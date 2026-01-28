@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}ETLF{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex align-items-center">
+                <h4 class="mb-0"><i class="bi bi-people"></i> NLF - Gestión de Recibos</h4> &nbsp;&nbsp;
+                <a href="{{ url_for('rep1recibos') }}" class="btn btn-success"> <i class="bi bi-person-plus"></i> Reporte #1 </a> &nbsp;&nbsp;
+                <a href="{{ url_for('rep2recibos') }}" class="btn btn-success"> <i class="bi bi-person-plus"></i> Reporte #2 </a> &nbsp;&nbsp;
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('aportes') }}">
+                    <!-- Barra de búsqueda -->
+                    <div class="row mb-4">
+                        <div class="col-md-2 mb-3">
+                            <label for="p1" class="form-label">Fecha Inicial</label>
+                            <input type="date" class="form-control" id="p1" name="p1" value="{{p1}}" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="p2" class="form-label">Fecha Final</label>
+                            <input type="date" class="form-control" id="p2" name="p2" value="{{p2}}" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="p3" class="form-label">Padron</label>
+                            <input type="number" class="form-control" id="p3" name="p3" value="{{p3}}" required>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Flores #2
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de datos -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>No.</th>
+                                    <th>Registro</th>
+                                    <th>Girado</th>
+                                    <th>Tipo</th>
+                                    <th>Emitido A.</th>
+                                    <th>Pagó</th>
+                                    <th>Act?</th>
+                                    <th>Caja</th>
+                                    <th>IdCtrl</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {%  for recibo in recibos %}
+                                <tr class="fila-aporte">
+                                    <td>{{ recibo.d0 }}</td>
+                                    <td>{{ recibo.d1 }}</td>
+                                    <td>{{ recibo.d2 }}</td>
+                                    <td>{{ recibo.d3 }}</td>
+                                    <td>{{ recibo.d4 }}</td>
+                                    <td>
+                                        <strong>{{ recibo.d6 }}</strong>
+                                    </td>
+                                    <td>{{ recibo.d7 }}</td>
+                                    <td>
+                                        <span class="badge {{ 'badge-activo' if recibo.d8 == 'S' else 'badge-inactivo' }}">
+                                            {{ 'S' if recibo.d8 == 'S' else 'N' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ recibo.d9 }}</td>
+                                    <td>{{ recibo.d10 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot><td colspan="6"></td><td>{{ total }}</td><td></td></tfoot>
+                        </table>
+                    </div>
+                </form>    
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h4>
+            </div>
+            <div class="card-body">
+                <h3>Bienvenido, {{ session.user_name }}!</h3>                
+                <p><b>Sesión Activa</b> - Ha iniciado sesión como <strong>{{ session.user_rol }}</strong></p>                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-person-check"></i>
+            </div>
+            <h3>Aportes</h3>
+            <p>Gestión de Recibos y Aportes</p>
+            <a href="{{ url_for('aportes') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Aportes
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Prestamos y Retiros</h3>
+            <p>Gestión post aporte sobre prestamos y retiros de socios</p>
+            <a href="{{ url_for('administracion') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Administracion
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-gear"></i>
+            </div>
+            <h3>Administracion de Buses</h3>
+            <p>Gestion de ruta, gps, consumo de Buses</p>
+            <button class="btn btn-secondary" disabled>
+                <i class="bi bi-tools"></i> Próximamente
+            </button>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-gear"></i>
+            </div>
+            <h3>Configuración</h3>
+            <p>Ajustes y preferencias del sistema</p>
+            <a href="{{ url_for('configuracion') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Opciones de Configuracion
+            </a>
+        </div>
+    </div>
+    
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Instrucciones</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> 
+                        <strong>Administradores:</strong> Pueden acceder a la gestión de usuarios
+                    </li>
+                    <li class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> 
+                        <strong>Usuarios regulares:</strong> Solo pueden ver el dashboard
+                    </li>
+                    <li class="list-group-item">
+                        <i class="bi bi-exclamation-triangle text-warning"></i> 
+                        Use el menú superior para navegar por el sistema
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

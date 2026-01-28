@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h4>
+            </div>
+            <div class="card-body">
+                <h3>Bienvenido, {{ session.user_name }}!</h3>                
+                <p><b>Sesión Activa</b> - Ha iniciado sesión como <strong>{{ session.user_rol }}</strong>
+                </p>                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Usuarios</h3>
+            <p>Gestión completa de usuarios del sistema</p>
+            <a href="{{ url_for('listar_usuarios') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Usuarios
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Socios</h3>
+            <p>Gestión completa de socios</p>
+            <a href="{{ url_for('listar_socios') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Socios
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Padrones</h3>
+            <p>Gestión completa de padrones</p>
+            <a href="{{ url_for('listar_padrones') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Padrones
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Tipos de Aportes</h3>
+            <p>Diferentes tipos de aportes que afectan a los padrones</p>
+            <a href="{{ url_for('listar_tipos_aportes') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Tipos de Aportes
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Tipos de Deudas</h3>
+            <p>Diferentes tipos de deudas brindados a socios</p>
+            <a href="{{ url_for('listar_tipos_deudas') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Deudas
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-gear"></i>
+            </div>
+            <h3>Productos</h3>
+            <p>Ajustes y preferencias de productos del sistema</p>
+            <button class="btn btn-secondary" disabled>
+                <i class="bi bi-tools"></i> Próximamente
+            </button>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}

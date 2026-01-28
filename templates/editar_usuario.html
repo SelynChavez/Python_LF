@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Usuario{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Mostrar/ocultar campo de nueva contraseña
+    $('#cambiar_password').change(function() {
+        if ($(this).is(':checked')) {
+            $('#nueva_password_group').show();
+            $('#nueva_password').prop('required', true);
+        } else {
+            $('#nueva_password_group').hide();
+            $('#nueva_password').prop('required', false);
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Usuario: {{ usuario.nombre }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('editar_usuario', id=usuario.id) }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Nombre de Usuario *</label>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   value="{{ usuario.username }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ usuario.email }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" 
+                                   value="{{ usuario.fullname }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="rol" class="form-label">Rol *</label>
+                            <select class="form-select" id="rol" name="rol" required>
+                                <option value="ADMIN" {{ 'selected' if usuario.roles == 'ADMIN' }}>Administrador</option>
+                                <option value="USER"  {{ 'selected' if usuario.roles == 'USER'  }}>Usuario Regular</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" id="activo" name="activo" required>
+                                <option value="ACTIVE"   {{ 'selected' if usuario.status == 'ACTIVE'   }}>Activo</option>
+                                <option value="INACTIVE" {{ 'selected' if usuario.status == 'INACTIVE' }}>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Cambio de contraseña opcional -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="cambiar_password" name="cambiar_password">
+                                <label class="form-check-label" for="cambiar_password">
+                                    Cambiar contraseña
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body" id="nueva_password_group" style="display: none;">
+                            <div class="mb-3">
+                                <label for="nueva_password" class="form-label">Nueva Contraseña</label>
+                                <input type="password" class="form-control" id="nueva_password" name="nueva_password">
+                                <div class="form-text">Dejar en blanco para mantener la contraseña actual</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        Los campos marcados con * son obligatorios
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                        <a href="{{ url_for('listar_usuarios') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

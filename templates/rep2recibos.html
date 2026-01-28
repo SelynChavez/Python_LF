@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte #2 - REP2APORTES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Reporte de Recibos por Fechas y Aportes</h4>
+            </div>
+            <div class="card-body">
+                <form id="formReporte" action="/generar_reporte" method="POST" target="_blank">
+                    <input type="hidden" id="cod" name="cod" value="REP2APORTES">
+                    <input type="hidden" id="titulo" name="titulo" value="Reporte de Recibos por Fechas y Aportes">
+                    <input type="hidden" id="subtitulo" name="subtitulo" value=" ( Desde $p1$ a $p2$ - Padron:$p3$ - Tipo:$p4$ )">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="p1" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="p1" name="p1" value="2021-01-01" required>
+                        </div>    
+                        <div class="col-md-6">
+                            <label for="p2" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="p2" name="p2" value="2021-12-31" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="p3" class="form-label">Padron</label>
+                            <input type="number" class="form-control" id="p3" name="p3" value="0" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="p4" class="form-label">Tipo de Aporte</label>
+                            <select class="form-select" id="p4" name="p4">
+                                {% for rg1 in tipos %}
+                                    <option value="{{ rg1["d1"] }}">{{ rg1["d2"] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>                    
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-generar me-md-2">
+                            <i class="bi bi-eye"></i> Generar y Ver Reporte
+                        </button>
+                    </div>
+                </form>
+
+
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

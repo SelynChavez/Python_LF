@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Búsqueda en tiempo real
+    $('#buscarUsuario').on('keyup', function() {
+        const valor = $(this).val().toLowerCase();
+        $('.fila-usuario').filter(function() {
+            $(this).toggle(
+                $(this).text().toLowerCase().indexOf(valor) > -1
+            );
+        });
+    });
+
+    // Confirmación para eliminar
+    $('.btn-eliminar').on('click', function(e) {
+        e.preventDefault();
+        const url = $(this).attr('href');
+        const nombre = $(this).data('nombre');
+        
+        if (confirm(`¿Está seguro de eliminar al usuario "${nombre}"? Esta acción no se puede deshacer.`)) {
+            window.location.href = url;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-people"></i> Gestión de Usuarios</h4>
+                <a href="{{ url_for('crear_usuario') }}" class="btn btn-success">
+                    <i class="bi bi-person-plus"></i> Nuevo Usuario
+                </a>
+            </div>
+            <div class="card-body">
+                <!-- Barra de búsqueda -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="buscarUsuario" class="form-control" placeholder="Buscar usuarios...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{{ url_for('configuracion') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Menu
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Tabla de usuarios -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuario</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Fecha Creación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                            <tr class="fila-usuario">
+                                <td>{{ usuario.id }}</td>
+                                <td>
+                                    <strong>{{ usuario.username }}</strong>
+                                    {% if usuario.id == session.user_id %}
+                                    <span class="badge bg-info">Tú</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ usuario.fullname }}</td>
+                                <td>{{ usuario.email }}</td>
+                                <td>
+                                    <span class="badge {{ 'badge-admin' if usuario.roles == 'ADMIN' else 'badge-usuario' }}">
+                                        {{ usuario.roles }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ 'badge-activo' if usuario.status == 'ACTIVE' else 'badge-inactivo' }}">
+                                        {{ 'Activo' if usuario.status == 'ACTIVE' else 'Inactivo' }}
+                                    </span>
+                                </td>
+                                <td>{{ usuario.modified.strftime('%d/%m/%Y %H:%M') if usuario.modified }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('editar_usuario', id=usuario.id) }}" 
+                                           class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        {% if usuario.id != session.user_id %}
+                                        <a href="{{ url_for('eliminar_usuario', id=usuario.id) }}" 
+                                           class="btn btn-sm btn-danger btn-eliminar" 
+                                           data-nombre="{{ usuario.fullname }}"
+                                           title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-secondary" disabled title="No puedes eliminarte">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Estadísticas -->
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Total Usuarios</h5>
+                                <p class="card-text display-6">{{ usuarios|length }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-white bg-success">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Administradores</h5>
+                                <p class="card-text display-6">
+                                    {{ usuarios|selectattr('roles', 'equalto', 'ADMIN')|list|length }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-white bg-warning">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Usuarios Activos</h5>
+                                <p class="card-text display-6">
+                                    {{ usuarios|selectattr('status', 'equalto', 'ACTIVE')|list|length }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

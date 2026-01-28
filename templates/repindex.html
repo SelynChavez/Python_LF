@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Reportes PDF</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .btn-generar {
+            background-color: #4a6fa5;
+            color: white;
+        }
+        .btn-descargar {
+            background-color: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="bi bi-file-earmark-pdf"></i> Generador de Reportes PDF</h3>
+            </div>
+            <div class="card-body">
+                <form id="formReporte" action="/generar_reporte" method="POST">
+                    <div class="mb-3">
+                        <label for="titulo" class="form-label">Título del Reporte</label>
+                        <input type="text" class="form-control" id="titulo" name="titulo" 
+                               value="Reporte de Empleados" required>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="fecha_inicio" 
+                                   name="fecha_inicio" value="" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="fecha_fin" 
+                                   name="fecha_fin" value="" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="departamento" class="form-label">Departamento</label>
+                        <select class="form-select" id="departamento" name="departamento">
+                            {% for depto in departamentos %}
+                            <option value="{{ depto }}">{{ depto }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="formato" class="form-label">Formato de Generación</label>
+                        <select class="form-select" id="formato" name="formato">
+                            <option value="reportlab">ReportLab (Recomendado)</option>
+                            <option value="fpdf">FPDF</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-generar me-md-2">
+                            <i class="bi bi-eye"></i> Generar y Ver Reporte
+                        </button>
+                        
+                        <button type="button" id="btnDescargar" class="btn btn-descargar">
+                            <i class="bi bi-download"></i> Descargar Directamente
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4">
+                    <h5>API de Reportes</h5>
+                    <p>También puedes generar reportes mediante API:</p>
+                    <code id="apiUrl">/api/generar_reporte?titulo=Mi Reporte&fecha_inicio=2024-01-01&fecha_fin=2024-12-31&departamento=Ventas</code>
+                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="copiarUrlAPI()">
+                        <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center text-muted">
+            <small>Sistema de Generación de Reportes PDF - Flask</small>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Descargar directamente sin mostrar
+        document.getElementById('btnDescargar').addEventListener('click', function() {
+            const form = document.getElementById('formReporte');
+            const formData = new FormData(form);
+            
+            fetch('/descargar_reporte', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'reporte.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Error:', error));
+        });
+        
+        // Actualizar URL de API
+        function actualizarUrlAPI() {
+            const titulo = encodeURIComponent(document.getElementById('titulo').value);
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            const departamento = encodeURIComponent(document.getElementById('departamento').value);
+            
+            const url = `/api/generar_reporte?titulo=${titulo}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}&departamento=${departamento}`;
+            document.getElementById('apiUrl').textContent = url;
+        }
+        
+        function copiarUrlAPI() {
+            const url = document.getElementById('apiUrl').textContent;
+            navigator.clipboard.writeText(url)
+                .then(() => alert('URL copiada al portapapeles'))
+                .catch(err => console.error('Error al copiar:', err));
+        }
+        
+        // Actualizar URL cuando cambien los campos
+        document.querySelectorAll('#formReporte input, #formReporte select').forEach(element => {
+            element.addEventListener('change', actualizarUrlAPI);
+            element.addEventListener('input', actualizarUrlAPI);
+        });
+        
+        // Inicializar URL
+        actualizarUrlAPI();
+    </script>
+</body>
+</html>
