@@ -21,7 +21,7 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <div class="dashboard-icon">
-                <i class="bi bi-person-check"></i>
+                <i class="bi bi-receipt-cutoff"></i>
             </div>
             <h3>Aportes</h3>
             <p>Gestión de Recibos y Aportes</p>
@@ -35,10 +35,10 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <div class="dashboard-icon">
-                <i class="bi bi-people"></i>
+                <i class="bi bi-cash-stack"></i>
             </div>
             <h3>Prestamos y Retiros</h3>
-            <p>Gestión post aporte sobre prestamos y retiros de socios</p>
+            <p>Post aporte sobre prestamos y retiros de socios</p>
             <a href="{{ url_for('administracion') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                 <i class="bi bi-eye"></i> Administracion
@@ -49,7 +49,7 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <div class="dashboard-icon">
-                <i class="bi bi-gear"></i>
+                <i class="bi bi-calendar-week"></i>
             </div>
             <h3>Administracion de Buses</h3>
             <p>Gestion de ruta, gps, consumo de Buses</p>
