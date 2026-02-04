@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}ETLF - Socios{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Búsqueda en tiempo real
+    $('#buscarSocio').on('keyup', function() {
+        const valor = $(this).val().toLowerCase();
+        $('.fila-socio').filter(function() {
+            $(this).toggle(
+                $(this).text().toLowerCase().indexOf(valor) > -1
+            );
+        });
+    });
+
+    // Confirmación para eliminar
+    $('.btn-eliminar').on('click', function(e) {
+        e.preventDefault();
+        const url = $(this).attr('href');
+        const nombre = $(this).data('nombre');
+        if (confirm(`¿Está seguro de eliminar al socio "${nombre}"? Esta acción no se puede deshacer.`)) {
+            window.location.href = url;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-people"></i> Gestión de Socios</h4>
+                <a href="{{ url_for('crear_socio') }}" class="btn btn-success">
+                    <i class="bi bi-person-plus"></i> Nuevo Socio
+                </a>
+            </div>
+            <div class="card-body">
+                <!-- Barra de búsqueda -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="buscarSocio" class="form-control" placeholder="Buscar socios...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{{ url_for('configuracion') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Menu
+                        </a>
+                    </div>
+                </div>
+                <!-- Tabla Lista -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Tipo</th>
+                                <th>Fono</th>
+                                <th>Estado</th>
+                                <th>Creado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for socio in socios %}
+                            <tr class="fila-socio">
+                                <td>{{ socio.id }}</td>
+                                <td>
+                                    <strong>{{ socio.nombre }}</strong>
+                                </td>
+                                <td>{{ socio.dni }}</td>
+                                <td>{{ socio.tipo }}</td>
+                                <td>{{ socio.fono }}</td>
+                                <td>
+                                    <span class="badge {{ 'badge-activo' if socio.active == 'S' else 'badge-inactivo' }}">
+                                        {{ 'Act' if socio.active == 'S' else 'Ina' }}
+                                    </span>
+                                </td>
+                                <td>{{ socio.modified.strftime('%d/%m/%Y %H:%M') if socio.modified }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('editar_socio', id=socio.id) }}" 
+                                           class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{{ url_for('eliminar_socio', id=socio.id) }}" 
+                                           class="btn btn-sm btn-danger btn-eliminar" 
+                                           data-nombre="{{ socio.nombre }}"
+                                           title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

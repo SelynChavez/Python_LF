@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Crear Socio{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Nuevo Socio</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('crear_socio') }}">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="dni" class="form-label">DNI *</label>
+                            <input type="number" class="form-control" id="dni" name="dni" min="0" max="99999999" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fono" class="form-label">Fono *</label>
+                            <input type="text" class="form-control" id="fono" name="fono" required>
+                            <div class="form-text"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="comentarios" class="form-label">Comentarios</label>
+                            <input type="text" class="form-control" id="comentarios" name="comentarios" required>
+                            <div class="form-text">Maximo 100 caracteres</div>
+                        </div>
+                    </div>
+
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label">Tipo *</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                <option value="">Seleccionar Tipo...</option>
+                                <option value="SOCIO">Socio</option>
+                                <option value="CHOFER">Chofer</option>
+                                <option value="ALQUILADO">Alquilado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Crear Socio
+                        </button>
+                        <a href="{{ url_for('listar_socios') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

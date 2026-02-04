@@ -7,12 +7,12 @@
     <div class="col-12 mb-4">
         <div class="card">
             <div class="card-header d-flex align-items-center">
-                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i>Gestión de Recibos</h4> &nbsp;&nbsp;
-                <a href="{{ url_for('rep1recibos') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nuevo Recibo </a> &nbsp;&nbsp;
-                <a href="{{ url_for('rep2recibos') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Reportes </a> &nbsp;&nbsp;
+                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> F#2 - Gestión de Recibos</h4> &nbsp;&nbsp;
+                <a href="{{ url_for('rep1recibosf2') }}" class="btn btn-success"> <i class="bi bi-printer"></i> [Rep.x Fechas] </a> &nbsp;&nbsp;
+                <a href="{{ url_for('rep2recibosf2') }}" class="btn btn-success"> <i class="bi bi-printer"></i> [Rep.x Aportes] </a> &nbsp;&nbsp;
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('aportes') }}">
+                <form method="POST" action="{{ url_for('aportesf2') }}">
                     <!-- Barra de búsqueda -->
                     <div class="row mb-4">
                         <div class="col-md-2 mb-3">
@@ -28,9 +28,9 @@
                             <input type="number" class="form-control" id="p3" name="p3" value="{{p3}}" required>
                         </div>
                         <div class="col-md-6 text-end">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Consultar
-                            </button>
+                            <a href="{{ url_for('aportes') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Flores NLF
+                            </a>
                         </div>
                     </div>
 

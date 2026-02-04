@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Reportes{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Reportes</h4>
+            </div>
+            <div class="card-body">
+                <h3>Hola, {{ session.user_name }}! como <strong>{{ session.user_rol }},</strong> tienes estas opciones</h3> 
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Rep.de Recibos</h3>
+            <p>Revisión completa de recibos</p>
+            <a href="{{ url_for('listar_usuarios') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Usuarios
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-person-check"></i>
+            </div>
+            <h3>Rep.de Prestamos</h3>
+            <p>Revisión completa de los Prestamos</p>
+            <a href="{{ url_for('listar_socios') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Socios
+            </a>
+        </div>
+    </div>
+
+
+{% endblock %}

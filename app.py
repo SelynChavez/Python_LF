@@ -96,8 +96,7 @@ def login():
                 connection = get_db_connection()
                 if connection:
                     cursor = connection.cursor()
-                    log_query = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion) VALUES (%s, %s, %s)"
-                    cursor.execute(log_query, (user['id'], 'login', 'Inicio de sesión exitoso'))
+                    cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (user['id'], 'login', 'Inicio de sesión exitoso'))
                     connection.commit()
                     cursor.close()
                     connection.close()
@@ -118,8 +117,7 @@ def logout():
         connection = get_db_connection()
         if connection:
             cursor = connection.cursor()
-            log_query = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion) VALUES (%s, %s, %s)"
-            cursor.execute(log_query, (session['user_id'], 'logout', 'Cierre de sesión'))
+            cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'logout', 'Cierre de sesión'))
             connection.commit()
             cursor.close()
             connection.close()
@@ -133,8 +131,41 @@ def logout():
 def dashboard():
     return render_template('dashboard.html')
 
+@app.route('/administracion')
+@login_required
+@admin_required
+def administracion():
+    return render_template('administracion.html')
+
+@app.route('/configuracion')
+@login_required
+@admin_required
+def configuracion():
+    return render_template('configuracion.html')
+
+# lista padrones
+@app.route('/padrones')
+@login_required
+@admin_required
+def listar_padrones():
+    return render_template('padrones.html')
 
 # lista aportes
+@app.route('/tipos_aportes')
+@login_required
+@admin_required
+def listar_tipos_aportes():
+    return render_template('tipos_aportes.html')
+
+# lista deudas
+@app.route('/tipos_deudas')
+@login_required
+@admin_required
+def listar_tipos_deudas():
+    return render_template('tipos_deudas.html')
+
+## ========================== CONSULTAS ====================================
+# lista aportes HLF
 @app.route('/aportes', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -169,49 +200,158 @@ def aportes():
         flash('Listo para consultar.', 'success')
         return render_template('aportes.html', recibos=recs, total=total)
 
-
-@app.route('/administracion')
-@login_required
-@admin_required
-def administracion():
-    return render_template('administracion.html')
-
-@app.route('/configuracion')
-@login_required
-@admin_required
-def configuracion():
-    return render_template('configuracion.html')
-
-# lista socios
+# ------------------------------------------------------------------------------------
+# SOCIOS (para demostrar funcionalidad reactiva)
 @app.route('/socios')
 @login_required
 @admin_required
 def listar_socios():
-    return render_template('socios.html')
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_SOCIOS)
+        socios = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return render_template('socios.html', socios=socios)
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('configuracion'))
 
-# lista padrones
-@app.route('/padrones')
+@app.route('/api/socios')
+@login_required
+def api_socios():
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        buscar = request.args.get('buscar', '')
+        query = sqlconstants.QRY1SOCIOS
+        if not buscar:
+            buscar = ""
+        cursor.execute(query, (f'%{buscar}%', f'%{buscar}%', f'%{buscar}%'))      
+        socios = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return jsonify(socios)
+    else:
+        return jsonify({'error': 'Error de conexión'}), 500
+
+@app.route('/socios/crear', methods=['GET', 'POST'])
 @login_required
 @admin_required
-def listar_padrones():
-    return render_template('padrones.html')
+def crear_socio():
+    if request.method == 'POST':
+        nombre = request.form.get('nombre')
+        dni = request.form.get('dni')
+        fono = request.form.get('fono')
+        tipo = request.form.get('tipo')
+        comentarios = request.form.get('comentarios')
+        if not all([dni, fono, nombre, tipo, comentarios]):
+            flash('Por favor, complete todos los campos.', 'danger')
+            return render_template('crear_socio.html')
+        connection = get_db_connection()
+        if connection:
+            try:
+                cursor = connection.cursor()
+                query = "INSERT INTO a_socios (nombre, fono, dni, comentarios, tipo, active, modified, webuser) VALUES (%s, %s, %s, %s, %s, 'S', now(), %s)"
+                cursor.execute(query, (nombre, fono, dni, comentarios, tipo, session['user_id']))
+                connection.commit()                
+                # Log
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_socio', f'Creó el socio: {nombre}'))
+                connection.commit()
+                cursor.close()
+                connection.close()
+                flash('Socio creado exitosamente.', 'success')
+                return redirect(url_for('listar_socios'))
+            except Error as e:
+                if 'Duplicate entry' in str(e):
+                    flash('El nombre/dni de socio o email ya existe.', 'danger')
+                else:
+                    flash(f'Error al crear socio: {str(e)}', 'danger')
+                connection.rollback()
+                cursor.close()
+                connection.close()
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')    
+    return render_template('crear_socio.html')
 
-# lista aportes
-@app.route('/tipos_aportes')
+@app.route('/socios/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
-def listar_tipos_aportes():
-    return render_template('tipos_aportes.html')
+def editar_socio(id):
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('listar_socios'))    
+    if request.method == 'POST':
+        nombre = request.form.get('nombre')
+        fono = request.form.get('fono')
+        dni = request.form.get('dni')
+        comentarios = request.form.get('comentarios')
+        tipo = request.form.get('tipo')
+        active = request.form.get('active')
+        try:
+            cursor = connection.cursor()
+            query = "UPDATE a_socios SET nombre=%s, fono=%s, dni=%s, comentarios=%s, tipo=%s, active=%s, modified=now() WHERE id=%s "
+            cursor.execute(query, (nombre, fono, dni, comentarios, tipo, active, id))            
+            connection.commit()
+            # Logs
+            cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_socio', f'Editó el socio: {nombre}'))
+            connection.commit()         
+            cursor.close()
+            connection.close()
+            flash('Socio actualizado exitosamente.', 'success')
+            return redirect(url_for('listar_socios'))
+        except Error as e:
+            if 'Duplicate entry' in str(e):
+                flash('El nombre/dni de socio ya existe.', 'danger')
+            else:
+                flash(f'Error al actualizar socio: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+            return redirect(url_for('editar_socio', id=id))    
+    # GET: Obtener datos del socio
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM a_socios WHERE id = %s", (id,))
+    socio = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if not socio:
+        flash('Socio no encontrado.', 'danger')
+        return redirect(url_for('listar_socios'))
+    return render_template('editar_socio.html', socio=socio)
 
-# lista deudas
-@app.route('/tipos_deudas')
+@app.route('/socios/eliminar/<int:id>')
 @login_required
 @admin_required
-def listar_tipos_deudas():
-    return render_template('tipos_deudas.html')
-
-
-# CRUD de usuarios
+def eliminar_socio(id):
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("SELECT nombre FROM a_socios WHERE id = %s", (id,))
+            socio = cursor.fetchone()
+            cursor.execute("DELETE FROM a_socios WHERE id = %s", (id,))
+            connection.commit()
+            # Logs
+            if socio:
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'eliminar_socio', f'Eliminó el socio: {socio["nombre"]}'))
+                connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Socio eliminado exitosamente.', 'success')
+        except Error as e:
+            flash(f'Error al eliminar socio: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')   
+    return redirect(url_for('listar_socios'))
+# ------------------------------------------------------------------------------------------
+# API para consulta de usuarios (para demostrar funcionalidad reactiva)
+# CRUD de USUARIOS
 @app.route('/usuarios')
 @login_required
 @admin_required
@@ -219,7 +359,7 @@ def listar_usuarios():
     connection = get_db_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM applicationuser ORDER BY modified DESC")
+        cursor.execute(sqlconstants.LISTA_USUARIOS)
         usuarios = cursor.fetchall()
         cursor.close()
         connection.close()
@@ -237,14 +377,11 @@ def crear_usuario():
         password = request.form.get('password')
         nombre = request.form.get('nombre')
         email = request.form.get('email')
-        rol = request.form.get('rol')
-        
+        rol = request.form.get('rol')        
         if not all([username, password, nombre, email, rol]):
             flash('Por favor, complete todos los campos.', 'danger')
             return render_template('crear_usuario.html')
-        
         hashed_password = hash_password(password)
-        
         connection = get_db_connection()
         if connection:
             try:
@@ -254,16 +391,12 @@ def crear_usuario():
                     VALUES (%s, %s, %s, %s, %s, 'ACTIVE', now())
                 """
                 cursor.execute(query, (username, hashed_password, nombre, email, rol))
-                connection.commit()
-                
+                connection.commit()                
                 # Registrar creación en logs
-                log_query = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion) VALUES (%s, %s, %s)"
-                cursor.execute(log_query, (session['user_id'], 'crear_usuario', f'Creó el usuario: {username}'))
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_usuario', f'Creó el usuario: {username}'))
                 connection.commit()
-                
                 cursor.close()
                 connection.close()
-                
                 flash('Usuario creado exitosamente.', 'success')
                 return redirect(url_for('listar_usuarios'))
             except Error as e:
@@ -275,8 +408,7 @@ def crear_usuario():
                 cursor.close()
                 connection.close()
         else:
-            flash('Error de conexión a la base de datos.', 'danger')
-    
+            flash('Error de conexión a la base de datos.', 'danger')    
     return render_template('crear_usuario.html')
 
 @app.route('/usuarios/editar/<int:id>', methods=['GET', 'POST'])
@@ -286,8 +418,7 @@ def editar_usuario(id):
     connection = get_db_connection()
     if not connection:
         flash('Error de conexión a la base de datos.', 'danger')
-        return redirect(url_for('listar_usuarios'))
-    
+        return redirect(url_for('listar_usuarios'))    
     if request.method == 'POST':
         username = request.form.get('username')
         nombre = request.form.get('nombre')
@@ -296,12 +427,9 @@ def editar_usuario(id):
         activo = request.form.get('activo')
         cambiar_password = request.form.get('cambiar_password')
         nueva_password = request.form.get('nueva_password')
-        
         ## activo_bool = True if activo == '1' else False
-        
         try:
             cursor = connection.cursor()
-            
             if cambiar_password and nueva_password:
                 hashed_password = hash_password(nueva_password)
                 query = """
@@ -317,17 +445,12 @@ def editar_usuario(id):
                     WHERE id = %s
                 """
                 cursor.execute(query, (username, nombre, email, rol, activo, id))
-            
             connection.commit()
-            
             # Registrar edición en logs
-            log_query = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion) VALUES (%s, %s, %s)"
-            cursor.execute(log_query, (session['user_id'], 'editar_usuario', f'Editó el usuario: {username}'))
+            cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_usuario', f'Editó el usuario: {username}'))
             connection.commit()
-            
             cursor.close()
             connection.close()
-            
             flash('Usuario actualizado exitosamente.', 'success')
             return redirect(url_for('listar_usuarios'))
         except Error as e:
@@ -338,19 +461,16 @@ def editar_usuario(id):
             connection.rollback()
             cursor.close()
             connection.close()
-            return redirect(url_for('editar_usuario', id=id))
-    
+            return redirect(url_for('editar_usuario', id=id))    
     # GET: Obtener datos del usuario
     cursor = connection.cursor(dictionary=True)
     cursor.execute("SELECT * FROM applicationuser WHERE id = %s", (id,))
     usuario = cursor.fetchone()
     cursor.close()
     connection.close()
-    
     if not usuario:
         flash('Usuario no encontrado.', 'danger')
         return redirect(url_for('listar_usuarios'))
-    
     return render_template('editar_usuario.html', usuario=usuario)
 
 @app.route('/usuarios/eliminar/<int:id>')
@@ -361,29 +481,22 @@ def eliminar_usuario(id):
     if id == session['user_id']:
         flash('No puede eliminar su propio usuario.', 'danger')
         return redirect(url_for('listar_usuarios'))
-    
     connection = get_db_connection()
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
-            
             # Obtener info del usuario antes de eliminar para el log
             cursor.execute("SELECT username FROM applicationuser WHERE id = %s", (id,))
             usuario = cursor.fetchone()
-            
             # Eliminar usuario
             cursor.execute("DELETE FROM applicationuser WHERE id = %s", (id,))
             connection.commit()
-            
             # Registrar eliminación en logs
             if usuario:
-                log_query = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion) VALUES (%s, %s, %s)"
-                cursor.execute(log_query, (session['user_id'], 'eliminar_usuario', f'Eliminó el usuario: {usuario["username"]}'))
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'eliminar_usuario', f'Eliminó el usuario: {usuario["username"]}'))
                 connection.commit()
-            
             cursor.close()
             connection.close()
-            
             flash('Usuario eliminado exitosamente.', 'success')
         except Error as e:
             flash(f'Error al eliminar usuario: {str(e)}', 'danger')
@@ -392,46 +505,53 @@ def eliminar_usuario(id):
             connection.close()
     else:
         flash('Error de conexión a la base de datos.', 'danger')
-    
     return redirect(url_for('listar_usuarios'))
 
-# API para consulta de usuarios (para demostrar funcionalidad reactiva)
 @app.route('/api/usuarios')
 @login_required
 def api_usuarios():
     connection = get_db_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        
         # Parámetros de búsqueda/filtro
         buscar = request.args.get('buscar', '')
-        
-        if buscar:
-            query = """
-                SELECT id, username, fullname, email, roles, 
-                       DATE_FORMAT(modified, '%%d/%%m/%%Y %%H:%%i') as modified, 
-                       status 
-                FROM applicationuser 
-                WHERE username LIKE %s OR fullname LIKE %s OR email LIKE %s
-                ORDER BY modified DESC
-            """
-            cursor.execute(query, (f'%{buscar}%', f'%{buscar}%', f'%{buscar}%'))
-        else:
-            query = """
-                SELECT id, username, fullname, email, roles, 
-                       DATE_FORMAT(modified, '%%d/%%m/%%Y %%H:%%i') as modified, 
-                       status 
-                FROM applicationuser 
-                ORDER BY modified DESC
-            """
-            cursor.execute(query)
-        
+        query = sqlconstants.QRY1USUARIOS
+        if not buscar:
+            buscar = ""
+        cursor.execute(query, (f'%{buscar}%', f'%{buscar}%', f'%{buscar}%'))      
         usuarios = cursor.fetchall()
         cursor.close()
         connection.close()
         return jsonify(usuarios)
     else:
         return jsonify({'error': 'Error de conexión'}), 500
+
+## REPORTES ----------------------------------------------------------------------------------------------------------
+@app.route('/reportes')
+@login_required
+@admin_required
+def reportes():
+    return render_template('reportes.html')
+
+@app.route('/rep1recibos')
+def rep1recibos():
+    return render_template('rep1recibos.html')
+
+@app.route('/rep2recibos')
+def rep2recibos():
+    tipos = []
+    query = sqlconstants.DROPLIST_APORTES
+    # Filtrar datos
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(query)
+        tipos = cursor.fetchall()
+        cursor.close()
+        connection.close()
+    else:
+        return jsonify({'error': 'Error de conexión'}), 500
+    return render_template('rep2recibos.html', tipos=tipos)
 
 
 ## PDF ----------------------------------------------------------------------------------------------------------
@@ -554,26 +674,6 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
     buffer.seek(0)
     return buffer
 
-@app.route('/rep1recibos')
-def rep1recibos():
-    return render_template('rep1recibos.html')
-
-@app.route('/rep2recibos')
-def rep2recibos():
-    tipos = []
-    query = "select codigo d1,concat(codigo,':',descripcion) d2 from nlf_tipos where tipo='APORTE'"
-    # Filtrar datos
-    connection = get_db_connection()
-    if connection:
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute(query)
-        tipos = cursor.fetchall()
-        cursor.close()
-        connection.close()
-    else:
-        return jsonify({'error': 'Error de conexión'}), 500
-    return render_template('rep2recibos.html', tipos=tipos)
-
 @app.route('/generar_reporte', methods=['POST'])
 def generar_reporte():
     try:
@@ -588,8 +688,7 @@ def generar_reporte():
         p5 = request.form.get('p5', '')
         p6 = request.form.get('p6', '')
         print("p3:"+p3)
-        print("p4:"+p4)
-        
+        print("p4:"+p4)        
         # Generar PDF
         pdf_buffer = generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6)
         # Convertir a base64 para mostrar en HTML
@@ -597,6 +696,7 @@ def generar_reporte():
         return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod=cod)    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+## ---- END PDF ----------------------------------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':

@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}Dashboard{% endblock %}
-
+{% block title %}ETLF - Dashboard{% endblock %}
 {% block content %}
 <div class="row">
     <div class="col-12 mb-4">
@@ -56,6 +54,20 @@
             <button class="btn btn-secondary" disabled>
                 <i class="bi bi-tools"></i> Próximamente
             </button>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-gear"></i>
+            </div>
+            <h3>Reportes</h3>
+            <p>Reportes y Listados de varios termas</p>
+            <a href="{{ url_for('reportes') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Reportes Varios
+            </a>
         </div>
     </div>
 

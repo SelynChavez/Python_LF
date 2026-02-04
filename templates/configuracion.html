@@ -1,17 +1,14 @@
 {% extends "base.html" %}
-
-{% block title %}Dashboard{% endblock %}
-
+{% block title %}ETLF - Configuracion{% endblock %}
 {% block content %}
 <div class="row">
     <div class="col-12 mb-4">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h4>
+                <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Configuracion </h4>
             </div>
             <div class="card-body">
-                <h3>Bienvenido, {{ session.user_name }}!</h3>                
-                <p><b>Sesión Activa</b> - Ha iniciado sesión como <strong>{{ session.user_rol }}</strong>
+                <h3> Hola, {{ session.user_name }}! tienes estas opciones.</h3>                
                 </p>                
             </div>
         </div>
