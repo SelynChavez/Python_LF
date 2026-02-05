@@ -22,11 +22,24 @@
             <div class="dashboard-icon">
                 <i class="bi bi-people"></i>
             </div>
-            <h3>Rep.de Recibos</h3>
-            <p>Revisión completa de recibos</p>
-            <a href="{{ url_for('listar_usuarios') if session.user_rol == 'ADMIN' else '#' }}" 
+            <h3>Recibos</h3>
+            <p>Reporte de recibos por Fechas y Padron</p>
+            <a href="{{ url_for('rep1recibos') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
-                <i class="bi bi-eye"></i> Ver Usuarios
+                <i class="bi bi-eye"></i> Rep #1 Aportes
+            </a>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Recibos</h3>
+            <p>Reporte de recibos por Fechas y Aportes</p>
+            <a href="{{ url_for('rep2recibos') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Rep #2 Aportes
             </a>
         </div>
     </div>

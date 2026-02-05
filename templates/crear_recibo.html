@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Crear Recibo{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Recibo Socio</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('crear_recibo') }}">
+                    <input type="hidden" id="act" name="act" value="{{act}}">
+                    <input type="hidden" id="lid" name="lid" value="{{lid}}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fec" class="form-label">Fecha *</label>
+                            <input type="date" class="form-control" id="fec" name="fec" value="{{fec}}" required>
+                            <div class="form-text">{{act}}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="pad" class="form-label">Padron *</label>
+                            <input type="number" class="form-control" id="pad" name="pad" value="{{pad}}" min="0" max="9999" maxlength="4" required>
+                            <div class="form-text">{{nom}}</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="com" class="form-label">Comentarios</label>
+                            <input type="text" class="form-control" id="com" name="com" value="{{com}}" maxlength="99">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- Tabla Lista -->
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Codigo</th>
+                                        <th>Descripcion</th>
+                                        <th>Monto</th>
+                                        <th>Prestamo</th>
+                                        <th>Tipo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ii in items %}
+                                    <tr class="fila-socio">
+                                        <td>{{ ii.idx0 }}</td>
+                                        <td>{{ ii.codigo }}</td>
+                                        <td><strong>{{ ii.descripcion }}</strong></td>
+                                        <td>
+                                            <input type="number" class="form-control" id="{{ ii.codigo }}" name="{{ ii.codigo }}" value="{{ ii.monto }}" min="0" max="9999.99" maxlength="7">
+                                        </td>
+                                        <td>{{ ii.prestamo }}</td>
+                                        <td>{{ ii.tipodeuda }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>        
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> {{but}}
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

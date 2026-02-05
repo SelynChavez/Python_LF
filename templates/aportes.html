@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}ETLF{% endblock %}
+{% block title %}ETLF - Aportes{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12 mb-4">
         <div class="card">
-            <div class="card-header d-flex align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i>Gestión de Recibos</h4> &nbsp;&nbsp;
-                <a href="{{ url_for('rep1recibos') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nuevo Recibo </a> &nbsp;&nbsp;
-                <a href="{{ url_for('rep2recibos') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Reportes </a> &nbsp;&nbsp;
+                <a href="{{ url_for('crear_recibo') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nuevo Recibo </a>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('aportes') }}">

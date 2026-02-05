@@ -58,6 +58,19 @@ def hash_password(password):
     # En producción usaría bcrypt o similar
     return password.encode()
 
+def get_nombre_padron(pad):
+    nombre_default = ''
+    connection1 = get_db_connection()
+    if connection1:
+        cursor = connection1.cursor(dictionary=True)
+        cursor.execute(sqlconstants.GET_NOMBRE_PADRON, (pad,))
+        reg0 = cursor.fetchone()
+        if reg0:
+            nombre_default = reg0['n0']
+        cursor.close()
+        connection1.close()
+    return nombre_default
+
 # Rutas principales
 @app.route('/')
 def index():
@@ -69,14 +82,11 @@ def index():
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
-        password = request.form.get('password')
-        
+        password = request.form.get('password')        
         if not username or not password:
             flash('Por favor, complete todos los campos.', 'danger')
             return render_template('login.html')
-        
         hashed_password = hash_password(password)
-        
         connection = get_db_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
@@ -85,14 +95,11 @@ def login():
             user = cursor.fetchone()
             cursor.close()
             connection.close()
-            
             if user:
                 session['user_id'] = user['id']
                 session['user_name'] = user['fullname']
                 session['user_username'] = user['username']
                 session['user_rol'] = user['roles']
-                
-                # Registrar login en logs
                 connection = get_db_connection()
                 if connection:
                     cursor = connection.cursor()
@@ -100,14 +107,12 @@ def login():
                     connection.commit()
                     cursor.close()
                     connection.close()
-                
                 flash(f'Bienvenido, {user["fullname"]}!', 'success')
                 return redirect(url_for('dashboard'))
             else:
                 flash('Usuario o contraseña incorrectos.', 'danger')
         else:
             flash('Error de conexión a la base de datos.', 'danger')
-    
     return render_template('login.html')
 
 @app.route('/logout')
@@ -121,7 +126,6 @@ def logout():
             connection.commit()
             cursor.close()
             connection.close()
-    
     session.clear()
     flash('Ha cerrado sesión correctamente.', 'info')
     return redirect(url_for('login'))
@@ -174,8 +178,8 @@ def aportes():
     line0 = 0
     recs = []
     if request.method == 'POST':
-        p1 = request.form.get('p1')  # Fecha Ini
-        p2 = request.form.get('p2')  # Fecha Fin
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
         p3 = request.form.get('p3')  # Padron
         connection = get_db_connection()
         if connection:
@@ -197,8 +201,101 @@ def aportes():
             flash('Error de conexión a la base de datos.', 'danger')
             return redirect(url_for('dashboard'))
     else:
+        px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Ini
         flash('Listo para consultar.', 'success')
-        return render_template('aportes.html', recibos=recs, total=total)
+        return render_template('aportes.html', p1=px, p2=px, p3=0, recibos=recs, total=total)
+
+# ------------------------------------------------------------------------------------
+# RECIBOS (para demostrar funcionalidad reactiva)
+@app.route('/recibos/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_recibo():
+    if request.method == 'POST':
+        act = request.form.get('act')
+        fec = request.form.get('fec')
+        pad = request.form.get('pad')
+        com = request.form.get('com')
+        lid = request.form.get('lid')
+        nom = ""
+        if not all([fec, pad]):
+            flash('Por favor, complete todos los campos con (*).', 'danger')
+            return render_template('crear_recibo.html')
+        connection = get_db_connection()
+        if act == '-':
+            if connection:
+                try:
+                    cursor = connection.cursor()
+                    query = sqlconstants.INSERT_RECIBO_1
+                    cursor.execute(query, (fec, pad, com, act, session['user_username'])) 
+                    lid = cursor.lastrowid
+                    connection.commit()
+                    act = '*'
+                    # --- comenzar con detalle
+                    cursor = connection.cursor(dictionary=True)
+                    consulta = sqlconstants.DETALLE_SERIE_1
+                    consulta = consulta.replace("$pad$", pad)
+                    cursor.execute(consulta)
+                    items = cursor.fetchall()
+                    cursor.close()
+                    nom = get_nombre_padron(pad)
+                    connection.close()
+                    flash('Continuar con detalles.', 'success')
+                    return render_template('crear_recibo.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid)
+                except Error as e:
+                    if 'Duplicate entry' in str(e):
+                        flash('El nombre/dni de socio o email ya existe.', 'danger')
+                    else:
+                        flash(f'Error al crear socio: {str(e)}', 'danger')
+                    connection.rollback()
+                    cursor.close()
+                    connection.close()
+            else:
+                flash('Error de conexión a la base de datos.', 'danger')
+        if act == '*':
+            if connection:
+                try:
+                    lin = 0
+                    cursor = connection.cursor(dictionary=True)
+                    consulta = sqlconstants.DETALLE_SERIE_1
+                    consulta = consulta.replace("$pad$", pad)
+                    cursor.execute(consulta)
+                    items = cursor.fetchall()
+                    for i0 in items:
+                        lin += 1
+                        mnt = request.form.get(i0['codigo'])
+                        mnt0 = float(mnt)
+                        if mnt and mnt0 > 0:
+                            query = sqlconstants.INSERT_DETREC_1
+                            query = query.replace("$apo$", i0['codigo'])
+                            query = query.replace("$rec$", lid)
+                            query = query.replace("$mnt$", mnt)
+                            query = query.replace("$pre$", str(i0['prestamo']))
+                            query = query.replace("$tip$", i0['tipodeuda'])
+                            query = query.replace("$usr$", session['user_username'])
+                            cursor = connection.cursor()
+                            cursor.execute(query)
+                    query9 = sqlconstants.UPDATE_RECIBO_1
+                    query9 = query9.replace("$recibo$",lid)
+                    cursor = connection.cursor()
+                    cursor.execute(query9)
+                    connection.commit()
+                    cursor.close()
+                    connection.close()
+                    flash('Recibo registrado.', 'success')
+                    return render_template('crear_recibo.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
+                except Error as e:
+                    if 'Duplicate entry' in str(e):
+                        flash('El nombre/dni de socio o email ya existe.', 'danger')
+                    else:
+                        flash(f'Error al crear socio: {str(e)}', 'danger')
+                    connection.rollback()
+                    cursor.close()
+                    connection.close()
+            else:
+                flash('Error de conexión a la base de datos.', 'danger')
+       
+    return render_template('crear_recibo.html', act='-',but='Continuar')
 
 # ------------------------------------------------------------------------------------
 # SOCIOS (para demostrar funcionalidad reactiva)
@@ -253,8 +350,7 @@ def crear_socio():
         if connection:
             try:
                 cursor = connection.cursor()
-                query = "INSERT INTO a_socios (nombre, fono, dni, comentarios, tipo, active, modified, webuser) VALUES (%s, %s, %s, %s, %s, 'S', now(), %s)"
-                cursor.execute(query, (nombre, fono, dni, comentarios, tipo, session['user_id']))
+                cursor.execute(sqlconstants.INSERT_SOCIO, (nombre, fono, dni, comentarios, tipo, session['user_username']))
                 connection.commit()                
                 # Log
                 cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_socio', f'Creó el socio: {nombre}'))
@@ -292,8 +388,7 @@ def editar_socio(id):
         active = request.form.get('active')
         try:
             cursor = connection.cursor()
-            query = "UPDATE a_socios SET nombre=%s, fono=%s, dni=%s, comentarios=%s, tipo=%s, active=%s, modified=now() WHERE id=%s "
-            cursor.execute(query, (nombre, fono, dni, comentarios, tipo, active, id))            
+            cursor.execute(sqlconstants.UPDATE_SOCIO, (nombre, fono, dni, comentarios, tipo, active, id))            
             connection.commit()
             # Logs
             cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_socio', f'Editó el socio: {nombre}'))
@@ -313,7 +408,7 @@ def editar_socio(id):
             return redirect(url_for('editar_socio', id=id))    
     # GET: Obtener datos del socio
     cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM a_socios WHERE id = %s", (id,))
+    cursor.execute(sqlconstants.SELECT_SOCIO, (id,))
     socio = cursor.fetchone()
     cursor.close()
     connection.close()
@@ -330,9 +425,9 @@ def eliminar_socio(id):
     if connection:
         try:
             cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT nombre FROM a_socios WHERE id = %s", (id,))
+            cursor.execute(sqlconstants.SEL_NM_SOCIO, (id,))
             socio = cursor.fetchone()
-            cursor.execute("DELETE FROM a_socios WHERE id = %s", (id,))
+            cursor.execute(sqlconstants.DELETE_SOCIO, (id,))
             connection.commit()
             # Logs
             if socio:
@@ -386,11 +481,7 @@ def crear_usuario():
         if connection:
             try:
                 cursor = connection.cursor()
-                query = """
-                    INSERT INTO applicationuser (username, password, fullname, email, roles, status, modified) 
-                    VALUES (%s, %s, %s, %s, %s, 'ACTIVE', now())
-                """
-                cursor.execute(query, (username, hashed_password, nombre, email, rol))
+                cursor.execute(sqlconstants.INSERT_USUARIO, (username, hashed_password, nombre, email, rol))
                 connection.commit()                
                 # Registrar creación en logs
                 cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_usuario', f'Creó el usuario: {username}'))
@@ -432,19 +523,9 @@ def editar_usuario(id):
             cursor = connection.cursor()
             if cambiar_password and nueva_password:
                 hashed_password = hash_password(nueva_password)
-                query = """
-                    UPDATE applicationuser 
-                    SET username = %s, fullname = %s, email = %s, roles = %s, status = %s, password = %s
-                    WHERE id = %s
-                """
-                cursor.execute(query, (username, nombre, email, rol, activo, hashed_password, id))
+                cursor.execute(sqlconstants.UPDAT1_USUARIO, (username, nombre, email, rol, activo, hashed_password, id))
             else:
-                query = """
-                    UPDATE applicationuser 
-                    SET username = %s, fullname = %s, email = %s, roles = %s, status = %s
-                    WHERE id = %s
-                """
-                cursor.execute(query, (username, nombre, email, rol, activo, id))
+                cursor.execute(sqlconstants.UPDAT2_USUARIO, (username, nombre, email, rol, activo, id))
             connection.commit()
             # Registrar edición en logs
             cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_usuario', f'Editó el usuario: {username}'))
@@ -464,7 +545,7 @@ def editar_usuario(id):
             return redirect(url_for('editar_usuario', id=id))    
     # GET: Obtener datos del usuario
     cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM applicationuser WHERE id = %s", (id,))
+    cursor.execute(sqlconstants.SELECT_USUARIO, (id,))
     usuario = cursor.fetchone()
     cursor.close()
     connection.close()
@@ -486,10 +567,10 @@ def eliminar_usuario(id):
         try:
             cursor = connection.cursor(dictionary=True)
             # Obtener info del usuario antes de eliminar para el log
-            cursor.execute("SELECT username FROM applicationuser WHERE id = %s", (id,))
+            cursor.execute(sqlconstants.SEL_NM_USUARIO, (id,))
             usuario = cursor.fetchone()
             # Eliminar usuario
-            cursor.execute("DELETE FROM applicationuser WHERE id = %s", (id,))
+            cursor.execute(sqlconstants.DELETE_USUARIO, (id,))
             connection.commit()
             # Registrar eliminación en logs
             if usuario:
@@ -535,7 +616,14 @@ def reportes():
 
 @app.route('/rep1recibos')
 def rep1recibos():
-    return render_template('rep1recibos.html')
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "0"
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+        p3 = request.form.get('p3')  # Padron
+    return render_template('rep1recibos.html', p1=p1, p2=p2, p3=p3)
 
 @app.route('/rep2recibos')
 def rep2recibos():
@@ -553,12 +641,12 @@ def rep2recibos():
         return jsonify({'error': 'Error de conexión'}), 500
     return render_template('rep2recibos.html', tipos=tipos)
 
-
-## PDF ----------------------------------------------------------------------------------------------------------
+## REPORT PDF CREATION ----------------------------------------------------------------------------------------------------------
 def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, p6):    
     pdf.set_font("Arial", 'B', 10)
     hora1 = str(datetime.datetime.now())[0:19] + "  -  Pag. # " + str(pdf.page_no()+sum4)
-    pdf.cell(0, 8, f"E.T.Las Flores :: {cod} -                                                                                  {hora1}", 0, 1, 'R')
+    usr = session['user_username']
+    pdf.cell(0, 8, f"E.T.Las Flores :: [{cod}] - [{usr}] -                                                                     {hora1}", 0, 1, 'R')
     # Título
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 4, f"{titulo}", 0, 1, 'C')
@@ -585,8 +673,6 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
         pdf.cell(15, 5, "Act?", 1)
         pdf.cell(18, 5, "Usuario", 1)
         pdf.cell(15, 5, "IdCtrl", 1)
-    elif(cod=='TEST'):
-        pdf.cell(15, 5, "ID", 1)
     elif(cod=='REP2APORTES'):
         pdf.cell(18, 5, "Nro.Rec.", 1)
         pdf.cell(18, 5, "Registro", 1)
@@ -607,6 +693,7 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
     pdf.set_left_margin(3.5)   
     print('Comenzando Reporte.. CABECERA')
     generar_pdf_cabecera(pdf, cod, titulo, subtitulo, 0, p1, p2, p3, p4, p5, p6)    
+    print('Procesando Reporte..')
     # Determinar SQL query
     query = sqlconstants.REP1APORTES
     if (cod=="REP2APORTES"):
@@ -646,8 +733,6 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
             pdf.cell(18, 5, dato["d9"], 1)
             pdf.cell(15, 5, dato["d10"], 1)
             to1 += float(dato["d7"])  
-        elif(cod=='TEST'):
-            pdf.cell(15, 5, dato["d1"], 1)
         elif(cod=='REP2APORTES'):
             pdf.cell(18, 5, dato["d1"], 1)
             pdf.cell(18, 5, dato["d2"], 1)
@@ -666,6 +751,7 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
             generar_pdf_cabecera(pdf, cod, titulo, subtitulo, 1, p1, p2, p3, p4, p5, p6)
             pdf.set_font("Arial", '', 8)          
     # Pie de página
+    print('Finalizando Reporte..')
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 10, f"#REGS:...{rgt} :: TOTAL APORTADO:... {to1}", 0, 1)
