@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Padrones{% endblock %}
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Búsqueda en tiempo real
+    $('#buscarPadron').on('keyup', function() {
+        const valor = $(this).val().toLowerCase();
+        $('.fila-padron').filter(function() {
+            $(this).toggle(
+                $(this).text().toLowerCase().indexOf(valor) > -1
+            );
+        });
+    });
+    // Confirmación para eliminar
+    $('.btn-eliminar').on('click', function(e) {
+        e.preventDefault();
+        const url = $(this).attr('href');
+        const placa = $(this).data('placa');
+        if (confirm(`¿Está seguro de eliminar al padron "${placa}"? Esta acción no se puede deshacer.`)) {
+            window.location.href = url;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-people"></i> Gestión de Padrones</h4>
+                <a href="{{ url_for('crear_padron') }}" class="btn btn-success">
+                    <i class="bi bi-person-plus"></i> Nuevo Padron
+                </a>
+            </div>
+            <div class="card-body">
+                <!-- Barra de búsqueda -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="buscarPadron" class="form-control" placeholder="Buscar padron por placa...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{{ url_for('configuracion') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Menu
+                        </a>
+                    </div>
+                </div>
+                <!-- Tabla Lista -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Placa</th>
+                                <th>Socio</th>
+                                <th>Act</th>
+                                <th>Monto#1</th>
+                                <th>Monto#2</th>
+                                <th>Monto#3</th>
+                                <th>Actualizado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p0 in padrones %}
+                            <tr class="fila-padron">
+                                <td>{{ p0.id }}</td>
+                                <td>
+                                    <strong>{{ p0.placa }}</strong>
+                                </td>
+                                <td>{{ p0.nombresocio }}</td>
+                                <td>
+                                    <span class="badge {{ 'badge-activo' if p0.active == 'S' else 'badge-inactivo' }}">
+                                        {{ 'S' if p0.active == 'S' else 'N' }}
+                                    </span>
+                                </td>
+                                <td>{{ p0.monto1 }}</td>
+                                <td>{{ p0.monto2 }}</td>
+                                <td>{{ p0.monto3 }}</td>
+                                <td>{{ p0.modified.strftime('%d/%m/%Y %H:%M') if p0.modified }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('editar_padron', id=p0.id) }}" 
+                                           class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{{ url_for('eliminar_padron', id=p0.id) }}" 
+                                           class="btn btn-sm btn-danger btn-eliminar" 
+                                           data-nombre="{{ p0.placa }}"
+                                           title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

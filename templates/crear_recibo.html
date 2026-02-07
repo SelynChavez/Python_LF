@@ -11,6 +11,7 @@
                 <form method="POST" action="{{ url_for('crear_recibo') }}">
                     <input type="hidden" id="act" name="act" value="{{act}}">
                     <input type="hidden" id="lid" name="lid" value="{{lid}}">
+                    <input type="hidden" id="nom" name="nom" value="{{nom}}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="fec" class="form-label">Fecha *</label>
@@ -50,7 +51,7 @@
                                         <td>{{ ii.codigo }}</td>
                                         <td><strong>{{ ii.descripcion }}</strong></td>
                                         <td>
-                                            <input type="number" class="form-control" id="{{ ii.codigo }}" name="{{ ii.codigo }}" value="{{ ii.monto }}" min="0" max="9999.99" maxlength="7">
+                                            <input type="number" class="form-control" id="{{ ii.codigo }}" name="{{ ii.codigo }}" value="{{ ii.monto }}" min="0" max="9999.99" step="0.01" maxlength="7">
                                         </td>
                                         <td>{{ ii.prestamo }}</td>
                                         <td>{{ ii.tipodeuda }}</td>

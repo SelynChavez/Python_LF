@@ -13,6 +13,7 @@ from reportlab.pdfgen import canvas
 from fpdf import FPDF
 import base64
 import datetime
+from decimal import Decimal
 import sqlconstants
 
 app = Flask(__name__)
@@ -147,13 +148,6 @@ def administracion():
 def configuracion():
     return render_template('configuracion.html')
 
-# lista padrones
-@app.route('/padrones')
-@login_required
-@admin_required
-def listar_padrones():
-    return render_template('padrones.html')
-
 # lista aportes
 @app.route('/tipos_aportes')
 @login_required
@@ -256,6 +250,8 @@ def crear_recibo():
             if connection:
                 try:
                     lin = 0
+                    total = 0
+                    nom = request.form.get('nom')
                     cursor = connection.cursor(dictionary=True)
                     consulta = sqlconstants.DETALLE_SERIE_1
                     consulta = consulta.replace("$pad$", pad)
@@ -266,6 +262,7 @@ def crear_recibo():
                         mnt = request.form.get(i0['codigo'])
                         mnt0 = float(mnt)
                         if mnt and mnt0 > 0:
+                            i0['monto'] = Decimal(mnt0)
                             query = sqlconstants.INSERT_DETREC_1
                             query = query.replace("$apo$", i0['codigo'])
                             query = query.replace("$rec$", lid)
@@ -283,6 +280,25 @@ def crear_recibo():
                     cursor.close()
                     connection.close()
                     flash('Recibo registrado.', 'success')
+
+                    # Datos de ejemplo
+                    codigo_padron = pad
+                    nombre_socio = nom
+                    fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
+                    date_format = '%Y-%m-%d'
+                    date_obj = datetime.datetime.strptime(fec, date_format)
+                    fecha_giro = date_obj.strftime('%d-%m-%Y')
+                    # Generar recibo
+                    archivo = generar_recibo('RECIBO DE PAGO', lid, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
+                    # Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
+                    try:
+                        if os.name == 'nt':  # Windows
+                            os.startfile(archivo)
+                        elif os.name == 'posix':  # Linux o macOS
+                            os.system(f'open "{archivo}"')
+                    except:
+                        print(f"Recibo guardado en: {os.path.abspath(archivo)}")
+
                     return render_template('crear_recibo.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
@@ -297,6 +313,160 @@ def crear_recibo():
        
     return render_template('crear_recibo.html', act='-',but='Continuar')
 
+# ------------------------------------------------------------------------------------
+# PADRONES (para demostrar funcionalidad reactiva)
+@app.route('/padrones')
+@login_required
+@admin_required
+def listar_padrones():
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_PADRONES)
+        padrones = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return render_template('padrones.html', padrones=padrones)
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('configuracion'))
+
+@app.route('/api/padrones')
+@login_required
+def api_padrones():
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        buscar = request.args.get('buscar', '')
+        query = sqlconstants.QRY1PADRONES
+        if not buscar:
+            buscar = ""
+        cursor.execute(query, (f'%{buscar}%', f'%{buscar}%', f'%{buscar}%'))      
+        padrones = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return jsonify(padrones)
+    else:
+        return jsonify({'error': 'Error de conexión'}), 500
+
+@app.route('/padrones/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_padron():
+    if request.method == 'POST':
+        placa = request.form.get('placa')
+        socio = request.form.get('socio')
+        active = request.form.get('active')
+        monto1 = request.form.get('monto1')
+        monto2 = request.form.get('monto2')
+        monto3 = request.form.get('monto3')
+        monto4 = request.form.get('monto4')
+        monto5 = request.form.get('monto5')
+        monto6 = request.form.get('monto6')
+        if not all([placa, socio]):
+            flash('Por favor, complete todos los campos.', 'danger')
+            return render_template('crear_padron.html')
+        connection = get_db_connection()
+        if connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute(sqlconstants.INSERT_PADRON, (placa, socio, active, monto1, monto2, monto3, monto4, session['user_username']))
+                connection.commit()                
+                # Log
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_padron', f'Creó el padron: {placa}'))
+                connection.commit()
+                cursor.close()
+                connection.close()
+                flash('Padron creado exitosamente.', 'success')
+                return redirect(url_for('listar_padrones'))
+            except Error as e:
+                if 'Duplicate entry' in str(e):
+                    flash('Placa - socio ya existe.', 'danger')
+                else:
+                    flash(f'Error al crear placa: {str(e)}', 'danger')
+                connection.rollback()
+                cursor.close()
+                connection.close()
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')    
+    return render_template('crear_padron.html')
+
+@app.route('/padrones/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def editar_padron(id):
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('listar_padrones'))    
+    if request.method == 'POST':
+        placa = request.form.get('placa')
+        socio = request.form.get('socio')
+        active = request.form.get('active')
+        monto1 = request.form.get('monto1')
+        monto2 = request.form.get('monto2')
+        monto3 = request.form.get('monto3')
+        monto4 = request.form.get('monto4')
+        monto5 = request.form.get('monto5')
+        monto6 = request.form.get('monto6')
+        try:
+            cursor = connection.cursor()
+            cursor.execute(sqlconstants.UPDATE_PADRON, (placa, socio, active, monto1, monto2, monto3, monto4, id))
+            connection.commit()
+            # Logs
+            cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_placa', f'Editó el padron: {placa}'))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Padron actualizado exitosamente.', 'success')
+            return redirect(url_for('listar_padrones'))
+        except Error as e:
+            if 'Duplicate entry' in str(e):
+                flash('La placa/socio ya existe.', 'danger')
+            else:
+                flash(f'Error al actualizar padron: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+            return redirect(url_for('editar_padron', id=id))    
+    # GET: Obtener datos del socio
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.SELECT_PADRON, (id,))
+    padron = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if not padron:
+        flash('Padron no encontrado.', 'danger')
+        return redirect(url_for('listar_padrones'))
+    return render_template('editar_padron.html', padron=padron)
+
+@app.route('/padrones/eliminar/<int:id>')
+@login_required
+@admin_required
+def eliminar_padron(id):
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(sqlconstants.SEL_NM_PADRON, (id,))
+            padron = cursor.fetchone()
+            cursor.execute(sqlconstants.DELETE_PADRON, (id,))
+            connection.commit()
+            # Logs
+            if padron:
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'eliminar_padron', f'Eliminó el padron: {padron["placa"]}'))
+                connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Padron eliminado exitosamente.', 'success')
+        except Error as e:
+            flash(f'Error al eliminar padron: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')   
+    return redirect(url_for('listar_padrones'))
 # ------------------------------------------------------------------------------------
 # SOCIOS (para demostrar funcionalidad reactiva)
 @app.route('/socios')
@@ -444,6 +614,7 @@ def eliminar_socio(id):
     else:
         flash('Error de conexión a la base de datos.', 'danger')   
     return redirect(url_for('listar_socios'))
+
 # ------------------------------------------------------------------------------------------
 # API para consulta de usuarios (para demostrar funcionalidad reactiva)
 # CRUD de USUARIOS
@@ -783,6 +954,149 @@ def generar_reporte():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 ## ---- END PDF ----------------------------------------------------------------------------------------------------------
+
+
+
+
+
+class ReciboTicket(FPDF):
+    def __init__(self):
+        super().__init__(orientation='P', unit='mm', format=(80, 200))
+        self.set_auto_page_break(auto=True, margin=10)
+        self.set_margins(5, 5, 5)
+        self.width = 80
+        self.max_chars = 30
+    
+    def header(self):
+        # Encabezado del recibo
+        self.set_font('Arial', 'B', 10)
+        self.cell(0, 5, 'E.T.Las Flores', 0, 1, 'C')
+        self.set_font('Arial', '', 8)
+        self.cell(0, 4, 'RUC: 20172781005', 0, 1, 'C')
+        ## self.set_font('Arial', '', 7)
+        ## self.cell(0, 4, 'Av.Wiese Mza J Lt#24 Urb.M.Caceres - SJL', 0, 1, 'C')
+        self.ln(1)
+        # Línea separadora
+        self.line(5, self.get_y(), self.width - 5, self.get_y())
+        self.ln(1)
+    
+    def footer(self):
+        # Pie de página
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 7)
+        self.cell(0, 4, 'Gracias por su pago', 0, 1, 'C')
+        self.cell(0, 4, 'Recibo válido como comprobante de pago', 0, 1, 'C')
+        self.cell(0, 4, f'Impreso el: {datetime.datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'C')
+    
+    def add_receipt_info(self, data):
+        """Agrega la información del recibo"""
+        # Título
+        self.set_font('Arial', 'B', 10)
+        self.cell(0, 6, data['titulo'], 0, 1, 'C')
+        self.set_font('Arial', 'B', 9)
+        self.cell(0, 4, '[ 001-00'+data['numero']+' ]', 0, 1, 'C')
+        self.ln(1)
+        # Información del socio
+        self.set_font('Arial', 'B', 7)
+        self.cell(20, 4, 'Padron/Socio:', 0, 0)
+        self.set_font('Arial', '', 7)
+        # Dividir el nombre si es muy largo
+        nombre = data['nombre_socio']
+        if len(nombre) > self.max_chars:
+            nombre_line1 = nombre[:self.max_chars]
+            self.cell(0, 4, nombre_line1, 0, 1)
+        else:
+            self.cell(0, 4, nombre, 0, 1)
+        self.set_font('Arial', 'B', 7)
+        self.cell(20, 4, 'Fec.Registro:', 0, 0)
+        self.set_font('Arial', '', 7)
+        self.cell(0, 4, data['fecha_recibo'], 0, 1)
+        self.set_font('Arial', 'B', 7)
+        self.cell(20, 4, 'Fec.de Giro:', 0, 0)
+        self.set_font('Arial', '', 7)
+        self.cell(0, 4, data['fecha_giro'], 0, 1)
+        self.ln(1)
+        # Línea separadora
+        self.line(5, self.get_y(), self.width - 5, self.get_y())
+        self.ln(1)
+    
+    def add_items_table(self, items):
+        """Agrega la tabla de items del recibo"""
+        # Encabezado de la tabla
+        self.set_font('Courier', 'B', 7)
+        self.cell(15, 6, 'COD', 0, 0, 'L')
+        self.cell(30, 6, 'DESCRIPCION', 0, 0, 'L')
+        self.cell(15, 6, 'MONTO', 0, 1, 'R')
+        # Línea bajo el encabezado
+        self.line(5, self.get_y(), self.width - 5, self.get_y())
+        self.ln(2)
+        # Items
+        self.set_font('Courier', '', 7)
+        total = 0
+        for item in items:
+            codigo = item['codigo']
+            descripcion = item['descripcion']
+            monto = item['monto']
+            total += monto
+            # Ajustar descripción si es muy larga
+            self.cell(15, 4, codigo, 0, 0, 'L')
+            if len(descripcion) > 18:
+                desc_line1 = descripcion[:18]
+                self.cell(30, 4, desc_line1, 0, 0, 'L')
+            else:
+                self.cell(30, 4, descripcion, 0, 0, 'L')
+            self.cell(15, 4, f"S/. {monto:.2f}", 0, 1, 'R')
+        self.ln(1)
+        # Línea separadora
+        self.line(5, self.get_y(), self.width - 5, self.get_y())
+        self.ln(1)
+        # Total
+        self.set_font('Courier', 'B', 8)
+        self.cell(40, 8, 'TOTAL PAGADO:______', 0, 0, 'R')
+        self.cell(15, 8, f"S/. {total:.2f}", 0, 1, 'R')
+        self.ln(5)
+        # Línea para firma
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 5, '_________________________', 0, 1, 'C')
+        self.cell(0, 5, 'Firma y Sello', 0, 1, 'C')
+        return total
+
+def generar_recibo(tipo_doc, numero_doc, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items, nombre_archivo=None):
+    """
+    Genera un recibo en formato PDF
+    
+    Args:
+        codigo_padron (str): Código de padrón del socio
+        nombre_socio (str): Nombre completo del socio
+        fecha_recibo (str): Fecha de emisión del recibo
+        fecha_giro (str): Fecha de giro del pago
+        items (list): Lista de diccionarios con items del recibo
+        nombre_archivo (str, optional): Nombre del archivo PDF
+    """
+    # Crear PDF
+    pdf = ReciboTicket()
+    pdf.add_page()
+    # Datos del recibo
+    datos = {
+        'titulo': tipo_doc,
+        'numero': numero_doc,
+        'codigo_padron': codigo_padron,
+        'nombre_socio': nombre_socio,
+        'fecha_recibo': fecha_recibo,
+        'fecha_giro': fecha_giro
+    }    
+    # Agregar información del recibo
+    pdf.add_receipt_info(datos)
+    # Agregar items y calcular total
+    total = pdf.add_items_table(items)
+    # Generar nombre de archivo si no se proporciona
+    if nombre_archivo is None:
+        nombre_archivo = f"recibo_{codigo_padron}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    # Guardar PDF
+    pdf.output(nombre_archivo)
+    print(f"Recibo generado: {nombre_archivo}")
+    print(f"Total del recibo: S/. {total:.2f}")
+    return nombre_archivo
 
 
 if __name__ == '__main__':

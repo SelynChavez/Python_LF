@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Crear Padron{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Nuevo Padron</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('crear_padron') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="placa" class="form-label">Placa *</label>
+                            <input type="text" class="form-control" id="placa" name="placa" max="6" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="socio" class="form-label">Socio *</label>
+                            <input type="number" class="form-control" id="socio" name="socio" min="0" max="9999" maxlength="4" required>
+                            <div class="form-text">{{nombresocio}}</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="monto1" class="form-label">Ap.Capital</label>
+                            <input type="number" class="form-control" id="monto1" name="monto1" min="0.00" max="999.99" maxlength="6">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="monto2" class="form-label">Ap.Ahorro</label>
+                            <input type="number" class="form-control" id="monto2" name="monto2" min="0.00" max="999.99" maxlength="6">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="monto3" class="form-label">Ap.Aporte</label>
+                            <input type="number" class="form-control" id="monto3" name="monto3" min="0.00" max="999.99" maxlength="6">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="monto4" class="form-label">Ap.Seguro</label>
+                            <input type="number" class="form-control" id="monto4" name="monto4" min="0.00" max="999.99" maxlength="6">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="active" class="form-label">Activo</label>
+                            <select class="form-select" id="active" name="active" required>
+                                <option value="S">SI</option>
+                                <option value="N">NO</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Crear Padron
+                        </button>
+                        <a href="{{ url_for('listar_socios') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -63,7 +63,22 @@ SELECT_SOCIO = "SELECT * FROM a_socios WHERE id = %s"
 SEL_NM_SOCIO = "SELECT nombre FROM a_socios WHERE id = %s"
 DELETE_SOCIO = "DELETE FROM a_socios WHERE id = %s"
 
+QRY1PADRONES = """
+  SELECT id, placa, socio, active, monto1, DATE_FORMAT(modified, '%%d/%%m/%%Y %%H:%%i') as modified,
+  (SELECT s.nombre FROM a_socios s WHERE s.id=p.socio) nombresocio 
+  FROM a_padrones p
+  WHERE placa LIKE %s OR socio LIKE %s 
+  ORDER BY p.modified DESC
+"""
+LISTA_PADRONES = "SELECT p.*,(SELECT s.nombre FROM a_socios s WHERE s.id=p.socio) nombresocio FROM a_padrones p ORDER BY p.modified DESC "
+INSERT_PADRON = "INSERT INTO a_padrones (placa, socio, active, monto1, monto2, monto3, monto4, modified, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, now(), %s)"
+UPDATE_PADRON = "UPDATE a_padrones SET placa=%s, socio=%s, active=%s, monto1=%s, monto2=%s, monto3=%s, monto4=%s, modified=now() WHERE id=%s "
+SELECT_PADRON = "SELECT p.*,(SELECT s.nombre FROM a_socios s WHERE s.id=p.socio) nombresocio FROM a_padrones p WHERE p.id = %s"
+SEL_NM_PADRON = "SELECT placa FROM a_padrones WHERE id = %s"
+DELETE_PADRON = "DELETE FROM a_padrones WHERE id = %s"
 GET_NOMBRE_PADRON = "SELECT concat(p.id,':',p.placa,':',s.nombre) as n0 FROM a_padrones p, a_socios s WHERE p.id=%s and p.socio=s.id "
+
+
 DROPLIST_APORTES = "SELECT codigo d1,concat(codigo,':',descripcion) d2 FROM nlf_tipos WHERE tipo='APORTE' "
 INSERT_LOGUSUARIO = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion) VALUES (%s, %s, %s)"
 
@@ -77,9 +92,6 @@ DETALLE_SERIE_1 = """
       WHEN t.codigo='APAHORRO'    THEN p.monto2
       WHEN t.codigo='APAPORTE'    THEN p.monto3
       WHEN t.codigo='APSEGURO'    THEN p.monto4
-      WHEN t.codigo='AUMCAPITAL'  THEN p.monto5
-      WHEN t.codigo='APSOLIDARIO' THEN p.monto6
-      WHEN t.codigo='APRENBUS'    THEN p.monto7
       ELSE t.monto1
   END) monto, 0 prestamo, '' tipodeuda, t.id idx0
   FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
