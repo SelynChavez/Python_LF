@@ -88,5 +88,5 @@ DETALLE_SERIE_1 = """
       ELSE t.monto1
   END) monto, 0 prestamo, '' tipodeuda, t.id idx0
   FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
-  WHERE t.tipo='APORTE' and t.atributo2='I' and (t.codigo not in ('DEUDA','INICIAL'))
+  WHERE t.tipo='APORTE' and t.atributo1='1' and (t.codigo not in ('DEUDA','INICIAL'))
 """

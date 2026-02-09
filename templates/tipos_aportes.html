@@ -16,8 +16,8 @@ $(document).ready(function() {
     $('.btn-eliminar').on('click', function(e) {
         e.preventDefault();
         const url = $(this).attr('href');
-        const desc1 = $(this).data('codigo');
-        if (confirm(`¿Está seguro de eliminar el tipo ${tipo} "${desc1}"? Esta acción no se puede deshacer.`)) {
+        const codigo = $(this).data('codigo');
+        if (confirm(`¿Está seguro de eliminar el tipo "${codigo}"? Esta acción no se puede deshacer.`)) {
             window.location.href = url;
         }
     });
@@ -123,7 +123,7 @@ $(document).ready(function() {
                                         </a>
                                         <a href="{{ url_for('eliminar_tipo', id=t0.id ) }}" 
                                            class="btn btn-sm btn-danger btn-eliminar" 
-                                           data-nombre="{{ t0.codigo }}"
+                                           data-codigo="{{ t0.codigo }}"
                                            title="Eliminar">
                                             <i class="bi bi-trash"></i>
                                         </a>
