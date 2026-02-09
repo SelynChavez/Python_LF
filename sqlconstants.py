@@ -50,12 +50,6 @@ SELECT_USUARIO = "SELECT * FROM applicationuser WHERE id = %s"
 SEL_NM_USUARIO = "SELECT username FROM applicationuser WHERE id = %s"
 DELETE_USUARIO = "DELETE FROM applicationuser WHERE id = %s"
 
-QRY1SOCIOS = """
-  SELECT id, nombre, dni, tipo, fono, DATE_FORMAT(modified, '%%d/%%m/%%Y') as modified, active, email, webuser 
-  FROM a_socios
-  WHERE nombre LIKE %s OR dni LIKE %s OR tipo LIKE %s
-  ORDER BY modified DESC
-"""
 LISTA_SOCIOS = "SELECT * FROM a_socios ORDER BY modified DESC "
 INSERT_SOCIO = "INSERT INTO a_socios (nombre, fono, dni, comentarios, tipo, email, active, modified, webuser) VALUES (%s, %s, %s, %s, %s, %s, 'S', now(), %s)"
 UPDATE_SOCIO = "UPDATE a_socios SET nombre=%s, fono=%s, dni=%s, comentarios=%s, tipo=%s, active=%s, email=%s, modified=now() WHERE id=%s "
@@ -63,13 +57,6 @@ SELECT_SOCIO = "SELECT * FROM a_socios WHERE id = %s"
 SEL_NM_SOCIO = "SELECT nombre FROM a_socios WHERE id = %s"
 DELETE_SOCIO = "DELETE FROM a_socios WHERE id = %s"
 
-QRY1PADRONES = """
-  SELECT id, placa, socio, active, monto1, DATE_FORMAT(modified, '%%d/%%m/%%Y') as modified, webuser,
-  (SELECT s.nombre FROM a_socios s WHERE s.id=p.socio) nombresocio 
-  FROM a_padrones p
-  WHERE placa LIKE %s OR socio LIKE %s 
-  ORDER BY p.modified DESC
-"""
 LISTA_PADRONES = "SELECT p.*,(SELECT s.nombre FROM a_socios s WHERE s.id=p.socio) nombresocio FROM a_padrones p ORDER BY p.modified DESC "
 INSERT_PADRON = "INSERT INTO a_padrones (placa, socio, active, monto1, monto2, monto3, monto4, modified, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, now(), %s)"
 UPDATE_PADRON = "UPDATE a_padrones SET placa=%s, socio=%s, active=%s, monto1=%s, monto2=%s, monto3=%s, monto4=%s, modified=now() WHERE id=%s "
@@ -78,6 +65,12 @@ SEL_NM_PADRON = "SELECT placa FROM a_padrones WHERE id = %s"
 DELETE_PADRON = "DELETE FROM a_padrones WHERE id = %s"
 GET_NOMBRE_PADRON = "SELECT concat(p.id,':',p.placa,':',s.nombre) as n0 FROM a_padrones p, a_socios s WHERE p.id=%s and p.socio=s.id "
 
+LISTA_TIPOS = "SELECT t.* FROM a_tipos t WHERE t.tipo=%s ORDER BY t.modified DESC "
+INSERT_TIPO = "INSERT INTO a_tipos (tipo, codigo, descripcion, monto1, monto2, atributo1, atributo2, atributo3, atributo4, atributo5, modified, webuser) VALUES (%s, %s, %s, '0','0','','','','','', now(), %s)"
+UPDATE_TIPO = "UPDATE a_tipos SET codigo=%s, descripcion=%s, monto1=%s,monto2=%s,atributo1=%s,atributo2=%s,atributo3=%s,atributo4=%s,atributo5=%s, modified=now() WHERE id=%s "
+SELECT_TIPO = "SELECT t.* FROM a_tipos t WHERE t.id = %s"
+SEL_NM_TIPO = "SELECT codigo FROM a_tipos WHERE id = %s"
+DELETE_TIPO = "DELETE FROM a_tipos WHERE id = %s"
 
 DROPLIST_APORTES = "SELECT codigo d1,concat(codigo,':',descripcion) d2 FROM nlf_tipos WHERE tipo='APORTE' "
 INSERT_LOGUSUARIO = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion) VALUES (%s, %s, %s)"

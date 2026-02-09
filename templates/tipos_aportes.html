@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Tipos de Aportes{% endblock %}
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Búsqueda en tiempo real
+    $('#buscarTipo').on('keyup', function() {
+        const valor = $(this).val().toLowerCase();
+        $('.fila-tipo').filter(function() {
+            $(this).toggle(
+                $(this).text().toLowerCase().indexOf(valor) > -1
+            );
+        });
+    });
+    // Confirmación para eliminar
+    $('.btn-eliminar').on('click', function(e) {
+        e.preventDefault();
+        const url = $(this).attr('href');
+        const desc1 = $(this).data('codigo');
+        if (confirm(`¿Está seguro de eliminar el tipo ${tipo} "${desc1}"? Esta acción no se puede deshacer.`)) {
+            window.location.href = url;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-people"></i> Gestión de Tipos de Aportes </h4>
+                <a href="{{ url_for('crear_tipo_aporte') }}" class="btn btn-success">
+                    <i class="bi bi-person-plus"></i> Nuevo Tipo de Aporte
+                </a>
+            </div>
+            <div class="card-body">
+                <!-- Barra de búsqueda -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="buscarTipo" class="form-control" placeholder="Buscar por descripcion...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{{ url_for('configuracion') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Menu
+                        </a>
+                    </div>
+                </div>
+                <!-- Tabla Lista -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Codigo</th>
+                                <th>Descripcion</th>
+                                {% if m1 %}
+                                    <th class="text-end">{{ m1 }}</th>
+                                {% endif %}
+                                {% if m2 %}
+                                    <th class="text-end">{{ m2 }}</th>
+                                {% endif %}
+                                {% if a1 %}
+                                    <th>{{ a1 }}</th>
+                                {% endif %}
+                                {% if a2 %}
+                                    <th>{{ a2 }}</th>
+                                {% endif %}
+                                {% if a3 %}
+                                    <th>{{ a3 }}</th>
+                                {% endif %}
+                                {% if a4 %}
+                                    <th>{{ a4 }}</th>
+                                {% endif %}
+                                {% if a5 %}
+                                    <th>{{ a5 }}</th>
+                                {% endif %}
+                                <th>Actualizado</th>
+                                <th>Por</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t0 in tipos %}
+                            <tr class="fila-tipo">
+                                <td>{{ t0.id }}</td>
+                                <td>
+                                    <strong>{{ t0.codigo }}</strong>
+                                </td>
+                                <td>{{ t0.descripcion }}</td>
+                                {% if m1 %}
+                                    <td class="text-end">{{ t0.monto1 }}</td>
+                                {% endif %}
+                                {% if m2 %}
+                                    <td class="text-end">{{ t0.monto2 }}</td>
+                                {% endif %}
+                                {% if a1 %}
+                                    <td>{{ t0.atributo1 }}</td>
+                                {% endif %}
+                                {% if a2 %}
+                                    <td>{{ t0.atributo2 }}</td>
+                                {% endif %}
+                                {% if a3 %}
+                                    <td>{{ t0.atributo3 }}</td>
+                                {% endif %}
+                                {% if a4 %}
+                                    <td>{{ t0.atributo4 }}</td>
+                                {% endif %}
+                                {% if a5 %}
+                                    <td>{{ t0.atributo5 }}</td>
+                                {% endif %}
+                                <td>{{ t0.modified.strftime('%d/%m/%Y %H:%M') if t0.modified }}</td>
+                                <td>{{ t0.webuser }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('editar_tipo_aporte', id=t0.id ) }}" 
+                                           class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{{ url_for('eliminar_tipo', id=t0.id ) }}" 
+                                           class="btn btn-sm btn-danger btn-eliminar" 
+                                           data-nombre="{{ t0.codigo }}"
+                                           title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

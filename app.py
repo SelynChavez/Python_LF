@@ -148,13 +148,6 @@ def administracion():
 def configuracion():
     return render_template('configuracion.html')
 
-# lista aportes
-@app.route('/tipos_aportes')
-@login_required
-@admin_required
-def listar_tipos_aportes():
-    return render_template('tipos_aportes.html')
-
 # lista deudas
 @app.route('/tipos_deudas')
 @login_required
@@ -314,6 +307,137 @@ def crear_recibo():
     return render_template('crear_recibo.html', act='-',but='Continuar')
 
 # ------------------------------------------------------------------------------------
+# TIPOS (para demostrar funcionalidad reactiva)
+@app.route('/tipos_aportes')
+@login_required
+@admin_required
+def listar_tipos_aportes():
+    tipo = 'APORTE'
+    m1 = "Aporte Fijo"
+    a1 = "Serie"
+    a4 = "Retiros?"
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_TIPOS, (tipo,) )
+        tipos = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return render_template('tipos_aportes.html', tipos=tipos, tipo=tipo, m1=m1, a1= a1, a4=a4)
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')
+    return redirect(url_for('configuracion'))
+
+@app.route('/tipos/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_tipo_aporte():
+    if request.method == 'POST':
+        tipo = request.form.get('tipo')
+        codigo = request.form.get('codigo')
+        descripcion = request.form.get('descripcion')
+        if not all([codigo, descripcion]):
+            flash('Por favor, complete todos los campos.', 'danger')
+            return render_template('crear_tipo_aporte.html')
+        connection = get_db_connection()
+        if connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute(sqlconstants.INSERT_TIPO, (tipo, codigo, descripcion, session['user_username']))
+                connection.commit()
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_tipo_aporte', f'LOG::Creó el Tipo: {codigo}'))
+                connection.commit()
+                cursor.close()
+                connection.close()
+                flash('Tipo Aporte creado exitosamente.', 'success')
+                return redirect(url_for('listar_tipos_aportes'))
+            except Error as e:
+                if 'Duplicate entry' in str(e):
+                    flash('Codigo ya existe.', 'danger')
+                else:
+                    flash(f'Error al crear tipo aporte: {str(e)}', 'danger')
+                connection.rollback()
+                cursor.close()
+                connection.close()
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')    
+    return render_template('crear_tipo_aporte.html')
+
+@app.route('/tipos/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def editar_tipo_aporte(id):
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('listar_tipos_aportes'))    
+    if request.method == 'POST':
+        codigo = request.form.get('codigo')
+        descripcion = request.form.get('descripcion')
+        monto1 = request.form.get('monto1')
+        atributo1 = request.form.get('atributo1')
+        atributo2 = request.form.get('atributo2')
+        atributo3 = request.form.get('atributo3')
+        atributo4 = request.form.get('atributo4')
+        try:
+            cursor = connection.cursor()
+            cursor.execute(sqlconstants.UPDATE_TIPO, (codigo, descripcion, monto1,'0',atributo1,atributo2,atributo3,atributo4,'', id))
+            connection.commit()
+            cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_tipo_aporte', f'LOG::Editó el tipo: {codigo}'))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Codigo actualizado exitosamente.', 'success')
+            return redirect(url_for('listar_tipos_aportes'))
+        except Error as e:
+            if 'Duplicate entry' in str(e):
+                flash('Codigo ya existe.', 'danger')
+            else:
+                flash(f'Error al actualizar tipo: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+            return redirect(url_for('editar_tipo_aporte', id=id))    
+    # GET: Obtener datos del socio
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.SELECT_TIPO, (id,))
+    tipo = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if not tipo:
+        flash('Tipo/Codigo no encontrado.', 'danger')
+        return redirect(url_for('listar_tipos_aportes'))
+    return render_template('editar_tipo_aporte.html', id=id, tipo=tipo)
+
+@app.route('/tipos/eliminar/<int:id>')
+@login_required
+@admin_required
+def eliminar_tipo(id):
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(sqlconstants.SEL_NM_TIPO, (id,))
+            tipo = cursor.fetchone()
+            cursor.execute(sqlconstants.DELETE_TIPO, (id,))
+            connection.commit()
+            # Logs
+            if tipo:
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'eliminar_tipo', f'Eliminó el Tipo: {tipo["codigo"]}'))
+                connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Tipo de Aporte eliminado exitosamente.', 'success')
+        except Error as e:
+            flash(f'Error al eliminar Tipo: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')   
+    return redirect(url_for('listar_tipos_aportes'))
+
+# ------------------------------------------------------------------------------------
 # PADRONES (para demostrar funcionalidad reactiva)
 @app.route('/padrones')
 @login_required
@@ -330,24 +454,6 @@ def listar_padrones():
     else:
         flash('Error de conexión a la base de datos.', 'danger')
         return redirect(url_for('configuracion'))
-
-@app.route('/api/padrones')
-@login_required
-def api_padrones():
-    connection = get_db_connection()
-    if connection:
-        cursor = connection.cursor(dictionary=True)
-        buscar = request.args.get('buscar', '')
-        query = sqlconstants.QRY1PADRONES
-        if not buscar:
-            buscar = ""
-        cursor.execute(query, (f'%{buscar}%', f'%{buscar}%', f'%{buscar}%'))      
-        padrones = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return jsonify(padrones)
-    else:
-        return jsonify({'error': 'Error de conexión'}), 500
 
 @app.route('/padrones/crear', methods=['GET', 'POST'])
 @login_required
@@ -484,24 +590,6 @@ def listar_socios():
     else:
         flash('Error de conexión a la base de datos.', 'danger')
         return redirect(url_for('configuracion'))
-
-@app.route('/api/socios')
-@login_required
-def api_socios():
-    connection = get_db_connection()
-    if connection:
-        cursor = connection.cursor(dictionary=True)
-        buscar = request.args.get('buscar', '')
-        query = sqlconstants.QRY1SOCIOS
-        if not buscar:
-            buscar = ""
-        cursor.execute(query, (f'%{buscar}%', f'%{buscar}%', f'%{buscar}%'))      
-        socios = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return jsonify(socios)
-    else:
-        return jsonify({'error': 'Error de conexión'}), 500
 
 @app.route('/socios/crear', methods=['GET', 'POST'])
 @login_required
