@@ -29,12 +29,12 @@
                                    value="{{ socio.fono }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="comentarios" class="form-label">Comentarios *</label>
-                            <input type="text" class="form-control" id="comentarios" name="comentarios" 
-                                   value="{{ socio.comentarios }}" required>
+                            <label for="email" class="form-label">E.Mail *</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ socio.email }}" required>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Tipo</label>
@@ -44,6 +44,14 @@
                                 <option value="ALQUILADO" {{ 'selected' if socio.tipo == 'ALQUILADO' }}>Alquilado</option>
                             </select>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="comentarios" class="form-label">Comentarios *</label>
+                            <input type="text" class="form-control" id="comentarios" name="comentarios" 
+                                   value="{{ socio.comentarios }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
 
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Activo?</label>

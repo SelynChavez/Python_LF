@@ -51,20 +51,20 @@ SEL_NM_USUARIO = "SELECT username FROM applicationuser WHERE id = %s"
 DELETE_USUARIO = "DELETE FROM applicationuser WHERE id = %s"
 
 QRY1SOCIOS = """
-  SELECT id, nombre, dni, tipo, fono, DATE_FORMAT(modified, '%%d/%%m/%%Y %%H:%%i') as modified, active 
+  SELECT id, nombre, dni, tipo, fono, DATE_FORMAT(modified, '%%d/%%m/%%Y') as modified, active, email, webuser 
   FROM a_socios
   WHERE nombre LIKE %s OR dni LIKE %s OR tipo LIKE %s
   ORDER BY modified DESC
 """
 LISTA_SOCIOS = "SELECT * FROM a_socios ORDER BY modified DESC "
-INSERT_SOCIO = "INSERT INTO a_socios (nombre, fono, dni, comentarios, tipo, active, modified, webuser) VALUES (%s, %s, %s, %s, %s, 'S', now(), %s)"
-UPDATE_SOCIO = "UPDATE a_socios SET nombre=%s, fono=%s, dni=%s, comentarios=%s, tipo=%s, active=%s, modified=now() WHERE id=%s "
+INSERT_SOCIO = "INSERT INTO a_socios (nombre, fono, dni, comentarios, tipo, email, active, modified, webuser) VALUES (%s, %s, %s, %s, %s, %s, 'S', now(), %s)"
+UPDATE_SOCIO = "UPDATE a_socios SET nombre=%s, fono=%s, dni=%s, comentarios=%s, tipo=%s, active=%s, email=%s, modified=now() WHERE id=%s "
 SELECT_SOCIO = "SELECT * FROM a_socios WHERE id = %s"
 SEL_NM_SOCIO = "SELECT nombre FROM a_socios WHERE id = %s"
 DELETE_SOCIO = "DELETE FROM a_socios WHERE id = %s"
 
 QRY1PADRONES = """
-  SELECT id, placa, socio, active, monto1, DATE_FORMAT(modified, '%%d/%%m/%%Y %%H:%%i') as modified,
+  SELECT id, placa, socio, active, monto1, DATE_FORMAT(modified, '%%d/%%m/%%Y') as modified, webuser,
   (SELECT s.nombre FROM a_socios s WHERE s.id=p.socio) nombresocio 
   FROM a_padrones p
   WHERE placa LIKE %s OR socio LIKE %s 

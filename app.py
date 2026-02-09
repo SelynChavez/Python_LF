@@ -512,15 +512,16 @@ def crear_socio():
         dni = request.form.get('dni')
         fono = request.form.get('fono')
         tipo = request.form.get('tipo')
+        email = request.form.get('email')
         comentarios = request.form.get('comentarios')
-        if not all([dni, fono, nombre, tipo, comentarios]):
+        if not all([dni, fono, nombre, tipo, email, comentarios]):
             flash('Por favor, complete todos los campos.', 'danger')
             return render_template('crear_socio.html')
         connection = get_db_connection()
         if connection:
             try:
                 cursor = connection.cursor()
-                cursor.execute(sqlconstants.INSERT_SOCIO, (nombre, fono, dni, comentarios, tipo, session['user_username']))
+                cursor.execute(sqlconstants.INSERT_SOCIO, (nombre, fono, dni, comentarios, tipo, email, session['user_username']))
                 connection.commit()                
                 # Log
                 cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_socio', f'Creó el socio: {nombre}'))
@@ -555,14 +556,15 @@ def editar_socio(id):
         dni = request.form.get('dni')
         comentarios = request.form.get('comentarios')
         tipo = request.form.get('tipo')
+        email = request.form.get('email')
         active = request.form.get('active')
         try:
             cursor = connection.cursor()
-            cursor.execute(sqlconstants.UPDATE_SOCIO, (nombre, fono, dni, comentarios, tipo, active, id))            
+            cursor.execute(sqlconstants.UPDATE_SOCIO, (nombre, fono, dni, comentarios, tipo, active, email, id))            
             connection.commit()
             # Logs
             cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_socio', f'Editó el socio: {nombre}'))
-            connection.commit()         
+            connection.commit()
             cursor.close()
             connection.close()
             flash('Socio actualizado exitosamente.', 'success')

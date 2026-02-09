@@ -65,6 +65,7 @@ $(document).ready(function() {
                                 <th>Fono</th>
                                 <th>Estado</th>
                                 <th>Creado</th>
+                                <th>Por</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -83,7 +84,8 @@ $(document).ready(function() {
                                         {{ 'Act' if socio.active == 'S' else 'Ina' }}
                                     </span>
                                 </td>
-                                <td>{{ socio.modified.strftime('%d/%m/%Y %H:%M') if socio.modified }}</td>
+                                <td>{{ socio.modified.strftime('%d/%m/%Y') if socio.modified }}</td>
+                                <td>{{ socio.webuser }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
                                         <a href="{{ url_for('editar_socio', id=socio.id) }}" 
