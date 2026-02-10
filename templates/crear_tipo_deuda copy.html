@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Crear Tipo de Deuda{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Nuevo Tipo de Deuda</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('crear_tipo_deuda') }}">
+                    <input type="hidden" id="tipo" name="tipo" value="DEUDA">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="codigo" class="form-label">Codigo *</label>
+                            <input type="text" class="form-control" id="codigo" name="codigo" max="15" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="descripcion" class="form-label">Descripcion *</label>
+                            <input type="text" class="form-control" id="descripcion" name="descripcion" maxlength="50" required>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Crear Tipo
+                        </button>
+                        <a href="{{ url_for('listar_tipos_deuda') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
