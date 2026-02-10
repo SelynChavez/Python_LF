@@ -121,7 +121,7 @@ $(document).ready(function() {
                                            class="btn btn-sm btn-warning" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="{{ url_for('eliminar_tipo', id=t0.id ) }}" 
+                                        <a href="{{ url_for('eliminar_tipo', id=t0.id, url='listar_tipos_deudas' ) }}" 
                                            class="btn btn-sm btn-danger btn-eliminar" 
                                            data-codigo="{{ t0.codigo }}"
                                            title="Eliminar">

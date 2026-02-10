@@ -69,7 +69,7 @@ LISTA_TIPOS = "SELECT t.* FROM a_tipos t WHERE t.tipo=%s ORDER BY t.modified DES
 INSERT_TIPO = "INSERT INTO a_tipos (tipo, codigo, descripcion, monto1, monto2, atributo1, atributo2, atributo3, atributo4, atributo5, modified, webuser) VALUES (%s, %s, %s, '0','0','','','','','', now(), %s)"
 UPDATE_TIPO = "UPDATE a_tipos SET codigo=%s, descripcion=%s, monto1=%s,monto2=%s,atributo1=%s,atributo2=%s,atributo3=%s,atributo4=%s,atributo5=%s, modified=now() WHERE id=%s "
 SELECT_TIPO = "SELECT t.* FROM a_tipos t WHERE t.id = %s"
-SEL_NM_TIPO = "SELECT codigo FROM a_tipos WHERE id = %s"
+SEL_NM_TIPO = "SELECT tipo,codigo FROM a_tipos WHERE id = %s"
 DELETE_TIPO = "DELETE FROM a_tipos WHERE id = %s"
 
 DROPLIST_APORTES = "SELECT codigo d1,concat(codigo,':',descripcion) d2 FROM nlf_tipos WHERE tipo='APORTE' "

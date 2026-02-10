@@ -20,37 +20,12 @@
                             <input type="text" class="form-control" id="descripcion" name="descripcion" maxlength="50" value="{{ tipo.descripcion }}" required>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="monto1" class="form-label">Monto Fijo Deuda</label>
-                            <input type="number" class="form-control" id="monto1" name="monto1" min="0.00" max="999.99" value="{{ tipo.monto1 }}" maxlength="6">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Serie</label>
-                            <select class="form-select" id="atributo1" name="atributo1" required>
-                                <option value="1" {{ 'selected' if tipo.atributo1 == '1' }}>001</option>
-                                <option value="2" {{ 'selected' if tipo.atributo1 == '2' }}>002</option>
-                                <option value="3" {{ 'selected' if tipo.atributo1 == '3' }}>003</option>
-                                <option value="4" {{ 'selected' if tipo.atributo1 == '4' }}>004</option>
-                                <option value="5" {{ 'selected' if tipo.atributo1 == '5' }}>005</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Permite Retiro</label>
-                            <select class="form-select" id="atributo4" name="atributo4" required>
-                                <option value="S" {{ 'selected' if tipo.atributo4 == 'S' }}>Si</option>
-                                <option value="N" {{ 'selected' if tipo.atributo4 == 'N' }}>No</option>
-                            </select>
-                        </div>
-                    </div>
 
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-save"></i> Guardar Cambios
                         </button>
-                        <a href="{{ url_for('listar_tipos_deuda') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('listar_tipos_deudas') }}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Volver a la lista
                         </a>
                     </div>

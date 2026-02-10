@@ -148,13 +148,6 @@ def administracion():
 def configuracion():
     return render_template('configuracion.html')
 
-# lista deudas
-@app.route('/tipos_deudas')
-@login_required
-@admin_required
-def listar_tipos_deudas():
-    return render_template('tipos_deudas.html')
-
 ## ========================== CONSULTAS ====================================
 # lista aportes HLF
 @app.route('/aportes', methods=['GET', 'POST'])
@@ -307,7 +300,135 @@ def crear_recibo():
     return render_template('crear_recibo.html', act='-',but='Continuar')
 
 # ------------------------------------------------------------------------------------
-# TIPOS (para demostrar funcionalidad reactiva)
+# TIPOS DEUDAS (para demostrar funcionalidad reactiva)
+@app.route('/tipos_deudas')
+@login_required
+@admin_required
+def listar_tipos_deudas():
+    tipo = 'DEUDA'
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_TIPOS, (tipo,) )
+        tipos = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return render_template('tipos_deudas.html', tipos=tipos, tipo=tipo)
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')
+    return redirect(url_for('configuracion'))
+
+@app.route('/tiposdeudas/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_tipo_deuda():
+    if request.method == 'POST':
+        tipo = request.form.get('tipo')
+        codigo = request.form.get('codigo')
+        descripcion = request.form.get('descripcion')
+        if not all([codigo, descripcion]):
+            flash('Por favor, complete todos los campos.', 'danger')
+            return render_template('crear_tipo_deuda.html')
+        connection = get_db_connection()
+        if connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute(sqlconstants.INSERT_TIPO, (tipo, codigo, descripcion, session['user_username']))
+                connection.commit()
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_tipo_deuda', f'LOG::Creó el Tipo: {codigo}'))
+                connection.commit()
+                cursor.close()
+                connection.close()
+                flash('Tipo Deuda creado exitosamente.', 'success')
+                return redirect(url_for('listar_tipos_deudas'))
+            except Error as e:
+                if 'Duplicate entry' in str(e):
+                    flash('Codigo ya existe.', 'danger')
+                else:
+                    flash(f'Error al crear tipo deuda: {str(e)}', 'danger')
+                connection.rollback()
+                cursor.close()
+                connection.close()
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')    
+    return render_template('crear_tipo_deuda.html')
+
+@app.route('/tiposdeudas/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def editar_tipo_deuda(id):
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('listar_tipos_deudas'))    
+    if request.method == 'POST':
+        codigo = request.form.get('codigo')
+        descripcion = request.form.get('descripcion')
+        try:
+            cursor = connection.cursor()
+            cursor.execute(sqlconstants.UPDATE_TIPO, (codigo, descripcion, '0','0','','','','','', id))
+            connection.commit()
+            cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_tipo_deuda', f'LOG::Editó el tipo: {codigo}'))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Codigo actualizado exitosamente.', 'success')
+            return redirect(url_for('listar_tipos_deudas'))
+        except Error as e:
+            if 'Duplicate entry' in str(e):
+                flash('Codigo ya existe.', 'danger')
+            else:
+                flash(f'Error al actualizar tipo: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+            return redirect(url_for('editar_tipo_deuda', id=id))    
+    # GET: Obtener datos del socio
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.SELECT_TIPO, (id,))
+    tipo = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if not tipo:
+        flash('Tipo/Codigo no encontrado.', 'danger')
+        return redirect(url_for('listar_tipos_deudas'))
+    return render_template('editar_tipo_deuda.html', id=id, tipo=tipo)
+
+@app.route('/tipos/eliminar/<int:id>')
+@login_required
+@admin_required
+def eliminar_tipo(id):
+    url = 'listar_tipos_aportes'
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(sqlconstants.SEL_NM_TIPO, (id,))
+            tipo = cursor.fetchone()
+            tp = tipo["tipo"]
+            if (tp == "DEUDA"):
+                url = 'listar_tipos_deudas'
+            print(tp)
+            cursor.execute(sqlconstants.DELETE_TIPO, (id,))
+            connection.commit()
+            # Logs
+            if tipo:
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'eliminar_tipo', f'Eliminó el Tipo: {tipo["codigo"]}'))
+                connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Tipo eliminado exitosamente.', 'success')
+        except Error as e:
+            flash(f'Error al eliminar Tipo: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')   
+    return redirect(url_for(url))
+
+# ------------------------------------------------------------------------------------
+# TIPOS APORTES (para demostrar funcionalidad reactiva)
 @app.route('/tipos_aportes')
 @login_required
 @admin_required
@@ -408,34 +529,6 @@ def editar_tipo_aporte(id):
         flash('Tipo/Codigo no encontrado.', 'danger')
         return redirect(url_for('listar_tipos_aportes'))
     return render_template('editar_tipo_aporte.html', id=id, tipo=tipo)
-
-@app.route('/tipos/eliminar/<int:id>')
-@login_required
-@admin_required
-def eliminar_tipo(id):
-    connection = get_db_connection()
-    if connection:
-        try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute(sqlconstants.SEL_NM_TIPO, (id,))
-            tipo = cursor.fetchone()
-            cursor.execute(sqlconstants.DELETE_TIPO, (id,))
-            connection.commit()
-            # Logs
-            if tipo:
-                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'eliminar_tipo', f'Eliminó el Tipo: {tipo["codigo"]}'))
-                connection.commit()
-            cursor.close()
-            connection.close()
-            flash('Tipo de Aporte eliminado exitosamente.', 'success')
-        except Error as e:
-            flash(f'Error al eliminar Tipo: {str(e)}', 'danger')
-            connection.rollback()
-            cursor.close()
-            connection.close()
-    else:
-        flash('Error de conexión a la base de datos.', 'danger')   
-    return redirect(url_for('listar_tipos_aportes'))
 
 # ------------------------------------------------------------------------------------
 # PADRONES (para demostrar funcionalidad reactiva)
