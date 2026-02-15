@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Actualización / Carga Masiva - Combustible{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <i class="bi-arrow-clockwise"></i> Actualización / Carga Masiva de Turnos
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('cargar_turnos') }}">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="shift_code" class="form-label">Seleccionar Turno *</label>
+                    <select class="form-select" id="shift_code" name="shift_code" required>
+                        <option value="">Seleccionar turno...</option>
+                        {% for shift in shifts %}
+                        <option value="{{ shift.code }}">{{ shift.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="shift_date" class="form-label">Fecha *</label>
+                    <input type="date" class="form-control" id="shift_date" 
+                           name="shift_date" value="{{ today }}" required>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Máquina</th>
+                            <th>Combustible</th>
+                            <th>Lectura Actual</th>
+                            <th>Lectura Inicial</th>
+                            <th>Lectura Final</th>
+                            <th>Stock Disp.</th>
+                            <th>Calculado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for machine in machines %}
+                        <tr>
+                            <td>
+                                <strong>{{ machine.machine_number }}</strong>
+                            </td>
+                            <td>{{ machine.fuel_name }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-info">
+                                    {{ "%.2f"|format(machine.current_reading) }}
+                                </span>
+                            </td>
+                            <td>
+                                <input type="number" 
+                                       name="initial_{{ machine.id }}" 
+                                       class="form-control form-control-sm initial-reading" 
+                                       data-machine="{{ machine.id }}"
+                                       value="{{ "%.2f"|format(machine.current_reading) }}"
+                                       step="0.01" min="0">
+                            </td>
+                            <td>
+                                <input type="number" 
+                                       name="final_{{ machine.id }}" 
+                                       class="form-control form-control-sm final-reading" 
+                                       data-machine="{{ machine.id }}"
+                                       step="0.01" min="0">
+                            </td>
+                            <td class="text-center">
+                                <span class="badge 
+                                    {% if (machine.stock_available / machine.stock_capacity * 100) < 20 %}bg-danger
+                                    {% elif (machine.stock_available / machine.stock_capacity * 100) < 40 %}bg-warning
+                                    {% else %}bg-success{% endif %}">
+                                    {{ "%.1f"|format(machine.stock_available) }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span id="calc_{{ machine.id }}" class="badge bg-secondary">0.00</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="alert alert-info mt-3">
+                <i class="bi-info-circle"></i>
+                <strong>Instrucciones:</strong> Complete las lecturas inicial y final para cada máquina. 
+                Las lecturas iniciales se han precargado con los valores actuales.
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <button type="reset" class="btn btn-secondary me-md-2">
+                    <i class="bi-arrow-clockwise"></i> Limpiar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi-save"></i> Guardar Todos los Turnos
+                </button>
+                <a href="{{ url_for('dashboardC') }}" class="btn btn-secondary me-md-2">
+                    <i class="bi-x-circle"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Calcular diferencia para cada máquina
+    $('.initial-reading, .final-reading').on('input', function() {
+        var machineId = $(this).data('machine');
+        var initial = parseFloat($('input[name="initial_' + machineId + '"]').val()) || 0;
+        var final = parseFloat($('input[name="final_' + machineId + '"]').val()) || 0;
+        
+        if (final >= initial) {
+            var gallons = final - initial;
+            $('#calc_' + machineId).text(gallons.toFixed(2));
+            $('#calc_' + machineId).removeClass('bg-secondary').addClass('bg-success');
+        } else {
+            $('#calc_' + machineId).text('ERR');
+            $('#calc_' + machineId).removeClass('bg-success').addClass('bg-danger');
+        }
+    });
+});
+</script>
+{% endblock %}

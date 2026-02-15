@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Stock - Combustible{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="col-md-6">
+        <h2><i class="bi-database"></i> Gestión de Stock de Combustible</h2>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{{ url_for('dashboardC') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al dashboard
+        </a>
+    </div>
+</div>
+<!-- Stock de Combustibles -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi-fuel-pump"></i> Stock por Tipo de Combustible
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for fuel in fuels %}
+            <div class="col-md-3 mb-3">
+                <div class="card {% if fuel.current_stock < fuel.min_stock %}border-danger
+                               {% else %}border-success{% endif %}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ fuel.name }}</h5>
+                        <p class="card-text">
+                            <strong>Stock Actual:</strong> 
+                            <span class="{% if fuel.current_stock < fuel.min_stock %}stock-critical
+                                       {% else %}stock-normal{% endif %}">
+                                {{ "%.1f"|format(fuel.current_stock) }} gal
+                            </span>
+                        </p>
+                        <p class="card-text"><strong>Mínimo:</strong> {{ "%.1f"|format(fuel.min_stock) }} gal </p>
+                        <p class="card-text">
+                            <strong>Precio:</strong> ${{ "%.2f"|format(fuel.unit_price) }}/gal
+                        </p>
+                        <div class="progress" style="height: 10px;">
+                            {% set percentage = (fuel.current_stock / (fuel.min_stock * 2) * 100) %}
+                            <div class="progress-bar 
+                                {% if percentage < 25 %}bg-danger
+                                {% elif percentage < 50 %}bg-warning
+                                {% else %}bg-success{% endif %}" 
+                                style="width: {{ percentage if percentage <= 100 else 100 }}%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Stock por Máquina -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi-hdd"></i> Stock por Máquina
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Máquina</th>
+                        <th>Combustible</th>
+                        <th>Stock Actual</th>
+                        <th>Capacidad</th>
+                        <th>% Lleno</th>
+                        <th>Estado</th>
+                        <th>Última Actualización</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for machine in machine_stock %}
+                    <tr>
+                        <td><strong>{{ machine.machine_number }}</strong></td>
+                        <td>{{ machine.fuel_name }}</td>
+                        <td>{{ "%.1f"|format(machine.stock_available) }} gal</td>
+                        <td>{{ "%.1f"|format(machine.stock_capacity) }} gal</td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar 
+                                    {% if machine.percentage < 20 %}bg-danger
+                                    {% elif machine.percentage < 40 %}bg-warning
+                                    {% elif machine.percentage < 70 %}bg-info
+                                    {% else %}bg-success{% endif %}" 
+                                    style="width: {{ machine.percentage }}%">
+                                    {{ "%.1f"|format(machine.percentage) }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if machine.status == 'CRITICO' %}bg-danger
+                                {% elif machine.status == 'BAJO' %}bg-warning
+                                {% else %}bg-success{% endif %}">
+                                {{ machine.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('editar_turno', machine_id=machine.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi-arrow-clockwise"></i> Actualizar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Resumen de Stock -->
+<div class="card mt-4">
+    <div class="card-header">
+        <i class="bi-graph-up"></i> Resumen de Stock
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 text-center">
+                <div class="display-4 text-danger">
+                    {{ machine_stock|selectattr("status", "equalto", "CRITICO")|list|length }}
+                </div>
+                <p class="text-muted">Máquinas en Stock Crítico</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="display-4 text-warning">
+                    {{ machine_stock|selectattr("status", "equalto", "BAJO")|list|length }}
+                </div>
+                <p class="text-muted">Máquinas con Stock Bajo</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="display-4 text-success">
+                    {{ machine_stock|selectattr("status", "equalto", "NORMAL")|list|length }}
+                </div>
+                <p class="text-muted">Máquinas con Stock Normal</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

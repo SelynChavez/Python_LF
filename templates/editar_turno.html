@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Actualizar Turno - Combustible{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-{% if current_shift.code == 'TURNO_1' %}primary
+                                     {% elif current_shift.code == 'TURNO_2' %}warning
+                                     {% else %}info{% endif %} text-white">
+                <i class="bi-clock"></i> Registrar Turno - {{ current_shift.name }}
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <h5>Máquina: {{ machine.machine_number }}</h5>
+                    <p><strong>Combustible:</strong> {{ machine.fuel_name }}</p>
+                    <p><strong>Precio Unitario:</strong> ${{ machine.unit_price }}/gal</p>
+                    <p><strong>Stock Disponible:</strong> {{ "%.1f"|format(machine.stock_available) }} gal</p>
+                </div>
+                <form method="POST" action="{{ url_for('editar_turno', machine_id=machine.id) }}">
+                    <div class="mb-3">
+                        <label for="shift_date" class="form-label">Fecha del Turno</label>
+                        <input type="date" class="form-control" id="shift_date" name="shift_date" value="{{ today }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="initial_reading" class="form-label">Lectura Inicial *</label>
+                            <input type="number" class="form-control" id="initial_reading" 
+                                   name="initial_reading" step="0.01" min="0" 
+                                   value="{{ "%.2f"|format(machine.current_reading) }}" required>
+                            <div class="form-text">Lectura al inicio del turno</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="final_reading" class="form-label">Lectura Final *</label>
+                            <input type="number" class="form-control" id="final_reading" 
+                                   name="final_reading" step="0.01" min="0" required>
+                            <div class="form-text">Lectura al final del turno</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning" id="calculation" style="display: none;">
+                        <strong>Cálculo:</strong>
+                        <span id="gallons">0.00</span> galones × ${{ machine.unit_price }} = 
+                        $<span id="total">0.00</span>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboardC') }}" class="btn btn-secondary me-md-2">
+                            <i class="bi-arrow-left"></i> Volver
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi-check-circle"></i> Registrar Turno
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi-clock-history"></i> Turnos de Hoy
+            </div>
+            <div class="card-body">
+                {% if today_shifts %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Turno</th>
+                                <th>Inicial</th>
+                                <th>Final</th>
+                                <th>Galones</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for shift in today_shifts %}
+                            <tr class="shift-{% if shift.shift_code == 'TURNO_1' %}1
+                                           {% elif shift.shift_code == 'TURNO_2' %}2
+                                           {% else %}3{% endif %}">
+                                <td>{{ shift.shift_name }}</td>
+                                <td>{{ "%.2f"|format(shift.initial_reading) }}</td>
+                                <td>{{ "%.2f"|format(shift.final_reading) }}</td>
+                                <td><strong>{{ "%.2f"|format(shift.gallons_sold) }}</strong></td>
+                                <td>${{ "%.2f"|format(shift.total_price) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi-clock fs-1"></i>
+                    <p class="mt-3">No hay turnos registrados hoy</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Calcular diferencia al cambiar lecturas
+    $('#initial_reading, #final_reading').on('input', function() {
+        var initial = parseFloat($('#initial_reading').val()) || 0;
+        var final = parseFloat($('#final_reading').val()) || 0;
+        var price = {{ machine.unit_price }};
+        
+        if (final > initial) {
+            var gallons = final - initial;
+            var total = gallons * price;
+            $('#gallons').text(gallons.toFixed(2));
+            $('#total').text(total.toFixed(2));
+            $('#calculation').show();
+        } else {
+            $('#calculation').hide();
+        }
+    });
+    
+    // Cargar lectura actual automáticamente
+    $.get('/api/machine/{{ machine.id }}/current_reading', function(data) {
+        if (data.current_reading > 0) {
+            $('#initial_reading').val(data.current_reading.toFixed(2));
+        }
+    });
+});
+</script>
+{% endblock %}

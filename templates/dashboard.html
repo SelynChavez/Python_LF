@@ -51,9 +51,10 @@
             </div>
             <h3>Administracion de Buses</h3>
             <p>Gestion de ruta, gps, consumo de combustible</p>
-            <button class="btn btn-secondary" disabled>
-                <i class="bi bi-tools"></i> Próximamente
-            </button>
+            <a href="{{ url_for('dashboardC') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Gestion Combustible
+            </a>    
         </div>
     </div>
 

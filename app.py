@@ -15,6 +15,7 @@ import base64
 import datetime
 from decimal import Decimal
 import sqlconstants
+from datetime import time
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -1281,6 +1282,296 @@ def generar_recibo(tipo_doc, numero_doc, codigo_padron, nombre_socio, fecha_reci
     print(f"Total del recibo: S/. {total:.2f}")
     return nombre_archivo
 
+
+#### ************************************ COMBUSTIBLE **********************************************
+@app.route('/dashboardC')
+def dashboardC():
+    """Panel de control con estadísticas"""
+    now = datetime.datetime.now()
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        # Total de galones vendidos hoy
+        cursor.execute('''
+            SELECT 
+                COALESCE(SUM(galones_vendidos), 0) as total_gallons,
+                COALESCE(SUM(total_precio), 0) as total_revenue,
+                COUNT(DISTINCT maquina) as active_machines
+            FROM a_ventas_comb 
+            WHERE DATE(fecha) = CURDATE()
+        ''')
+        today_stats = cursor.fetchone()        
+        # Ventas por turno hoy
+        cursor.execute('''
+            SELECT 
+                nombre as shift_name,
+                SUM(galones_vendidos) as gallons,
+                SUM(total_precio) as revenue
+            FROM a_ventas_comb 
+            WHERE DATE(fecha) = CURDATE()
+            GROUP BY nombre, turno
+            ORDER BY FIELD(turno, 'TURNO_1', 'TURNO_2', 'TURNO_3')
+        ''')
+        shift_stats = cursor.fetchall()
+        # Top máquinas
+        cursor.execute('''
+            SELECT 
+                m.id,
+                m.numero as machine_number,
+                f.nombre as fuel_type,
+                COALESCE(SUM(s.galones_vendidos), 0) as gallons,
+                COALESCE(SUM(s.total_precio), 0) as revenue
+            FROM a_maquinas m
+            LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
+            LEFT JOIN a_ventas_comb s ON m.id = s.maquina AND DATE(s.fecha) = CURDATE()
+            GROUP BY m.id
+            ORDER BY gallons DESC
+            LIMIT 5
+        ''')
+        top_machines = cursor.fetchall()
+        # Stock crítico (menos del 20%)
+        cursor.execute('''
+            SELECT 
+                m.id,
+                m.numero as machine_number,
+                f.nombre as fuel_type,
+                m.disponible_stock stock_available,
+                m.capacidad_stock  stock_capacity,
+                ROUND((m.disponible_stock/ m.capacidad_stock) * 100, 2) as percentage
+            FROM a_maquinas m
+            LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
+            ORDER BY percentage ASC
+        ''')
+        low_stock = cursor.fetchall()
+        cursor.close()
+    return render_template('dashboardC.html',
+                          today_stats=today_stats,
+                          shift_stats=shift_stats,
+                          top_machines=top_machines,
+                          low_stock=low_stock, 
+                          now=now)
+
+@app.route('/cargar_turnos', methods=['GET', 'POST'])
+def cargar_turnos():
+    """Actualización masiva de todas las máquinas en una página"""
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    # Obtener todas las máquinas
+    cursor.execute('''
+        SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
+            capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at,
+            f.nombre as fuel_name 
+        FROM a_maquinas m 
+        LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
+        ORDER BY m.numero
+    ''')
+    machines = cursor.fetchall()    
+    # Obtener turnos disponibles
+    shifts = [
+        {'code': 'TURNO_1', 'name': '11AM - 6PM'},
+        {'code': 'TURNO_2', 'name': '6PM - 2AM'},
+        {'code': 'TURNO_3', 'name': '2AM - 11AM'}
+    ]    
+    if request.method == 'POST':
+        shift_code = request.form['shift_code']
+        shift_date = request.form['shift_date']
+        success_count = 0
+        errors = []
+        for machine in machines:
+            machine_id = machine['id']
+            initial_key = f'initial_{machine_id}'
+            final_key = f'final_{machine_id}'
+            if initial_key in request.form and final_key in request.form:
+                try:
+                    initial_reading = Decimal(request.form[initial_key])
+                    final_reading = Decimal(request.form[final_key])
+                    if initial_reading == 0 and final_reading == 0:
+                        continue  # Saltar si no hay datos
+                    gallons_sold = final_reading - initial_reading
+                    if gallons_sold < 0:
+                        errors.append(f'Máquina {machine["machine_number"]}: Lectura final menor que inicial')
+                        continue
+                    # Obtener precio unitario
+                    cursor.execute('SELECT precio_unitario unit_price FROM a_combustible WHERE id = %s', (machine['fuel_type_id'],))
+                    fuel = cursor.fetchone()
+                    if gallons_sold > 0:
+                        # Registrar venta
+                        cursor.execute('''
+                            INSERT INTO a_ventas_comb (maquina, turno, nombre, fecha, lectura_inicial, lectura_final, galones_vendidos, total_precio)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        ''', (machine_id, shift_code, 
+                              next(s['name'] for s in shifts if s['code'] == shift_code),
+                              shift_date, initial_reading, final_reading, 
+                              gallons_sold, gallons_sold * fuel['unit_price']))
+                        # Actualizar stock
+                        cursor.execute("UPDATE a_maquinas SET disponible_stock = disponible_stock - %s, lectura_actual = %s WHERE id = %s", 
+                            (gallons_sold, final_reading, machine_id))   
+                        success_count += 1
+                except Exception as e:
+                    errors.append(f'Máquina {machine["machine_number"]}: {str(e)}')
+        if success_count > 0:
+            connection.commit()
+            flash(f'{success_count} máquina(s) actualizada(s) exitosamente', 'success')
+        if errors:
+            for error in errors:
+                flash(error, 'warning')        
+        return redirect(url_for('cargar_turnos'))
+    cursor.close()
+    return render_template('cargar_turnos.html', machines=machines, shifts=shifts, today=datetime.datetime.now().strftime('%Y-%m-%d'))
+
+@app.route('/maquinas')
+def maquinas():
+    """Listar todas las máquinas"""
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute('''
+        SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
+               capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at,
+               f.nombre as fuel_name, f.precio_unitario unit_price, 
+               COALESCE(SUM(s.galones_vendidos), 0) as total_gallons_today, m.disponible_stock as current_stock
+        FROM a_maquinas m
+        LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
+        LEFT JOIN a_ventas_comb s ON m.id = s.maquina AND DATE(s.fecha) = CURDATE()
+        GROUP BY m.id
+    ''')
+    machines = cursor.fetchall()
+    cursor.execute('SELECT id,nombre name, descripcion description,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock FROM a_combustible')
+    fuels = cursor.fetchall()
+    cursor.close()
+    return render_template('maquinas.html', machines=machines, fuels=fuels)
+
+@app.route('/maquinas/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_maquina():
+    if request.method == 'POST':
+        machine_number = request.form['numero']
+        fuel_type_id = request.form['tipo_combustible']
+        initial_reading = request.form['lectura_inicial']
+        stock_capacity = request.form['capacidad_stock']
+        stock_available = request.form['disponible_stock']        
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        try:
+            cursor.execute("INSERT INTO a_maquinas (numero, tipo_combustible, lectura_inicial,capacidad_stock,disponible_stock) VALUES (%s, %s, %s, %s, %s)", 
+                (machine_number, fuel_type_id, initial_reading, stock_capacity, stock_available))
+            connection.commit()
+            flash('Máquina agregada exitosamente', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Error: {err}', 'danger')
+        finally:
+            cursor.close()
+        return redirect(url_for('maquinas'))
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM a_combustible')
+    fuels = cursor.fetchall()
+    cursor.close()
+    return render_template('crear_maquina.html', fuels=fuels)
+
+@app.route('/stock')
+def stock():
+    """Gestión de stock de combustibles"""
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    # Obtener stock de combustibles
+    cursor.execute('SELECT id,nombre name,descripcion,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock,modified FROM a_combustible ORDER BY nombre')
+    fuels = cursor.fetchall()
+    # Obtener stock por máquina
+    cursor.execute('''
+        SELECT 
+            m.id,
+            m.numero machine_number,
+            f.nombre as fuel_name,
+            m.disponible_stock stock_available,
+            m.capacidad_stock stock_capacity,
+            ROUND((m.disponible_stock / m.capacidad_stock) * 100, 2) as percentage,
+            CASE 
+                WHEN (m.disponible_stock / m.capacidad_stock) < 0.2 THEN 'CRITICO'
+                WHEN (m.disponible_stock / m.capacidad_stock) < 0.4 THEN 'BAJO'
+                ELSE 'NORMAL'
+            END as status
+        FROM a_maquinas m
+        LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
+        ORDER BY percentage ASC
+    ''')
+    machine_stock = cursor.fetchall()
+    cursor.close()
+    return render_template('stock.html', fuels=fuels, machine_stock=machine_stock)
+
+@app.route('/editar_turno/<int:machine_id>', methods=['GET', 'POST'])
+def editar_turno(machine_id):
+    """Actualizar lecturas por turno"""
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    # Obtener información de la máquina
+    cursor.execute('''
+        SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
+               capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at,
+               f.nombre as fuel_name, f.precio_unitario unit_price
+        FROM a_maquinas m 
+        LEFT JOIN a_combustible f ON m.tipo_combustible = f.id 
+        WHERE m.id = %s
+    ''', (machine_id,))
+    machine = cursor.fetchone()
+    if request.method == 'POST':
+        shift_code, shift_name = get_shift_name()
+        initial_reading = Decimal(request.form['initial_reading'])
+        final_reading = Decimal(request.form['final_reading'])
+        shift_date = request.form['shift_date']
+        # Calcular galones vendidos
+        gallons_sold = final_reading - initial_reading
+        if gallons_sold < 0:
+            flash('La lectura final no puede ser menor que la inicial', 'danger')
+            return redirect(url_for('editar_turno', machine_id=machine_id))
+        # Verificar stock disponible
+        if gallons_sold > machine['stock_available']:
+            flash(f'Stock insuficiente. Disponible: {machine["stock_available"]} galones', 'danger')
+            return redirect(url_for('editar_turno', machine_id=machine_id))
+        try:
+            # Registrar la venta
+            cursor.execute("INSERT INTO a_ventas_comb (maquina, turno, nombre, fecha, lectura_inicial, lectura_final, galones_vendidos, total_precio) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+               , (machine_id, shift_code, shift_name, shift_date,
+                  initial_reading, final_reading, gallons_sold,
+                  gallons_sold * machine['unit_price']))
+            # Actualizar stock de la máquina
+            cursor.execute("UPDATE a_maquinas SET disponible_stock = disponible_stock - %s, lectura_actual = %s WHERE id = %s", (gallons_sold, final_reading, machine_id))
+            connection.commit()
+            # Actualizar stock general del combustible
+            cursor.execute("UPDATE a_combustible SET stock_actual = stock_actual - %s WHERE id = %s", (gallons_sold, machine['fuel_type_id']))
+            connection.commit()
+            flash(f'Turno registrado exitosamente. Galones vendidos: {gallons_sold}', 'success')
+        except mysql.connector.Error as err:
+            connection.rollback()
+            flash(f'Error: {err}', 'danger')
+        finally:
+            cursor.close()
+        return redirect(url_for('maquinas'))
+    # Obtener registros de turnos para hoy
+    cursor.execute('''
+    SELECT id, maquina machine_id,turno shift_code,nombre shift_name,fecha shift_date,lectura_inicial initial_reading,lectura_final final_reading,
+           galones_vendidos gallons_sold,total_precio total_price,modified recorded_at,operador_id,webuser,notas notes
+    FROM a_ventas_comb WHERE maquina = %s AND DATE(fecha) = CURDATE() ORDER BY fecha DESC''', (machine_id,))
+    today_shifts = cursor.fetchall()
+    cursor.close()
+    # Obtener turno actual
+    shift_code, shift_name = get_shift_name()
+    return render_template('editar_turno.html', 
+                          machine=machine, 
+                          today_shifts=today_shifts,
+                          current_shift={'code': shift_code, 'name': shift_name},
+                          today=datetime.datetime.now().strftime('%Y-%m-%d'))
+
+def get_shift_name(current_time=None):
+    """Determinar el turno actual basado en la hora"""
+    if current_time is None:
+        current_time = datetime.datetime.now().time()
+    if time(11, 0) <= current_time < time(18, 0):
+        return 'TURNO_1', '11AM - 6PM'
+    elif time(18, 0) <= current_time < time(2, 0):
+        return 'TURNO_2', '6PM - 2AM'
+    else:
+        return 'TURNO_3', '2AM - 11AM'
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
