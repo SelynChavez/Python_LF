@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Gestion Prestamos y Retiros{% endblock %}
+{% block specific_styles %}
+    <style>
+        a:link {color: rgb(237, 243, 237);}
+        a:visited {
+        color: rgb(251, 243, 244);
+        }
+        a:hover {
+        color: rgb(211, 209, 209);
+        }
+        a:active {
+        color: rgb(248, 248, 239);
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi-speedometer2"></i><b> Dashboard Prestamos / Retiros</b></h2>
+    <small class="text-muted">Actualizado: {{ now }}</small>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-dashboard bg-primary text-white">
+            <div class="card-body">
+                <h6 class="card-title">#Socios Deudores</h6>
+                <h2 class="display-6">{{ total_socios }}</h2>
+                <i class="bi bi-people card-icon"></i>
+                <small>Registrados en el último mes</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard bg-success text-white">
+            <div class="card-body">
+                <h6 class="card-title">Total <a class="btn btn-warning" href="{{ url_for('retiros') }}">Retiros</a></h6>
+                <h2 class="display-6">{{ total_padrones }}</h2>
+                <i class="bi bi-files card-icon"></i>
+                <small>Total retiros otorgados</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard bg-info text-white">
+            <div class="card-body">
+                <h6 class="card-title">Total <a class="btn btn-warning" href="{{ url_for('aportes') }}">Aportes</a></h6>
+                <h2 class="display-6">${{ "{:,.0f}".format(total_aportes) }}</h2>
+                <i class="bi bi-piggy-bank card-icon"></i>
+                <small>Suma de todos los aportes</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard bg-secondary text-white">
+            <div class="card-body">
+                <h6 class="card-title"><a class="btn btn-warning" href="{{ url_for('prestamos') }}">Préstamos</a> Activos</h6>
+                <h2 class="display-6">${{ "{:,.0f}".format(total_prestamos) }}</h2>
+                <i class="bi bi-cash card-icon"></i>
+                <small>Saldo pendiente total</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Préstamos por estado -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-pie-chart"></i> Préstamos por Estado
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Estado</th>
+                                <th>Cantidad</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for estado in prestamos_por_estado %}
+                            <tr>
+                                <td>
+                                    {% if estado.estado == 'pendiente' %}
+                                        <span class="badge bg-warning text-dark">Pendiente</span>
+                                    {% elif estado.estado == 'aprobado' %}
+                                        <span class="badge bg-success">Aprobado</span>
+                                    {% elif estado.estado == 'rechazado' %}
+                                        <span class="badge bg-danger">Rechazado</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Pagado</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ estado.cantidad }}</td>
+                                <td>${{ "{:,.2f}".format(estado.total) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Préstamos por tipo -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-grid"></i> Préstamos por Tipo
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Cantidad</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tipo in prestamos_por_tipo %}
+                            <tr>
+                                <td>{{ tipo.nombre }}</td>
+                                <td>{{ tipo.cantidad }}</td>
+                                <td>${{ "{:,.2f}".format(tipo.total) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Top padrones con más aportes -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-trophy"></i> Top 5 Padrones con más Aportes
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Socio</th>
+                                <th>Padrón</th>
+                                <th>Monto Aportado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for padron in top_padrones %}
+                            <tr>
+                                <td>{{ padron.nombre }} {{ padron.apellido }}</td>
+                                <td>{{ padron.numero_padron }}</td>
+                                <td class="text-success">${{ "{:,.2f}".format(padron.monto0) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimos movimientos -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi-clock-history"></i> Últimos Movimientos
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Socio</th>
+                                <th>Padrón</th>
+                                <th>Monto</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mov in ultimos_movimientos %}
+                            <tr>
+                                <td>
+                                    {% if mov.tipo == 'Préstamo' %}
+                                        <span class="badge bg-warning text-dark">Préstamo</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Retiro</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ mov.socio }}</td>
+                                <td>{{ mov.numero_padron }}</td>
+                                <td>
+                                    {% if mov.tipo == 'Préstamo' %}
+                                        <span class="text-warning">${{ "{:,.2f}".format(mov.monto) }}</span>
+                                    {% else %}
+                                        <span class="text-info">${{ "{:,.2f}".format(mov.monto) }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ mov.fecha.strftime('%d/%m/%Y') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

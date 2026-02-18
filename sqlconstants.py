@@ -9,6 +9,7 @@ REP1APORTES = """
     v.active d8,
     upper(substr(v.webuser,1,10)) d9,
     concat(v.id) d10,
+    concat(v.padron) d11,
     '0' d0 
     FROM a_recibos v 
     WHERE serie='1' and v.fecha>=date('$p1$') and v.fecha<=date('$p2$') and 
@@ -65,7 +66,7 @@ SEL_NM_PADRON = "SELECT placa FROM a_padrones WHERE id = %s"
 DELETE_PADRON = "DELETE FROM a_padrones WHERE id = %s"
 GET_NOMBRE_PADRON = "SELECT concat(p.id,':',p.placa,':',s.nombre) as n0 FROM a_padrones p, a_socios s WHERE p.id=%s and p.socio=s.id "
 
-LISTA_TIPOS = "SELECT t.* FROM a_tipos t WHERE t.tipo=%s ORDER BY t.modified DESC "
+LISTA_TIPOS = "SELECT t.*,concat('S00',atributo1) serie FROM a_tipos t WHERE t.tipo=%s ORDER BY t.modified DESC "
 INSERT_TIPO = "INSERT INTO a_tipos (tipo, codigo, descripcion, monto1, monto2, atributo1, atributo2, atributo3, atributo4, atributo5, modified, webuser) VALUES (%s, %s, %s, '0','0','','','','','', now(), %s)"
 UPDATE_TIPO = "UPDATE a_tipos SET codigo=%s, descripcion=%s, monto1=%s,monto2=%s,atributo1=%s,atributo2=%s,atributo3=%s,atributo4=%s,atributo5=%s, modified=now() WHERE id=%s "
 SELECT_TIPO = "SELECT t.* FROM a_tipos t WHERE t.id = %s"
@@ -78,6 +79,8 @@ INSERT_LOGUSUARIO = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion)
 INSERT_RECIBO_1 = "INSERT INTO a_recibos (serie, fecha, giro, padron, comentarios, active, modified, webuser) VALUES ('1', now(), %s, %s, %s, %s, now(), %s)"
 UPDATE_RECIBO_1 = "UPDATE a_recibos SET active='S' WHERE id='$recibo$'"
 INSERT_DETREC_1 = "INSERT INTO a_recibos_detalle (aporte, recibo, monto, prestamo, tipodeuda, modified, webuser) VALUES ('$apo$', '$rec$', '$mnt$', '$pre$', '$tip$', now(), '$usr$')"
+SELECT_RECIBO_1 = "SELECT r.*,nombPadronSocio(r.padron) nombre, concat(fecha) fec, concat(giro) gir FROM a_recibos r WHERE r.id='$pX$'"
+SELECT_DETALLE1 = "SELECT rd.*,tt.codigo,tt.descripcion FROM a_recibos_detalle rd, a_tipos tt WHERE recibo='$pX$' AND tt.tipo='APORTE' AND tt.codigo=rd.aporte ORDER BY rd.id"
 DETALLE_SERIE_1 = """
   SELECT t.codigo,t.descripcion,
   (CASE
@@ -90,3 +93,102 @@ DETALLE_SERIE_1 = """
   FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
   WHERE t.tipo='APORTE' and t.atributo1='1' and (t.codigo not in ('DEUDA','INICIAL'))
 """
+DASHB_COMB_TOTAL_HOY = """
+SELECT COALESCE(SUM(galones_vendidos), 0) as total_gallons,
+       COALESCE(SUM(total_precio), 0) as total_revenue,
+       COUNT(DISTINCT maquina) as active_machines
+FROM a_ventas_comb WHERE DATE(fecha) = CURDATE()
+"""
+DASHB_COMB_TURNOS_HOY = """
+SELECT nombre as shift_name, SUM(galones_vendidos) as gallons, SUM(total_precio) as revenue
+FROM a_ventas_comb WHERE DATE(fecha) = CURDATE() GROUP BY nombre, turno
+ORDER BY FIELD(turno, 'TURNO_1', 'TURNO_2', 'TURNO_3')
+"""
+DASHB_COMB_TOP_MAQUINAS = '''
+SELECT m.id, m.numero machine_number, f.nombre fuel_type, COALESCE(SUM(s.galones_vendidos), 0) gallons, 
+       COALESCE(SUM(s.total_precio), 0) revenue
+FROM a_maquinas m
+  LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
+  LEFT JOIN a_ventas_comb s ON m.id = s.maquina AND DATE(s.fecha) = CURDATE()
+GROUP BY m.id
+ORDER BY gallons DESC
+LIMIT 5
+'''
+DASHB_COMB_STOCK_CRITICO = """
+SELECT m.id, m.numero as machine_number, f.nombre as fuel_type, f.nombre as fuel_name, m.disponible_stock stock_available,
+    m.capacidad_stock stock_capacity, ROUND((m.disponible_stock/ m.capacidad_stock) * 100, 2) as percentage,
+    CASE 
+      WHEN (m.disponible_stock / m.capacidad_stock) < 0.2 THEN 'CRITICO'
+      WHEN (m.disponible_stock / m.capacidad_stock) < 0.4 THEN 'BAJO'
+      ELSE 'NORMAL'
+    END as status
+FROM a_maquinas m LEFT JOIN a_combustible f ON m.tipo_combustible = f.id ORDER BY percentage ASC
+"""
+LISTA_TURNOS_MAQUINA_COMB = '''
+    SELECT id, maquina machine_id,turno shift_code,nombre shift_name,fecha shift_date,lectura_inicial initial_reading,lectura_final final_reading,
+           galones_vendidos gallons_sold,total_precio total_price,modified recorded_at,operador_id,webuser,notas notes
+    FROM a_ventas_comb WHERE maquina = %s AND DATE(fecha) = CURDATE() ORDER BY fecha DESC
+'''
+LISTA_MAQUINAS_X_TURNOS = """
+SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, 
+       m.lectura_actual current_reading, capacidad_stock stock_capacity, disponible_stock stock_available, 
+       estado status, m.modified created_at, f.nombre as fuel_name 
+FROM a_maquinas m LEFT JOIN a_combustible f ON m.tipo_combustible = f.id ORDER BY m.numero
+"""
+INSERT_VTAS_COMBUSTIBLE = '''
+INSERT INTO a_ventas_comb (maquina,turno,nombre,fecha,lectura_inicial,lectura_final,galones_vendidos,total_precio)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+'''
+UPDATE_VTAS_COMB_MAQUINAS = "UPDATE a_maquinas SET disponible_stock = disponible_stock - %s, lectura_actual = %s WHERE id = %s"
+LISTA_MAQUINAS = '''
+SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
+        capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at,
+        f.nombre as fuel_name, f.precio_unitario unit_price, 
+        COALESCE(SUM(s.galones_vendidos), 0) as total_gallons_today, m.disponible_stock as current_stock
+FROM a_maquinas m
+LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
+LEFT JOIN a_ventas_comb s ON m.id = s.maquina AND DATE(s.fecha) = CURDATE()
+GROUP BY m.id
+'''
+LISTA_COMBUSTIBLE_TODOS = "SELECT id,nombre name, descripcion description,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock FROM a_combustible"
+INS_MAQUINAS = "INSERT INTO a_maquinas (numero,tipo_combustible,lectura_inicial,capacidad_stock,disponible_stock) VALUES (%s, %s, %s, %s, %s)"
+SEL_COMBUSTIBLE = "SELECT id,nombre name,descripcion,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock,modified FROM a_combustible ORDER BY nombre"
+SEL_1_MAQUINA = """
+SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
+        capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at, f.nombre as fuel_name, f.precio_unitario unit_price
+FROM a_maquinas m 
+LEFT JOIN a_combustible f ON m.tipo_combustible = f.id 
+WHERE m.id = %s
+"""
+INS_VENTAS_COMB = "INSERT INTO a_ventas_comb (maquina,turno,nombre,fecha,lectura_inicial,lectura_final,galones_vendidos,total_precio) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+UPD_MAQUINAS_VTAS_COMB = "UPDATE a_maquinas SET disponible_stock = disponible_stock - %s, lectura_actual = %s WHERE id = %s"
+UPD_COMBUSTIBLE_CTAS_COMB = "UPDATE a_combustible SET stock_actual = stock_actual - %s WHERE id = %s"
+PRECIO_U_COMB = "SELECT precio_unitario unit_price FROM a_combustible WHERE id = %s"
+INS_PRESTAMO = "INSERT INTO a_prestamos (padron,fecha_solicitud,tipo_prestamo,monto_solicitado,saldo_pendiente,descripcion,cuota,garantia_aporte,estado) VALUES (%s, %s, %s, %s, 0, %s, %s, %s, %s)"
+ACT_PRESTAMO = "UPDATE a_prestamos SET estado='pendiente',modified=now(),webuser='$usr$' WHERE id='$lid$' "
+APR_PRESTAMO = "UPDATE a_prestamos SET estado='aprobado',fecha_aprobacion=curdate(),monto_aprobado=monto_solicitado,saldo_pendiente=monto_solicitado WHERE id = %s"
+RCH_PRESTAMO = "UPDATE a_prestamos SET estado='rechazado' WHERE id = %s"
+DROPLIST_DEUDAS = "SELECT tp.* FROM a_tipos tp WHERE tp.tipo='DEUDA' "
+DROPLIST_APORTES_SALDO_X_PADRON = "SELECT aporte codigo,descripcion,aportado,retirado,(aportado-retirado) saldo FROM av_total_aportes_x_padron WHERE padron='$pad$' ORDER by 1"
+SELECT_PRESTAMOS_1 = """
+SELECT p.*, pr.placa, s.nombre, tp.descripcion as tipo_nombre, coalesce(p.monto_aprobado,0) mnt_aprobado
+FROM a_prestamos p
+  JOIN a_padrones pr ON p.padron = pr.id
+  JOIN a_socios s ON pr.socio = s.id
+  JOIN a_tipos tp ON tp.tipo='DEUDA' and p.tipo_prestamo = tp.codigo
+WHERE (p.fecha_solicitud>=date('$p1$') AND p.fecha_solicitud<=date('$p2$')) AND
+      (p.padron='$p3$' OR '$p3$'='0') AND (('$p4$'='on' AND estado='aprobado') OR ('$p4$'!='on'))
+ORDER BY p.id DESC, p.fecha_solicitud DESC
+"""
+SELECT_RETIROS_1 = """
+SELECT r.*, pr.placa, s.nombre, coalesce(r.monto_retirado,0) as mnt_retirado 
+FROM a_retiros r 
+  JOIN a_padrones pr ON r.padron = pr.id 
+  JOIN a_socios s ON pr.socio = s.id 
+WHERE (r.fecha_solicitud>=date('$p1$') AND r.fecha_solicitud<=date('$p2$')) AND
+      (r.padron='$p3$' OR '$p3$'='0') AND ('$p4$'='' OR r.tipo_aporte='$p4$')
+ORDER BY r.fecha_retiro DESC
+"""
+INS_RETIRO = "INSERT INTO a_retiros (padron,socio,fecha_solicitud,tipo_aporte,monto_solicitado,saldo_final_dia,monto_retirado,descripcion,estado,modified,webuser) VALUES (%s, 0, %s, %s, %s, %s, 0, %s, %s, now(), %s)"
+APR_RETIRO = "UPDATE a_retiros SET estado='aprobado',monto_retirado=monto_solicitado,fecha_retiro=curdate() WHERE id = %s"
+RCH_RETIRO = "UPDATE a_retiros SET estado='rechazado',monto_retirado=0 WHERE id = %s"

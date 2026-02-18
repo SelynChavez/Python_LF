@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Crear Prestamo.{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Solicitud de Prestamo</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" iaction="{{ url_for('crear_prestamo') }}">
+                    <input type="hidden" id="act" name="act" value="{{act}}">
+                    <input type="hidden" id="lid" name="lid" value="{{lid}}">
+                    <input type="hidden" id="nom" name="nom" value="{{nom}}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fec" class="form-label">Fecha *</label>
+                            <input type="date" class="form-control" id="fec" name="fec" value="{{fec}}" required>
+                            <div class="form-text">{{act}}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="pad" class="form-label">Padron *</label>
+                            <input type="number" class="form-control" id="pad" name="pad" value="{{pad}}" min="0" max="9999" maxlength="4" required>
+                            <div class="form-text">{{nom}}</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="mnt" class="form-label">Monto Solicitado</label>
+                            <div class="input-group">
+                                <span class="input-group-text">S/</span>
+                                <input type="number" step="0.01" class="form-control" id="mnt" name="mnt" min="1" value="{{mnt}}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cuo" class="form-label">Cuota Diaria</label>
+                            <div class="input-group">
+                                <span class="input-group-text">S/</span>
+                                <input type="number" step="0.01" class="form-control" id="cuo" name="cuo" min="0" value="{{cuo}}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="gar" name="gar"  {% if gar %} checked {% endif %}>
+                                <label class="form-check-label" for="gar">
+                                    Usar aportes como garantía
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                Al marcar esta opción, el préstamo estará garantizado con sus aportes
+                            </small>
+                        </div>    
+                        <div class="col-md-6 mb-3">
+                            <label for="des" class="form-label">Descripción / Motivo</label>
+                            <textarea class="form-control" id="des" 
+                                      name="des" rows="3" 
+                                      placeholder="Describa el motivo del préstamo..."> {{des}} </textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3">
+                            <label for="tip" class="form-label">Tipo de Préstamo</label>
+                            <select class="form-select" id="tip" name="tip" required>
+                                <option value="">Seleccionar tipo de prestamo...</option>
+                                {% for tt in tipos %}
+                                <option value="{{ tt.codigo }}" 
+                                    {% if tt.codigo == tip %} selected
+                                    {% endif %} >{{ tt.codigo }} : {{ tt.descripcion }} - ${{ tt.monto1 }} %</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('prestamos') }}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-x"></i> Cancelar / Regresar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> {{but}}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#padron_id').change(function() {
+        var selected = $(this).find('option:selected');
+        var saldo = selected.data('saldo');
+        if (saldo) {
+            $('#saldoInfo').text('Saldo disponible del padrón: $' + saldo.toFixed(2));
+            $('#monto_solicitado').attr('max', saldo);
+        } else {
+            $('#saldoInfo').text('');
+            $('#monto_solicitado').removeAttr('max');
+        }
+    });
+
+    $('#tipo_prestamo_id').change(function() {
+        var selected = $(this).find('option:selected');
+        var tasa = selected.data('tasa');
+        if (tasa) {
+            $('#tasaInfo').remove();
+            $('<small class="text-muted" id="tasaInfo">Tasa de interés: ' + tasa + '%</small>')
+                .insertAfter($(this).parent());
+        }
+    });
+});
+</script>
+{% endblock %}

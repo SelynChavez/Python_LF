@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Retiros {% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Gestión de Retiros</h4> &nbsp;&nbsp;
+                <a href="{{ url_for('dashboardP') }}" class="btn btn-secondary"> <i class="bi bi-arrow-left"></i> Regresar </a>
+                <a href="{{ url_for('crear_retiro') }}" class="btn btn-success"> <i class="bi bi-plus-cirle"></i> Nuevo Retiro </a>
+            </div>
+            <div class="card-body">
+                    <form method="POST" action="{{ url_for('retiros') }}">
+                        <!-- Barra de búsqueda -->
+                        <div class="row mb-4">
+                            <div class="col-md-2 mb-3">
+                                <label for="p1" class="form-label">Fecha Inicial</label>
+                                <input type="date" class="form-control" id="p1" name="p1" value="{{p1}}" required>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p2" class="form-label">Fecha Final</label>
+                                <input type="date" class="form-control" id="p2" name="p2" value="{{p2}}" required>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p3" class="form-label">Padron</label>
+                                <input type="number" class="form-control" id="p3" name="p3" value="{{p3}}" required>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="p4" class="form-label">Tipo de Aporte</label>
+                                <select class="form-select" id="p4" name="p4">
+                                    <option value="">Seleccionar Aporte</option>
+                                    {% for rg1 in tipos %}
+                                        <option value="{{ rg1["d1"] }}" {% if rg1["d1"] == p4 %} selected {% endif %}>{{ rg1["d2"] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save"></i> Consultar
+                                </button>
+                            </div>
+                        </div>
+                    </form>    
+                    <!-- Barra de búsqueda -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre del Socio</th>
+                                    <th>Padrón</th>
+                                    <th>Tipo</th>
+                                    <th>Solicitado</th>
+                                    <th>Retirado</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th width="15%">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r0 in retiros %}
+                                <tr class="fila-retiro">
+                                    <td><span class="badge bg-primary">#{{ r0.id }}</span></td>
+                                    <td><strong>{{ r0.nombre }}</strong></td>
+                                    <td>{{ r0.padron }}</td>
+                                    <td>{{ r0.tipo_aporte }}</td>
+                                    <td style="text-align:right"><span class="text-danger">S/{{ "{:,.2f}".format(r0.monto_solicitado) }}</span></td>
+                                    <td style="text-align:right"><span style="color:navy">S/{{ "{:,.2f}".format(r0.mnt_retirado) }}</span></td>
+                                    <td>{{ r0.fecha_retiro.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if r0.estado == 'pendiente' %}
+                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                        {% elif r0.estado == 'aprobado' %}
+                                            <span class="badge bg-success">Aprobado</span>
+                                        {% elif r0.estado == 'rechazado' %}
+                                            <span class="badge bg-danger">Rechazado</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">PorRevisar</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+
+                                        {% if r0.estado == 'pendiente' %}
+                                        <form action="{{ url_for('aprobar_retiro', retiro_id=r0.id) }}" 
+                                              method="post" style="display: inline;">
+                                            <input type="hidden" id="p1" name="p1" value="{{p1}}">
+                                            <input type="hidden" id="p2" name="p2" value="{{p2}}">
+                                            <input type="hidden" id="p3" name="p3" value="{{p3}}">
+                                            <input type="hidden" id="p4" name="p4" value="{{p4}}">
+                                            <button type="submit" class="btn btn-success"
+                                                    onclick="return confirm('¿Está seguro de APROBAR este retiro?')"
+                                                    title="Aprobar Retiro">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('rechazar_retiro', retiro_id=r0.id) }}" 
+                                              method="post" style="display: inline;">
+                                              <input type="hidden" id="p1" name="p1" value="{{p1}}">
+                                              <input type="hidden" id="p2" name="p2" value="{{p2}}">
+                                              <input type="hidden" id="p3" name="p3" value="{{p3}}">
+                                              <input type="hidden" id="p4" name="p4" value="{{p4}}">
+                                              <button type="submit" class="btn btn-sm btn-danger"
+                                                    onclick="return confirm('¿Está seguro de RECHAZAR este retiro?')"
+                                                    title="Rechazar Retiro">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% if r0.estado != 'rechazado' %}
+                                            <!-- Botones para PDF -->
+                                            <a href="{{ url_for('generar_pdf_retiro', retiro_id=r0.id) }}" 
+                                            class="btn btn-sm btn-secondary btn-action" target="_blank">
+                                                <i class="bi bi-file-pdf"></i>
+                                            </a>
+                                        {% endif %}
+
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td colspan="5"></td><td style="text-align:right;color:navy"><b>S/{{ "{:,.2f}".format(total)}}</b></td><td colspan="3"></td>
+                                </tr>
+                            </tbody>    
+                        </table>
+                    </div>
+            </div>        
+        </div>
+    </div>    
+</div>
+{% endblock %}

@@ -1,13 +1,11 @@
 {% extends "base.html" %}
-
 {% block title %}ETLF - Aportes{% endblock %}
-
 {% block content %}
 <div class="row">
     <div class="col-12 mb-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i>Gestión de Recibos</h4> &nbsp;&nbsp;
+                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Gestión de Recibos de Aportes por Padron - Serie #1</h4> &nbsp;&nbsp;
                 <a href="{{ url_for('crear_recibo') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nuevo Recibo </a>
             </div>
             <div class="card-body">
@@ -48,27 +46,37 @@
                                     <th>Act?</th>
                                     <th>Caja</th>
                                     <th>IdCtrl</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {%  for recibo in recibos %}
+                                {%  for r3 in recibos %}
                                 <tr class="fila-aporte">
-                                    <td>{{ recibo.d0 }}</td>
-                                    <td>{{ recibo.d1 }}</td>
-                                    <td>{{ recibo.d2 }}</td>
-                                    <td>{{ recibo.d3 }}</td>
-                                    <td>{{ recibo.d4 }}</td>
+                                    <td>{{ r3.d0 }}</td>
+                                    <td>{{ r3.d1 }}</td>
+                                    <td>{{ r3.d2 }}</td>
+                                    <td>{{ r3.d3 }}</td>
+                                    <td>{{ r3.d4 }}</td>
                                     <td>
-                                        <strong>{{ recibo.d6 }}</strong>
+                                        <strong>{{ r3.d6 }}</strong>
                                     </td>
-                                    <td>{{ recibo.d7 }}</td>
+                                    <td>{{ r3.d7 }}</td>
                                     <td>
-                                        <span class="badge {{ 'badge-activo' if recibo.d8 == 'S' else 'badge-inactivo' }}">
-                                            {{ 'S' if recibo.d8 == 'S' else 'N' }}
+                                        <span class="badge {{ 'badge-activo' if r3.d8 == 'S' else 'badge-inactivo' }}">
+                                            {{ 'S' if r3.d8 == 'S' else 'N' }}
                                         </span>
                                     </td>
-                                    <td>{{ recibo.d9 }}</td>
-                                    <td>{{ recibo.d10 }}</td>
+                                    <td>{{ r3.d9 }}</td>
+                                    <td>{{ r3.d10 }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('imprimir_recibo', l_id=r3.d10 ) }}" 
+                                               class="btn btn-outline-primary" 
+                                               title="Imprimir Recibo">
+                                                <i class="bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

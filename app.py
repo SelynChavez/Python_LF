@@ -1,21 +1,28 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, make_response
 import mysql.connector
 from mysql.connector import Error
+import pymysql
 import hashlib
 import os
 from functools import wraps
 from config import Config
+import sqlconstants
 
 from io import BytesIO
 import tempfile
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 from fpdf import FPDF
 import base64
 import datetime
 from decimal import Decimal
-import sqlconstants
 from datetime import time
+## from datetime import datetime
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -187,7 +194,7 @@ def aportes():
         return render_template('aportes.html', p1=px, p2=px, p3=0, recibos=recs, total=total)
 
 # ------------------------------------------------------------------------------------
-# RECIBOS (para demostrar funcionalidad reactiva)
+# RECIBOS (para demostrar funcionalidad reactiva) ## SERIE 001
 @app.route('/recibos/crear', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -222,7 +229,8 @@ def crear_recibo():
                     nom = get_nombre_padron(pad)
                     connection.close()
                     flash('Continuar con detalles.', 'success')
-                    return render_template('crear_recibo.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid)
+                    return render_template('crear_recibo.html', 
+                    act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('El nombre/dni de socio o email ya existe.', 'danger')
@@ -269,6 +277,7 @@ def crear_recibo():
                     flash('Recibo registrado.', 'success')
 
                     # Datos de ejemplo
+                    serie = '1'
                     codigo_padron = pad
                     nombre_socio = nom
                     fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
@@ -276,7 +285,7 @@ def crear_recibo():
                     date_obj = datetime.datetime.strptime(fec, date_format)
                     fecha_giro = date_obj.strftime('%d-%m-%Y')
                     # Generar recibo
-                    archivo = generar_recibo('RECIBO DE PAGO', lid, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
+                    archivo = generar_recibo('RECIBO DE PAGO', serie, lid, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
                     # Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
                     try:
                         if os.name == 'nt':  # Windows
@@ -299,6 +308,39 @@ def crear_recibo():
                 flash('Error de conexión a la base de datos.', 'danger')
        
     return render_template('crear_recibo.html', act='-',but='Continuar')
+
+@app.route('/imprimir_recibo/<int:l_id>', methods=['GET', 'POST'])
+@login_required
+def imprimir_recibo(l_id):
+    lid = str(l_id)
+    if request.method == 'GET':
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            queryHead = sqlconstants.SELECT_RECIBO_1
+            queryHead = queryHead.replace("$pX$", lid)
+            cursor.execute(queryHead)
+            recibo = cursor.fetchone()
+            pad = recibo['padron']
+            nom = recibo['nombre']
+            fec = recibo['fecha']
+            date_format = '%Y-%m-%d'
+            date_obj = datetime.datetime.strptime(recibo['fec'], date_format)
+            fec = date_obj.strftime('%d-%m-%Y')
+            date_obj = datetime.datetime.strptime(recibo['gir'], date_format)
+            gir = date_obj.strftime('%d-%m-%Y')
+            consulta = sqlconstants.SELECT_DETALLE1
+            consulta = consulta.replace("$pX$", lid)
+            cursor.execute(consulta)
+            items = cursor.fetchall()
+            archivo = generar_recibo('RECIBO DE PAGO', '1', lid, pad, nom, fec, gir, items)
+            try:     ### Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
+                if os.name == 'nt':  # Windows
+                    os.startfile(archivo)
+                elif os.name == 'posix':  # Linux o macOS
+                    os.system(f'open "{archivo}"')
+            except:
+                print(f"Recibo guardado en: {os.path.abspath(archivo)}")
 
 # ------------------------------------------------------------------------------------
 # TIPOS DEUDAS (para demostrar funcionalidad reactiva)
@@ -1001,7 +1043,8 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
     pdf.set_font("Arial", 'B', 10)
     hora1 = str(datetime.datetime.now())[0:19] + "  -  Pag. # " + str(pdf.page_no()+sum4)
     usr = session['user_username']
-    pdf.cell(0, 8, f"E.T.Las Flores :: [{cod}] - [{usr}] -                                                                     {hora1}", 0, 1, 'R')
+    spc = " " * 70
+    pdf.cell(0, 8, f"E.T.Las Flores :: [{cod}] - [{usr}] - {spc} {hora1}", 0, 1, 'R')
     # Título
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 4, f"{titulo}", 0, 1, 'C')
@@ -1139,10 +1182,6 @@ def generar_reporte():
         return jsonify({'error': str(e)}), 500
 ## ---- END PDF ----------------------------------------------------------------------------------------------------------
 
-
-
-
-
 class ReciboTicket(FPDF):
     def __init__(self):
         super().__init__(orientation='P', unit='mm', format=(80, 200))
@@ -1151,8 +1190,7 @@ class ReciboTicket(FPDF):
         self.width = 80
         self.max_chars = 30
     
-    def header(self):
-        # Encabezado del recibo
+    def header(self):    # Encabezado del recibo
         self.set_font('Arial', 'B', 10)
         self.cell(0, 5, 'E.T.Las Flores', 0, 1, 'C')
         self.set_font('Arial', '', 8)
@@ -1160,25 +1198,21 @@ class ReciboTicket(FPDF):
         ## self.set_font('Arial', '', 7)
         ## self.cell(0, 4, 'Av.Wiese Mza J Lt#24 Urb.M.Caceres - SJL', 0, 1, 'C')
         self.ln(1)
-        # Línea separadora
         self.line(5, self.get_y(), self.width - 5, self.get_y())
         self.ln(1)
     
-    def footer(self):
-        # Pie de página
+    def footer(self):    # Pie de página
         self.set_y(-15)
         self.set_font('Arial', 'I', 7)
         self.cell(0, 4, 'Gracias por su pago', 0, 1, 'C')
         self.cell(0, 4, 'Recibo válido como comprobante de pago', 0, 1, 'C')
         self.cell(0, 4, f'Impreso el: {datetime.datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'C')
     
-    def add_receipt_info(self, data):
-        """Agrega la información del recibo"""
-        # Título
+    def add_receipt_info(self, data):    # Título
         self.set_font('Arial', 'B', 10)
         self.cell(0, 6, data['titulo'], 0, 1, 'C')
         self.set_font('Arial', 'B', 9)
-        self.cell(0, 4, '[ 001-00'+data['numero']+' ]', 0, 1, 'C')
+        self.cell(0, 4, '[ S0'+data['serie']+'-0'+data['numero']+' ]', 0, 1, 'C')
         self.ln(1)
         # Información del socio
         self.set_font('Arial', 'B', 7)
@@ -1200,18 +1234,14 @@ class ReciboTicket(FPDF):
         self.set_font('Arial', '', 7)
         self.cell(0, 4, data['fecha_giro'], 0, 1)
         self.ln(1)
-        # Línea separadora
         self.line(5, self.get_y(), self.width - 5, self.get_y())
         self.ln(1)
     
-    def add_items_table(self, items):
-        """Agrega la tabla de items del recibo"""
-        # Encabezado de la tabla
+    def add_items_table(self, items):  ### TABLA DE ITEMS DE RECIBO
         self.set_font('Courier', 'B', 7)
         self.cell(15, 6, 'COD', 0, 0, 'L')
         self.cell(30, 6, 'DESCRIPCION', 0, 0, 'L')
         self.cell(15, 6, 'MONTO', 0, 1, 'R')
-        # Línea bajo el encabezado
         self.line(5, self.get_y(), self.width - 5, self.get_y())
         self.ln(2)
         # Items
@@ -1222,7 +1252,6 @@ class ReciboTicket(FPDF):
             descripcion = item['descripcion']
             monto = item['monto']
             total += monto
-            # Ajustar descripción si es muy larga
             self.cell(15, 4, codigo, 0, 0, 'L')
             if len(descripcion) > 18:
                 desc_line1 = descripcion[:18]
@@ -1231,7 +1260,6 @@ class ReciboTicket(FPDF):
                 self.cell(30, 4, descripcion, 0, 0, 'L')
             self.cell(15, 4, f"S/. {monto:.2f}", 0, 1, 'R')
         self.ln(1)
-        # Línea separadora
         self.line(5, self.get_y(), self.width - 5, self.get_y())
         self.ln(1)
         # Total
@@ -1245,23 +1273,12 @@ class ReciboTicket(FPDF):
         self.cell(0, 5, 'Firma y Sello', 0, 1, 'C')
         return total
 
-def generar_recibo(tipo_doc, numero_doc, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items, nombre_archivo=None):
-    """
-    Genera un recibo en formato PDF
-    
-    Args:
-        codigo_padron (str): Código de padrón del socio
-        nombre_socio (str): Nombre completo del socio
-        fecha_recibo (str): Fecha de emisión del recibo
-        fecha_giro (str): Fecha de giro del pago
-        items (list): Lista de diccionarios con items del recibo
-        nombre_archivo (str, optional): Nombre del archivo PDF
-    """
-    # Crear PDF
+# Crear PDF
+def generar_recibo(tipo_doc, serie, numero_doc, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items, nombre_archivo=None):
     pdf = ReciboTicket()
     pdf.add_page()
-    # Datos del recibo
     datos = {
+        'serie': serie,
         'titulo': tipo_doc,
         'numero': numero_doc,
         'codigo_padron': codigo_padron,
@@ -1269,11 +1286,8 @@ def generar_recibo(tipo_doc, numero_doc, codigo_padron, nombre_socio, fecha_reci
         'fecha_recibo': fecha_recibo,
         'fecha_giro': fecha_giro
     }    
-    # Agregar información del recibo
     pdf.add_receipt_info(datos)
-    # Agregar items y calcular total
     total = pdf.add_items_table(items)
-    # Generar nombre de archivo si no se proporciona
     if nombre_archivo is None:
         nombre_archivo = f"recibo_{codigo_padron}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     # Guardar PDF
@@ -1282,66 +1296,24 @@ def generar_recibo(tipo_doc, numero_doc, codigo_padron, nombre_socio, fecha_reci
     print(f"Total del recibo: S/. {total:.2f}")
     return nombre_archivo
 
-
 #### ************************************ COMBUSTIBLE **********************************************
 @app.route('/dashboardC')
-def dashboardC():
-    """Panel de control con estadísticas"""
+def dashboardC():   ### DASHBOARD COMBUSTIBLE
     now = datetime.datetime.now()
     connection = get_db_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
         # Total de galones vendidos hoy
-        cursor.execute('''
-            SELECT 
-                COALESCE(SUM(galones_vendidos), 0) as total_gallons,
-                COALESCE(SUM(total_precio), 0) as total_revenue,
-                COUNT(DISTINCT maquina) as active_machines
-            FROM a_ventas_comb 
-            WHERE DATE(fecha) = CURDATE()
-        ''')
+        cursor.execute(sqlconstants.DASHB_COMB_TOTAL_HOY)
         today_stats = cursor.fetchone()        
         # Ventas por turno hoy
-        cursor.execute('''
-            SELECT 
-                nombre as shift_name,
-                SUM(galones_vendidos) as gallons,
-                SUM(total_precio) as revenue
-            FROM a_ventas_comb 
-            WHERE DATE(fecha) = CURDATE()
-            GROUP BY nombre, turno
-            ORDER BY FIELD(turno, 'TURNO_1', 'TURNO_2', 'TURNO_3')
-        ''')
+        cursor.execute(sqlconstants.DASHB_COMB_TURNOS_HOY)
         shift_stats = cursor.fetchall()
         # Top máquinas
-        cursor.execute('''
-            SELECT 
-                m.id,
-                m.numero as machine_number,
-                f.nombre as fuel_type,
-                COALESCE(SUM(s.galones_vendidos), 0) as gallons,
-                COALESCE(SUM(s.total_precio), 0) as revenue
-            FROM a_maquinas m
-            LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
-            LEFT JOIN a_ventas_comb s ON m.id = s.maquina AND DATE(s.fecha) = CURDATE()
-            GROUP BY m.id
-            ORDER BY gallons DESC
-            LIMIT 5
-        ''')
+        cursor.execute(sqlconstants.DASHB_COMB_TOP_MAQUINAS)
         top_machines = cursor.fetchall()
         # Stock crítico (menos del 20%)
-        cursor.execute('''
-            SELECT 
-                m.id,
-                m.numero as machine_number,
-                f.nombre as fuel_type,
-                m.disponible_stock stock_available,
-                m.capacidad_stock  stock_capacity,
-                ROUND((m.disponible_stock/ m.capacidad_stock) * 100, 2) as percentage
-            FROM a_maquinas m
-            LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
-            ORDER BY percentage ASC
-        ''')
+        cursor.execute(sqlconstants.DASHB_COMB_STOCK_CRITICO)
         low_stock = cursor.fetchall()
         cursor.close()
     return render_template('dashboardC.html',
@@ -1352,22 +1324,12 @@ def dashboardC():
                           now=now)
 
 @app.route('/cargar_turnos', methods=['GET', 'POST'])
-def cargar_turnos():
-    """Actualización masiva de todas las máquinas en una página"""
+def cargar_turnos():  ##Actualización masiva de todas las máquinas en una página
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
-    # Obtener todas las máquinas
-    cursor.execute('''
-        SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
-            capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at,
-            f.nombre as fuel_name 
-        FROM a_maquinas m 
-        LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
-        ORDER BY m.numero
-    ''')
-    machines = cursor.fetchall()    
-    # Obtener turnos disponibles
-    shifts = [
+    cursor.execute(sqlconstants.LISTA_MAQUINAS_X_TURNOS)       # Obtener todas las máquinas
+    machines = cursor.fetchall()
+    shifts = [              # Obtener turnos disponibles
         {'code': 'TURNO_1', 'name': '11AM - 6PM'},
         {'code': 'TURNO_2', 'name': '6PM - 2AM'},
         {'code': 'TURNO_3', 'name': '2AM - 11AM'}
@@ -1392,20 +1354,14 @@ def cargar_turnos():
                         errors.append(f'Máquina {machine["machine_number"]}: Lectura final menor que inicial')
                         continue
                     # Obtener precio unitario
-                    cursor.execute('SELECT precio_unitario unit_price FROM a_combustible WHERE id = %s', (machine['fuel_type_id'],))
+                    cursor.execute(sqlconstants.PRECIO_U_COMB, (machine['fuel_type_id'],))
                     fuel = cursor.fetchone()
-                    if gallons_sold > 0:
-                        # Registrar venta
-                        cursor.execute('''
-                            INSERT INTO a_ventas_comb (maquina, turno, nombre, fecha, lectura_inicial, lectura_final, galones_vendidos, total_precio)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                        ''', (machine_id, shift_code, 
-                              next(s['name'] for s in shifts if s['code'] == shift_code),
-                              shift_date, initial_reading, final_reading, 
-                              gallons_sold, gallons_sold * fuel['unit_price']))
+                    if gallons_sold > 0:     # Registrar venta
+                        cursor.execute(sqlconstants.INSERT_VTAS_COMBUSTIBLE, (machine_id, shift_code, 
+                              next(s['name'] for s in shifts if s['code'] == shift_code), shift_date, 
+                              initial_reading, final_reading, gallons_sold, gallons_sold * fuel['unit_price']))
                         # Actualizar stock
-                        cursor.execute("UPDATE a_maquinas SET disponible_stock = disponible_stock - %s, lectura_actual = %s WHERE id = %s", 
-                            (gallons_sold, final_reading, machine_id))   
+                        cursor.execute(sqlconstants.UPDATE_VTAS_COMB_MAQUINAS, (gallons_sold, final_reading, machine_id))   
                         success_count += 1
                 except Exception as e:
                     errors.append(f'Máquina {machine["machine_number"]}: {str(e)}')
@@ -1420,22 +1376,12 @@ def cargar_turnos():
     return render_template('cargar_turnos.html', machines=machines, shifts=shifts, today=datetime.datetime.now().strftime('%Y-%m-%d'))
 
 @app.route('/maquinas')
-def maquinas():
-    """Listar todas las máquinas"""
+def maquinas(): ## Listar todas las máquinas
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
-    cursor.execute('''
-        SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
-               capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at,
-               f.nombre as fuel_name, f.precio_unitario unit_price, 
-               COALESCE(SUM(s.galones_vendidos), 0) as total_gallons_today, m.disponible_stock as current_stock
-        FROM a_maquinas m
-        LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
-        LEFT JOIN a_ventas_comb s ON m.id = s.maquina AND DATE(s.fecha) = CURDATE()
-        GROUP BY m.id
-    ''')
+    cursor.execute(sqlconstants.LISTA_MAQUINAS)
     machines = cursor.fetchall()
-    cursor.execute('SELECT id,nombre name, descripcion description,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock FROM a_combustible')
+    cursor.execute(sqlconstants.LISTA_COMBUSTIBLE_TODOS)
     fuels = cursor.fetchall()
     cursor.close()
     return render_template('maquinas.html', machines=machines, fuels=fuels)
@@ -1453,8 +1399,7 @@ def crear_maquina():
         connection = get_db_connection()
         cursor = connection.cursor()
         try:
-            cursor.execute("INSERT INTO a_maquinas (numero, tipo_combustible, lectura_inicial,capacidad_stock,disponible_stock) VALUES (%s, %s, %s, %s, %s)", 
-                (machine_number, fuel_type_id, initial_reading, stock_capacity, stock_available))
+            cursor.execute(sqlconstants.INS_MAQUINAS,(machine_number, fuel_type_id, initial_reading, stock_capacity, stock_available))
             connection.commit()
             flash('Máquina agregada exitosamente', 'success')
         except mysql.connector.Error as err:
@@ -1470,49 +1415,21 @@ def crear_maquina():
     return render_template('crear_maquina.html', fuels=fuels)
 
 @app.route('/stock')
-def stock():
-    """Gestión de stock de combustibles"""
+def stock(): ### Gestión de stock de combustibles
     connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
-    # Obtener stock de combustibles
-    cursor.execute('SELECT id,nombre name,descripcion,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock,modified FROM a_combustible ORDER BY nombre')
-    fuels = cursor.fetchall()
-    # Obtener stock por máquina
-    cursor.execute('''
-        SELECT 
-            m.id,
-            m.numero machine_number,
-            f.nombre as fuel_name,
-            m.disponible_stock stock_available,
-            m.capacidad_stock stock_capacity,
-            ROUND((m.disponible_stock / m.capacidad_stock) * 100, 2) as percentage,
-            CASE 
-                WHEN (m.disponible_stock / m.capacidad_stock) < 0.2 THEN 'CRITICO'
-                WHEN (m.disponible_stock / m.capacidad_stock) < 0.4 THEN 'BAJO'
-                ELSE 'NORMAL'
-            END as status
-        FROM a_maquinas m
-        LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
-        ORDER BY percentage ASC
-    ''')
+    cursor = connection.cursor(dictionary=True)    # Obtener stock de combustibles
+    cursor.execute(sqlconstants.SEL_COMBUSTIBLE)
+    fuels = cursor.fetchall()     # Obtener stock por máquina
+    cursor.execute(sqlconstants.DASHB_COMB_STOCK_CRITICO)
     machine_stock = cursor.fetchall()
     cursor.close()
     return render_template('stock.html', fuels=fuels, machine_stock=machine_stock)
 
 @app.route('/editar_turno/<int:machine_id>', methods=['GET', 'POST'])
-def editar_turno(machine_id):
-    """Actualizar lecturas por turno"""
+def editar_turno(machine_id): ### Actualizar lecturas por turno
     connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
-    # Obtener información de la máquina
-    cursor.execute('''
-        SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
-               capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at,
-               f.nombre as fuel_name, f.precio_unitario unit_price
-        FROM a_maquinas m 
-        LEFT JOIN a_combustible f ON m.tipo_combustible = f.id 
-        WHERE m.id = %s
-    ''', (machine_id,))
+    cursor = connection.cursor(dictionary=True)      # Obtener información de la máquina
+    cursor.execute(sqlconstants.SEL_1_MAQUINA, (machine_id,))
     machine = cursor.fetchone()
     if request.method == 'POST':
         shift_code, shift_name = get_shift_name()
@@ -1530,15 +1447,11 @@ def editar_turno(machine_id):
             return redirect(url_for('editar_turno', machine_id=machine_id))
         try:
             # Registrar la venta
-            cursor.execute("INSERT INTO a_ventas_comb (maquina, turno, nombre, fecha, lectura_inicial, lectura_final, galones_vendidos, total_precio) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-               , (machine_id, shift_code, shift_name, shift_date,
-                  initial_reading, final_reading, gallons_sold,
-                  gallons_sold * machine['unit_price']))
+            cursor.execute(sqlconstants.INS_VENTAS_COMB, (machine_id,shift_code,shift_name,shift_date,initial_reading,final_reading,gallons_sold,gallons_sold * machine['unit_price']))
             # Actualizar stock de la máquina
-            cursor.execute("UPDATE a_maquinas SET disponible_stock = disponible_stock - %s, lectura_actual = %s WHERE id = %s", (gallons_sold, final_reading, machine_id))
-            connection.commit()
-            # Actualizar stock general del combustible
-            cursor.execute("UPDATE a_combustible SET stock_actual = stock_actual - %s WHERE id = %s", (gallons_sold, machine['fuel_type_id']))
+            cursor.execute(sqlconstants.UPD_MAQUINAS_VTAS_COMB, (gallons_sold, final_reading, machine_id))
+            connection.commit()   # Actualizar stock general del combustible
+            cursor.execute(sqlconstants.UPD_COMBUSTIBLE_CTAS_COMB, (gallons_sold, machine['fuel_type_id']))
             connection.commit()
             flash(f'Turno registrado exitosamente. Galones vendidos: {gallons_sold}', 'success')
         except mysql.connector.Error as err:
@@ -1548,10 +1461,7 @@ def editar_turno(machine_id):
             cursor.close()
         return redirect(url_for('maquinas'))
     # Obtener registros de turnos para hoy
-    cursor.execute('''
-    SELECT id, maquina machine_id,turno shift_code,nombre shift_name,fecha shift_date,lectura_inicial initial_reading,lectura_final final_reading,
-           galones_vendidos gallons_sold,total_precio total_price,modified recorded_at,operador_id,webuser,notas notes
-    FROM a_ventas_comb WHERE maquina = %s AND DATE(fecha) = CURDATE() ORDER BY fecha DESC''', (machine_id,))
+    cursor.execute(sqlconstants.LISTA_TURNOS_MAQUINA_COMB, (machine_id,))
     today_shifts = cursor.fetchall()
     cursor.close()
     # Obtener turno actual
@@ -1562,8 +1472,7 @@ def editar_turno(machine_id):
                           current_shift={'code': shift_code, 'name': shift_name},
                           today=datetime.datetime.now().strftime('%Y-%m-%d'))
 
-def get_shift_name(current_time=None):
-    """Determinar el turno actual basado en la hora"""
+def get_shift_name(current_time=None): ### Determinar el turno actual basado en la hora
     if current_time is None:
         current_time = datetime.datetime.now().time()
     if time(11, 0) <= current_time < time(18, 0):
@@ -1572,6 +1481,667 @@ def get_shift_name(current_time=None):
         return 'TURNO_2', '6PM - 2AM'
     else:
         return 'TURNO_3', '2AM - 11AM'
+### ???????????????????????????????????????????????????????????????????????????????????????
+# Rutas para préstamos y retiros
+@app.route('/prestamos', methods=['GET', 'POST'])
+def prestamos():
+    total = 0
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+        p3 = request.form.get('p3')  # Padron
+        p4 = request.form.get('p4')  # Aprobados?
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        query = sqlconstants.SELECT_PRESTAMOS_1
+        query = query.replace("$p1$", str(p1))
+        query = query.replace("$p2$", str(p2))
+        query = query.replace("$p3$", str(p3))
+        query = query.replace("$p4$", str(p4))
+        cursor.execute(query)
+        prestamos = cursor.fetchall()
+        conn.close()
+        for r0 in prestamos:
+            total += float(r0['mnt_aprobado'])
+        return render_template('prestamos.html', prestamos=prestamos, total=total, p1=p1, p2=p2, p3=p3, p4=p4)
+    else:
+        px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
+        flash('Listo para consultar.', 'success')
+        return render_template('prestamos.html', prestamos=[],p1=px, p2=px, p3=0, p4='off', total=total)
+
+@app.route('/prestamos/nuevo', methods=['GET', 'POST'])
+def crear_prestamo():
+    conn = get_db_connection()    
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(sqlconstants.DROPLIST_DEUDAS)
+    tipos = cursor.fetchall()
+    if request.method == 'POST':
+        act = request.form['act']
+        pad = request.form['pad']
+        fec = request.form['fec']
+        tip = request.form['tip']
+        mnt = float(request.form['mnt'])
+        cuo = request.form['cuo']
+        des = request.form['des']
+        gar = 'gar' in request.form
+        nom = ""
+        lid = request.form.get('lid')
+        if not all([fec, pad, mnt]):
+            flash('Por favor, complete todos los campos con (*).', 'danger')
+            return render_template('crear_prestamo.html')
+        if act == '-':
+            try:
+                cursor = conn.cursor()
+                cursor.execute(sqlconstants.INS_PRESTAMO, (pad, fec, tip, mnt, des, cuo, gar, act))
+                lid = cursor.lastrowid
+                conn.commit()
+                act = "pendiente"
+                conn.close()
+                nom = get_nombre_padron(pad)
+                flash('Préstamo solicitado exitosamente', 'success')
+                return render_template('crear_prestamo.html',
+                                act=act, fec=fec, pad=pad, des=des, mnt=mnt, cuo=cuo, 
+                                tip=tip, gar=gar, but='Confirmar', lid=lid, nom = nom,
+                                tipos=tipos)
+            except Error as e:
+                    if 'Duplicate entry' in str(e):
+                        flash('Prestamo existe.', 'danger')
+                    else:
+                        flash(f'Error al crear prestamo: {str(e)}', 'danger')
+                    conn.rollback()
+        if act == 'pendiente':
+            try:
+                nom = request.form.get('nom')
+                usr = session['user_username']
+                query9 = sqlconstants.ACT_PRESTAMO
+                query9 = query9.replace("$lid$",lid)
+                query9 = query9.replace("$usr$",usr)
+                cursor = conn.cursor(dictionary=True)
+                cursor.execute(query9)
+                ## px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
+                query = sqlconstants.SELECT_PRESTAMOS_1
+                query = query.replace("$p1$", fec)
+                query = query.replace("$p2$", fec)
+                query = query.replace("$p3$", pad)
+                query = query.replace("$p4$", "on")
+                cursor.execute(query)
+                prestamos = cursor.fetchall()
+                conn.commit()
+                flash('Confirmacion de solicitud del Préstamo fue exitosa.', 'success')
+                return render_template('prestamos.html', prestamos=prestamos, total=0, p1=fec, p2=fec, p3=pad, p4="on")
+            except Error as e:
+                    if 'Duplicate entry' in str(e):
+                        flash('Prestamo existe.', 'danger')
+                    else:
+                        flash(f'Error al crear prestamo: {str(e)}', 'danger')
+                    conn.rollback()
+    cursor.close()
+    conn.close()
+    return render_template('crear_prestamo.html', act='-',but='Registrar', tipos=tipos)
+
+@app.route('/prestamos/aprobar/<int:prestamo_id>', methods=['POST'])
+def aprobar_prestamo(prestamo_id):
+    total = 0
+    p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+    p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+    p3 = request.form.get('p3')  # Padron
+    p4 = request.form.get('p4')  # Aprobados?
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(sqlconstants.APR_PRESTAMO, (prestamo_id,))
+    query = sqlconstants.SELECT_PRESTAMOS_1
+    query = query.replace("$p1$", str(p1))
+    query = query.replace("$p2$", str(p2))
+    query = query.replace("$p3$", str(p3))
+    query = query.replace("$p4$", str(p4))
+    cursor.execute(query)
+    prestamos = cursor.fetchall()
+    for r0 in prestamos:
+            total += float(r0['mnt_aprobado'])
+    conn.commit()
+    conn.close()    
+    flash('Préstamo aprobado exitosamente', 'success')
+    return redirect(url_for('prestamos', prestamos=prestamos, total=total, p1=p1, p2=p2, p3=p3, p4=p4))
+
+@app.route('/prestamos/rechazar/<int:prestamo_id>', methods=['POST'])
+def rechazar_prestamo(prestamo_id):
+    total = 0
+    p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+    p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+    p3 = request.form.get('p3')  # Padron
+    p4 = request.form.get('p4')  # Aprobados?
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(sqlconstants.RCH_PRESTAMO, (prestamo_id,))
+    query = sqlconstants.SELECT_PRESTAMOS_1
+    query = query.replace("$p1$", str(p1))
+    query = query.replace("$p2$", str(p2))
+    query = query.replace("$p3$", str(p3))
+    query = query.replace("$p4$", str(p4))
+    cursor.execute(query)
+    prestamos = cursor.fetchall()
+    for r0 in prestamos:
+            total += float(r0['mnt_aprobado'])
+    conn.commit()
+    conn.close()
+    flash('Préstamo rechazado', 'info')
+    return redirect(url_for('prestamos', prestamos=prestamos, total=total, p1=p1, p2=p2, p3=p3, p4=p4))
+
+# Rutas para retiros -------------------------------------------------------------------------------|||
+@app.route('/retiros', methods=['GET', 'POST'])
+def retiros():
+    total = 0
+    tipos = []
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    querA = sqlconstants.DROPLIST_APORTES
+    cursor.execute(querA)
+    tipos = cursor.fetchall()
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+        p3 = request.form.get('p3')  # Padron
+        p4 = request.form.get('p4')  # Aprobados?
+        query = sqlconstants.SELECT_RETIROS_1
+        query = query.replace("$p1$", str(p1))
+        query = query.replace("$p2$", str(p2))
+        query = query.replace("$p3$", str(p3))
+        query = query.replace("$p4$", str(p4))
+        cursor.execute(query)
+        retiros = cursor.fetchall()
+        querA = sqlconstants.DROPLIST_APORTES
+        cursor.execute(querA)
+        tipos = cursor.fetchall()
+        conn.close()
+        for r0 in retiros:
+            total += float(r0['mnt_retirado'])
+        return render_template('retiros.html', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4)
+    else:
+        conn.close()           
+        px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
+        flash('Listo para consultar.', 'success')
+        return render_template('retiros.html', retiros=[], tipos=tipos, p1=px, p2=px, p3=0, p4='', total=total)
+
+@app.route('/retiros/nuevo', methods=['GET', 'POST'])
+def crear_retiro():
+    conn = get_db_connection()    
+    if request.method == 'POST':
+        act = request.form['act']
+        pad = request.form['pad']
+        fec = request.form['fec']
+        des = request.form['des']
+        nom = ""
+        lid = request.form.get('lid')
+        if not all([fec, pad]):
+            flash('Por favor, complete todos los campos con (*).', 'danger')
+            return render_template('crear_retiro.html')
+        if act == '-':
+            try:
+                cursor = conn.cursor(dictionary=True)
+                query = sqlconstants.DROPLIST_APORTES_SALDO_X_PADRON
+                query = query.replace("$pad$", str(pad))
+                cursor.execute(query)
+                tipos = cursor.fetchall()
+                act = "pendiente"
+                cursor.close()
+                conn.close()
+                nom = get_nombre_padron(pad)
+                flash('Confirmar tipo de saldo y monto del retiro ', 'success')
+                return render_template('crear_retiro.html',
+                                act=act, fec=fec, pad=pad, des=des, mnt=0, 
+                                tip='', but='Confirmar', lid=lid, nom = nom,
+                                tipos=tipos)
+            except Error as e:
+                    if 'Duplicate entry' in str(e):
+                        flash('Retiro existe.', 'danger')
+                    else:
+                        flash(f'Error al crear retiro: {str(e)}', 'danger')
+                    conn.rollback()
+        if act == 'pendiente':
+            tip = request.form['tip']
+            mnt = float(request.form['mnt'])
+            total = 0
+            try:
+                sld = 0
+                nom = request.form.get('nom')
+                usr = session['user_username']
+                cursor = conn.cursor(dictionary=True)
+                quer4 = sqlconstants.DROPLIST_APORTES_SALDO_X_PADRON
+                quer4 = quer4.replace("$pad$", str(pad))
+                cursor.execute(quer4)
+                saldos = cursor.fetchall()
+                for s0 in saldos:
+                    if (s0['codigo']==tip):
+                        sld = s0['saldo']
+                        if (mnt > sld):
+                            flash('Debes colocar un monto menor al saldo actual, trata de nuevo, por favor.', 'danger')
+                            return render_template('crear_retiro.html')
+                query9 = sqlconstants.INS_RETIRO
+                cursor.execute(query9, (pad, fec, tip, mnt, sld, des, act, usr))
+                lid = cursor.lastrowid
+                conn.commit()
+                ### px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
+                query = sqlconstants.SELECT_RETIROS_1
+                query = query.replace("$p1$", fec)
+                query = query.replace("$p2$", fec)
+                query = query.replace("$p3$", pad)
+                query = query.replace("$p4$", tip)
+                cursor.execute(query)
+                retiros = cursor.fetchall()
+                querA = sqlconstants.DROPLIST_APORTES
+                cursor.execute(querA)
+                tipos = cursor.fetchall()
+                cursor.close()
+                conn.commit()
+                flash('Confirmacion de Solicitud del Retiro fue exitosa.', 'success')
+                return render_template('retiros.html', retiros=retiros, tipos=tipos, total=0, p1=fec, p2=fec, p3=pad, p4=tip)
+            except Error as e:
+                    if 'Duplicate entry' in str(e):
+                        flash('Retiro existe.', 'danger')
+                    else:
+                        flash(f'Error al crear retiro: {str(e)}', 'danger')
+                    conn.rollback()
+    conn.close()
+    return render_template('crear_retiro.html', act='-',but='Consultar', lid=0)
+
+@app.route('/retiros/aprobar/<int:retiro_id>', methods=['POST'])
+def aprobar_retiro(retiro_id):
+    total = 0
+    p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+    p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+    p3 = request.form.get('p3')  # Padron
+    p4 = request.form.get('p4')  # Tipo
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(sqlconstants.APR_RETIRO, (retiro_id,))
+    query = sqlconstants.SELECT_RETIROS_1
+    query = query.replace("$p1$", str(p1))
+    query = query.replace("$p2$", str(p2))
+    query = query.replace("$p3$", str(p3))
+    query = query.replace("$p4$", str(p4))
+    cursor.execute(query)
+    retiros = cursor.fetchall()
+    for r0 in retiros:
+            total += float(r0['mnt_retirado'])
+    querA = sqlconstants.DROPLIST_APORTES
+    cursor.execute(querA)
+    tipos = cursor.fetchall()
+    conn.commit()
+    conn.close()
+    flash('Retiro aprobado exitosamente', 'success')
+    return redirect(url_for('retiros', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4))
+
+@app.route('/retiros/rechazar/<int:retiro_id>', methods=['POST'])
+def rechazar_retiro(retiro_id):
+    total = 0
+    p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+    p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+    p3 = request.form.get('p3')  # Padron
+    p4 = request.form.get('p4')  # Tipo
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(sqlconstants.RCH_RETIRO, (retiro_id,))
+    query = sqlconstants.SELECT_RETIROS_1
+    query = query.replace("$p1$", str(p1))
+    query = query.replace("$p2$", str(p2))
+    query = query.replace("$p3$", str(p3))
+    query = query.replace("$p4$", str(p4))
+    cursor.execute(query)
+    retiros = cursor.fetchall()
+    for r0 in retiros:
+            total += float(r0['mnt_retirado'])
+    querA = sqlconstants.DROPLIST_APORTES
+    cursor.execute(querA)
+    tipos = cursor.fetchall()
+    conn.commit()
+    conn.close()
+    flash('Retiro rechazado', 'info')
+    return redirect(url_for('retiros', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4))
+
+# Dashboard
+@app.route('/dashboardP')
+def dashboardP():
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT '1' total FROM dual")
+        data = cursor.fetchone()
+        total_socios = str(data['total'])
+        
+        cursor.execute("SELECT '2' total FROM dual")
+        total_padrones = cursor.fetchone()['total']
+        
+        cursor.execute("SELECT COALESCE(SUM(monto0), 0) as total FROM a_padrones")
+        total_aportes = cursor.fetchone()['total']
+        
+        cursor.execute("""
+            SELECT COALESCE(SUM(saldo_pendiente), 0) as total 
+            FROM a_prestamos 
+            WHERE estado IN ('pendiente', 'aprobado')
+        """)
+        total_prestamos = cursor.fetchone()['total']
+        
+        # Préstamos por estado
+        cursor.execute("""
+            SELECT estado, COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as total
+            FROM a_prestamos
+            GROUP BY estado
+        """)
+        prestamos_por_estado = cursor.fetchall()
+        # Préstamos por tipo
+        cursor.execute("""
+            SELECT tp.descripcion, COUNT(*) as cantidad, COALESCE(SUM(p.saldo_pendiente), 0) as total
+            FROM a_prestamos p
+            JOIN a_tipos tp ON tp.tipo='DEUDA' AND p.tipo_prestamo = tp.id
+            WHERE p.estado IN ('pendiente', 'aprobado')
+            GROUP BY tp.descripcion
+        """)
+        prestamos_por_tipo = cursor.fetchall()
+        
+        # Top 5 padrones con más aportes
+        cursor.execute("""
+            SELECT p.placa, s.nombre, p.monto0
+            FROM a_padrones p
+            JOIN a_socios s ON p.socio = s.id
+            ORDER BY p.monto0 DESC
+            LIMIT 5
+        """)
+        top_padrones = cursor.fetchall()
+        
+        # Últimos movimientos
+        cursor.execute("""
+            (SELECT 'Préstamo' as tipo, 
+                    s.nombre,
+                    pr.placa,
+                    p.monto_solicitado as monto,
+                    p.estado,
+                    p.fecha_solicitud as fecha
+             FROM a_prestamos p
+             JOIN a_padrones pr ON p.padron = pr.id
+             JOIN a_socios s ON pr.socio = s.id
+             ORDER BY p.fecha_solicitud DESC
+             LIMIT 5)
+            UNION ALL
+            (SELECT 'Retiro' as tipo,
+                    s.nombre,
+                    pr.placa,
+                    r.monto_retirado as monto,
+                    'completado' as estado,
+                    r.fecha_retiro as fecha
+             FROM a_retiros r
+             JOIN a_padrones pr ON r.padron = pr.id
+             JOIN a_socios s ON pr.socio = s.id
+             ORDER BY r.fecha_retiro DESC
+             LIMIT 5)
+            ORDER BY fecha DESC
+            LIMIT 10
+        """)
+        ultimos_movimientos = cursor.fetchall()
+    
+    conn.close()
+    return render_template('dashboardP.html',
+                         now=datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 
+                         total_socios=total_socios,
+                         total_padrones=total_padrones,
+                         total_aportes=total_aportes,
+                         total_prestamos=total_prestamos,
+                         prestamos_por_estado=prestamos_por_estado,
+                         prestamos_por_tipo=prestamos_por_tipo,
+                         top_padrones=top_padrones,
+                         ultimos_movimientos=ultimos_movimientos)
+
+# API para obtener saldo
+@app.route('/api/padron/<int:padron_id>/saldo')
+def obtener_saldo(padron_id):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT monto0 FROM a_padrones WHERE id = %s", (padron_id,))
+        result = cursor.fetchone()
+    conn.close()    
+    if result:
+        return jsonify({'saldo': float(result['monto0'])})
+    return jsonify({'error': 'Padrón no encontrado'}), 404
+
+# Agregar estas rutas después de las rutas existentes
+
+# Ruta para generar PDF de solicitud de préstamo
+@app.route('/prestamos/pdf/<int:prestamo_id>')
+def generar_pdf_prestamo(prestamo_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+            SELECT p.*, pr.placa, pr.monto0, s.nombre, s.email, s.fono telefono, s.dni,
+                   tp.descripcion as tipo_nombre, tp.monto1 tasa_interes,
+                   s.nombre as socio_nombre, p.id padron
+            FROM a_prestamos p
+            JOIN a_padrones pr ON p.padron = pr.id
+            JOIN a_socios s ON pr.socio = s.id
+            JOIN a_tipos tp ON tp.tipo='DEUDA' AND p.tipo_prestamo = tp.codigo
+            WHERE p.id = %s
+        """, (prestamo_id,))
+    prestamo = cursor.fetchone()
+    conn.close()
+    if not prestamo:
+        return "Préstamo no encontrado", 404
+   # Crear el PDF en memoria
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                           rightMargin=72, leftMargin=72,
+                           topMargin=32, bottomMargin=18)
+    # Contenedor para los elementos del PDF
+    Story = []
+    # Estilos
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name='Center', alignment=TA_CENTER, fontSize=14, spaceAfter=10))
+    styles.add(ParagraphStyle(name='Right', alignment=TA_RIGHT, fontSize=10))
+    styles.add(ParagraphStyle(name='Left', alignment=TA_LEFT, fontSize=12, spaceAfter=10))
+    ##styles.add(ParagraphStyle(name='Title', alignment=TA_CENTER, fontSize=16, spaceAfter=30, fontName='Helvetica-Bold'))
+    # Encabezado
+    fecha_actual = datetime.datetime.now().strftime("%d de %B de %Y")
+    Story.append(Paragraph(f"<b>E.T. LAS FLORES</b>", styles['Title']))
+    Story.append(Spacer(1, 0.1*inch))
+    Story.append(Paragraph(f"<i>Fecha de emisión: {fecha_actual}</i>", styles['Right']))
+    Story.append(Spacer(1, 0.1*inch))
+    # Título de la carta
+    Story.append(Paragraph(f"<b>CARTA DE SOLICITUD DE PRÉSTAMO #{prestamo['id']}.</b>", styles['Center']))
+    Story.append(Spacer(1, 0.3*inch))
+    # Datos del solicitante
+    Story.append(Paragraph(f"<b>Señores</b>", styles['Left']))
+    Story.append(Paragraph("Comité de Préstamos", styles['Left']))
+    Story.append(Paragraph("Presente.", styles['Left']))
+    Story.append(Spacer(1, 0.2*inch))
+    # Cuerpo de la carta
+    Story.append(Paragraph(f"Yo, <b>{prestamo['socio_nombre']}</b>, con DNI _{prestamo['dni']}_, ", styles['Left']))
+    Story.append(Paragraph(f"por medio de la presente solicito a ustedes un préstamo por la suma de ", styles['Left']))
+    Story.append(Paragraph(f"<b>S/. {prestamo['monto_solicitado']:,.2f}</b>, el cual será destinado para <b>{prestamo['descripcion'] or 'No especificado'}</b>.", styles['Left']))
+    Story.append(Spacer(1, 0.2*inch))
+    
+    # Detalles del préstamo
+    data = [
+        ['Detalle de la Solicitud', ''],
+        ['Tipo de Préstamo:', prestamo['tipo_nombre']],
+        ['Número de Padrón:', prestamo['padron']],
+        ['Placa de Padrón:', prestamo['placa']],
+        ['Monto Solicitado:', f"S/. {prestamo['monto_solicitado']:,.2f}"],
+        ['Tasa de Interés:', f"{prestamo['tasa_interes']}%"],
+        ['Cuota Diaria:', f"S/. {prestamo['cuota']:,.2f}"],
+        ['Garantía:', 'Con garantía de aportes' if prestamo['garantia_aporte'] else 'Sin garantía específica'],
+        ['Fecha de solicitud:', prestamo['fecha_solicitud'].strftime('%d/%m/%Y')],
+        ['Estado de solicitud:', prestamo['estado'].upper()],
+    ]
+    
+    tabla = Table(data, colWidths=[2*inch, 3*inch])
+    tabla.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    Story.append(tabla)
+    Story.append(Spacer(1, 0.3*inch))
+    
+    # Declaración de garantía
+    if prestamo['garantia_aporte']:
+        Story.append(Paragraph("<b>DECLARACIÓN DE GARANTÍA</b>", styles['Left']))
+        Story.append(Paragraph("Declaro que este préstamo está garantizado con mis aportes, ", styles['Left']))
+       ### Story.append(Paragraph(f"los cuales ascienden a la fecha a <b>$ {prestamo['monto_aportado']:,.2f}</b>.", styles['Left']))
+        Story.append(Spacer(1, 0.2*inch))
+    
+    # Compromiso
+    Story.append(Paragraph("<b>COMPROMISO DE PAGO</b>", styles['Left']))
+    Story.append(Paragraph("Me comprometo a cancelar el monto adeudado más los intereses ", styles['Left']))
+    Story.append(Paragraph("generados en los plazos y condiciones establecidos por la institución.", styles['Left']))
+    Story.append(Spacer(1, 0.5*inch))
+    
+    # Firmas
+    data_firmas = [
+        ['_________________________', '_________________________'],
+        [prestamo['socio_nombre'], 'Comité de Préstamos'],
+        ['Solicitante', 'Autorizado por']
+    ]
+    
+    tabla_firmas = Table(data_firmas, colWidths=[3*inch, 3*inch])
+    tabla_firmas.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 1), (-1, 1), 5),
+    ]))
+    Story.append(tabla_firmas)
+    
+    # Construir el PDF
+    doc.build(Story)
+    
+    # Obtener el valor del buffer y crear respuesta
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=solicitud_prestamo_{prestamo_id}.pdf'
+    
+    return response
+
+# Ruta para generar PDF de solicitud de retiro
+@app.route('/retiros/pdf/<int:retiro_id>')
+def generar_pdf_retiro(retiro_id):
+    conn = get_db_connection()
+    with conn.cursor(dictionary=True) as cursor:
+        cursor.execute("""
+            SELECT r.*, pr.placa, r.saldo_final_dia monto_aportado,
+                   s.nombre, s.email, s.fono telefono,
+                   s.nombre as nombre_socio
+            FROM a_retiros r
+            JOIN a_padrones pr ON r.padron = pr.id
+            JOIN a_socios s ON pr.socio = s.id
+            WHERE r.id = %s
+        """, (retiro_id,))
+        retiro = cursor.fetchone()
+    conn.close()
+    if not retiro:
+        return "Retiro no encontrado", 404
+    # Crear el PDF en memoria
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                           rightMargin=72, leftMargin=72,
+                           topMargin=72, bottomMargin=18)
+    # Contenedor para los elementos del PDF
+    Story = []
+    # Estilos
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name='Center', alignment=TA_CENTER, fontSize=14, spaceAfter=20))
+    styles.add(ParagraphStyle(name='Right', alignment=TA_RIGHT, fontSize=10))
+    styles.add(ParagraphStyle(name='Left', alignment=TA_LEFT, fontSize=12, spaceAfter=12))
+    ##styles.add(ParagraphStyle(name='Title', alignment=TA_CENTER, fontSize=16, spaceAfter=30, fontName='Helvetica-Bold'))
+    
+    # Encabezado
+    fecha_actual = datetime.datetime.now().strftime("%d de %B de %Y")
+    Story.append(Paragraph(f"<b>E.T. LAS FLORES</b>", styles['Title']))
+    Story.append(Spacer(1, 0.2*inch))
+    Story.append(Paragraph(f"<i>Fecha de emisión: {fecha_actual}</i>", styles['Right']))
+    Story.append(Spacer(1, 0.3*inch))
+    
+    # Título de la carta
+    Story.append(Paragraph(f"<b>CARTA DE SOLICITUD DE RETIRO DE APORTES #00{retiro['id']}</b>", styles['Center']))
+    Story.append(Spacer(1, 0.3*inch))
+    
+    # Datos del solicitante
+    Story.append(Paragraph(f"<b>Señores</b>", styles['Left']))
+    Story.append(Paragraph("Dpto. de Administracion.", styles['Left']))
+    Story.append(Paragraph("Presente.-", styles['Left']))
+    Story.append(Spacer(1, 0.2*inch))
+    
+    # Cuerpo de la carta 
+    Story.append(Paragraph(f"Yo, <b>{retiro['nombre_socio']}</b>, por medio de la presente solicito ", styles['Left']))
+    Story.append(Paragraph(f"el retiro de la suma de <b>S/ {retiro['monto_retirado']:,.2f}</b> de mis aportes del tipo : <b>{retiro['tipo_aporte']}</b>,", styles['Left']))
+    Story.append(Paragraph(f"correspondientes al padrón placa número <b>{retiro['placa']}</b>.", styles['Left']))
+    Story.append(Spacer(1, 0.2*inch))
+    
+    # Detalles del retiro
+    data = [
+        ['Detalle del Retiro', ''],
+        ['Número de Padrón:', retiro['padron']],
+        ['Monto a Retirar:', f"S/ {retiro['monto_retirado']:,.2f}"],
+        ['Saldo cuando se solicito:', f"S/ {retiro['saldo_final_dia']:,.2f}"],
+        ['Tipo de Aporte:', retiro['tipo_aporte']],
+        ['Motivo:', retiro['descripcion'] or 'No especificado'],
+        ['Fecha de Retiro:', retiro['fecha_retiro'].strftime('%d/%m/%Y')],
+    ]
+    
+    tabla = Table(data, colWidths=[2*inch, 3*inch])
+    tabla.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.aliceblue),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    Story.append(tabla)
+    Story.append(Spacer(1, 0.3*inch))
+    
+    # Autorización
+    Story.append(Paragraph("<b>AUTORIZACIÓN</b>", styles['Left']))
+    Story.append(Paragraph("Autorizo al sistema a realizar el débito correspondiente de mis aportes ", styles['Left']))
+    Story.append(Paragraph("por el monto indicado en esta solicitud.", styles['Left']))
+    Story.append(Spacer(1, 0.5*inch))
+    
+    # Firmas
+    data_firmas = [
+        ['_________________________', '_________________________'],
+        [retiro['nombre_socio'], 'Departamento de Administracion'],
+        ['Solicitante', 'Autorizado por']
+    ]
+    
+    tabla_firmas = Table(data_firmas, colWidths=[3*inch, 3*inch])
+    tabla_firmas.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 1), (-1, 1), 5),
+    ]))
+    Story.append(tabla_firmas)
+    
+    # Construir el PDF
+    doc.build(Story)
+    
+    # Obtener el valor del buffer y crear respuesta
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=solicitud_retiro_{retiro_id}.pdf'
+    
+    return response
+
+### ???????????????????????????????????????????????????????????????????????????????????????
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

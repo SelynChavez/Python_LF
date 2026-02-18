@@ -37,9 +37,9 @@
             </div>
             <h3>Prestamos y Retiros</h3>
             <p>Post aporte sobre prestamos y retiros de socios</p>
-            <a href="{{ url_for('administracion') if session.user_rol == 'ADMIN' else '#' }}" 
+            <a href="{{ url_for('dashboardP') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
-                <i class="bi bi-eye"></i> Administracion
+                <i class="bi bi-eye"></i> Gestion Prestamos y Retiros
             </a>
         </div>
     </div>
