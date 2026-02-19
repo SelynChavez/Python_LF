@@ -45,7 +45,7 @@
                                     {% for tt in tipos %}
                                     <option value="{{ tt.codigo }}" 
                                         {% if tt.codigo == tip %} selected
-                                        {% endif %} >{{ tt.codigo }} : {{ tt.descripcion }} - S/.{{ tt.saldo }} %</option>
+                                        {% endif %} >{{ tt.codigo }} : {{ tt.descripcion }} - Saldo: S/.{{ tt.saldo }}</option>
                                     {% endfor %}
                                 </select>
                             </div>

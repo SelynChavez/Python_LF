@@ -5,7 +5,7 @@
     <div class="col-12 mb-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i>Gestión de Prestamos</h4> &nbsp;&nbsp;
+                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Gestión de Prestamos</h4> &nbsp;&nbsp;
                 <a href="{{ url_for('dashboardP') }}" class="btn btn-secondary"> <i class="bi bi-arrow-left"></i> Regresar </a>
                 <a href="{{ url_for('crear_prestamo') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nuevo Prestamo </a>
             </div>
@@ -61,9 +61,9 @@
                                     <td>{{ prestamo.padron }}:{{ prestamo.placa }}</td>
                                     <td>{{ prestamo.tipo_nombre }}</td>
                                     <td style="text-align:right; color:navy">S/{{ prestamo.monto_solicitado }}</td>
-                                    <td style="text-align:right">S/{{ prestamo.mnt_aprobado }}</td>
+                                    <td style="text-align:right">S/{{ "{:,.2f}".format(prestamo.mnt_aprobado)}}</td>
                                     <td style="text-align:right"; color:>
-                                         <span class="text-danger">S/{{ prestamo.saldo_pendiente }}</span>
+                                         <span class="text-danger">S/{{ "{:,.2f}".format(prestamo.sld_pendiente)}} </span>
                                     </td>
                                     <td>{{ prestamo.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
                                     <td>
@@ -78,7 +78,6 @@
                                         {% endif %}
                                     </td>
                                     <td>
-
                                         {% if prestamo.estado == 'pendiente' %}
                                         <form action="{{ url_for('aprobar_prestamo', prestamo_id=prestamo.id) }}" 
                                               method="post" style="display: inline;">
@@ -115,8 +114,8 @@
                                     </td>
                                 </tr>        
                     {% endfor %}
-                <tr>
-                    <td colspan="5"></td><td style="text-align:right">S/{{total}}</td><td colspan="4"></td>
+                <tr>  
+                    <td colspan="5"></td><td style="text-align:right">S/{{ "{:,.2f}".format(total)}}</td><td style="text-align:right;color:red">S/{{ "{:,.2f}".format(totsp)}}</td><td colspan="3"></td>
                 </tr>
                 </tbody>
             </table>

@@ -246,6 +246,7 @@ def crear_recibo():
                 try:
                     lin = 0
                     total = 0
+                    deu = 0
                     nom = request.form.get('nom')
                     cursor = connection.cursor(dictionary=True)
                     consulta = sqlconstants.DETALLE_SERIE_1
@@ -267,6 +268,12 @@ def crear_recibo():
                             query = query.replace("$usr$", session['user_username'])
                             cursor = connection.cursor()
                             cursor.execute(query)
+                            deu = i0['prestamo']
+                            if deu > 0:
+                                quer0 = "UPDATE a_prestamos SET saldo_pendiente=saldo_pendiente-$mnt$ WHERE id='$pre$'"
+                                quer0 = quer0.replace("$pre$", str(deu))
+                                quer0 = quer0.replace("$mnt$", str(mnt))
+                                cursor.execute(quer0)
                     query9 = sqlconstants.UPDATE_RECIBO_1
                     query9 = query9.replace("$recibo$",lid)
                     cursor = connection.cursor()
@@ -1289,7 +1296,7 @@ def generar_recibo(tipo_doc, serie, numero_doc, codigo_padron, nombre_socio, fec
     pdf.add_receipt_info(datos)
     total = pdf.add_items_table(items)
     if nombre_archivo is None:
-        nombre_archivo = f"recibo_{codigo_padron}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        nombre_archivo = f"recibos_/recibo_{codigo_padron}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     # Guardar PDF
     pdf.output(nombre_archivo)
     print(f"Recibo generado: {nombre_archivo}")
@@ -1486,6 +1493,7 @@ def get_shift_name(current_time=None): ### Determinar el turno actual basado en 
 @app.route('/prestamos', methods=['GET', 'POST'])
 def prestamos():
     total = 0
+    totsp = 0
     if request.method == 'POST':
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
         p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
@@ -1503,11 +1511,12 @@ def prestamos():
         conn.close()
         for r0 in prestamos:
             total += float(r0['mnt_aprobado'])
-        return render_template('prestamos.html', prestamos=prestamos, total=total, p1=p1, p2=p2, p3=p3, p4=p4)
+            totsp += float(r0['sld_pendiente'])
+        return render_template('prestamos.html', prestamos=prestamos, total=total, totsp=totsp, p1=p1, p2=p2, p3=p3, p4=p4)
     else:
         px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
         flash('Listo para consultar.', 'success')
-        return render_template('prestamos.html', prestamos=[],p1=px, p2=px, p3=0, p4='off', total=total)
+        return render_template('prestamos.html', prestamos=[],p1=px, p2=px, p3=0, p4='off', total=0, totsp=0)
 
 @app.route('/prestamos/nuevo', methods=['GET', 'POST'])
 def crear_prestamo():
@@ -1559,16 +1568,9 @@ def crear_prestamo():
                 cursor = conn.cursor(dictionary=True)
                 cursor.execute(query9)
                 ## px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
-                query = sqlconstants.SELECT_PRESTAMOS_1
-                query = query.replace("$p1$", fec)
-                query = query.replace("$p2$", fec)
-                query = query.replace("$p3$", pad)
-                query = query.replace("$p4$", "on")
-                cursor.execute(query)
-                prestamos = cursor.fetchall()
                 conn.commit()
                 flash('Confirmacion de solicitud del Préstamo fue exitosa.', 'success')
-                return render_template('prestamos.html', prestamos=prestamos, total=0, p1=fec, p2=fec, p3=pad, p4="on")
+                return render_template('prestamos.html', prestamos=[], total=0, totsp=0, p1=fec, p2=fec, p3=pad, p4="off")
             except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('Prestamo existe.', 'danger')

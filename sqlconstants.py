@@ -82,16 +82,19 @@ INSERT_DETREC_1 = "INSERT INTO a_recibos_detalle (aporte, recibo, monto, prestam
 SELECT_RECIBO_1 = "SELECT r.*,nombPadronSocio(r.padron) nombre, concat(fecha) fec, concat(giro) gir FROM a_recibos r WHERE r.id='$pX$'"
 SELECT_DETALLE1 = "SELECT rd.*,tt.codigo,tt.descripcion FROM a_recibos_detalle rd, a_tipos tt WHERE recibo='$pX$' AND tt.tipo='APORTE' AND tt.codigo=rd.aporte ORDER BY rd.id"
 DETALLE_SERIE_1 = """
-  SELECT t.codigo,t.descripcion,
-  (CASE
-      WHEN t.codigo='APCAPITAL'   THEN p.monto1
-      WHEN t.codigo='APAHORRO'    THEN p.monto2
-      WHEN t.codigo='APAPORTE'    THEN p.monto3
-      WHEN t.codigo='APSEGURO'    THEN p.monto4
+SELECT t.codigo,t.descripcion,
+  COALESCE((CASE
+      WHEN t.codigo='CP.TRABAJO' THEN p.monto1
+      WHEN t.codigo='APAHORRO'   THEN p.monto2
+      WHEN t.codigo='APAPORTE'   THEN p.monto3
       ELSE t.monto1
-  END) monto, 0 prestamo, '' tipodeuda, t.id idx0
-  FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
-  WHERE t.tipo='APORTE' and t.atributo1='1' and (t.codigo not in ('DEUDA','INICIAL'))
+  END),0) monto, 0 prestamo, '' tipodeuda, t.id idx0
+FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
+WHERE t.tipo='APORTE' and t.atributo1='1' and (t.codigo not in ('PRESTAMO','INICIAL'))
+UNION ALL
+SELECT t.codigo,t.descripcion,p.cuota monto,p.id prestamo,p.tipo_prestamo tipodeuda,t.id idx 
+FROM a_prestamos p,a_tipos t 
+WHERE p.padron='$pad$' and p.estado='aprobado' and t.tipo='APORTE' and t.codigo='PRESTAMO'
 """
 DASHB_COMB_TOTAL_HOY = """
 SELECT COALESCE(SUM(galones_vendidos), 0) as total_gallons,
@@ -169,9 +172,9 @@ ACT_PRESTAMO = "UPDATE a_prestamos SET estado='pendiente',modified=now(),webuser
 APR_PRESTAMO = "UPDATE a_prestamos SET estado='aprobado',fecha_aprobacion=curdate(),monto_aprobado=monto_solicitado,saldo_pendiente=monto_solicitado WHERE id = %s"
 RCH_PRESTAMO = "UPDATE a_prestamos SET estado='rechazado' WHERE id = %s"
 DROPLIST_DEUDAS = "SELECT tp.* FROM a_tipos tp WHERE tp.tipo='DEUDA' "
-DROPLIST_APORTES_SALDO_X_PADRON = "SELECT aporte codigo,descripcion,aportado,retirado,(aportado-retirado) saldo FROM av_total_aportes_x_padron WHERE padron='$pad$' ORDER by 1"
+DROPLIST_APORTES_SALDO_X_PADRON = "SELECT aporte codigo,descripcion,aportado,retirado,(aportado-retirado) saldo FROM av_total_aportes_x_padron WHERE padron='$pad$' and aporte in (select codigo from a_tipos where tipo='APORTE' and atributo4='S') ORDER by 1"
 SELECT_PRESTAMOS_1 = """
-SELECT p.*, pr.placa, s.nombre, tp.descripcion as tipo_nombre, coalesce(p.monto_aprobado,0) mnt_aprobado
+SELECT p.*, pr.placa, s.nombre, tp.descripcion as tipo_nombre, coalesce(p.monto_aprobado,0) mnt_aprobado, coalesce(saldo_pendiente,0) sld_pendiente
 FROM a_prestamos p
   JOIN a_padrones pr ON p.padron = pr.id
   JOIN a_socios s ON pr.socio = s.id
