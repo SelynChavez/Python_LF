@@ -1804,85 +1804,40 @@ def dashboardP():
     conn = get_db_connection()
     if conn:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT '1' total FROM dual")
+        cursor.execute(sqlconstants.DASHB_PRRET_SOCIOS)
         data = cursor.fetchone()
-        total_socios = str(data['total'])
+        total_socios_mes = str(data['total'])
         
-        cursor.execute("SELECT '2' total FROM dual")
-        total_padrones = cursor.fetchone()['total']
+        cursor.execute(sqlconstants.DASHB_PRRET_RETIROS)
+        total_retiros = cursor.fetchone()['total']
         
-        cursor.execute("SELECT COALESCE(SUM(monto0), 0) as total FROM a_padrones")
+        cursor.execute(sqlconstants.DASHB_PRRET_APORTES)
         total_aportes = cursor.fetchone()['total']
         
-        cursor.execute("""
-            SELECT COALESCE(SUM(saldo_pendiente), 0) as total 
-            FROM a_prestamos 
-            WHERE estado IN ('pendiente', 'aprobado')
-        """)
+        cursor.execute(sqlconstants.DASHB_PRRET_PRESTAMOS) 
         total_prestamos = cursor.fetchone()['total']
         
         # Préstamos por estado
-        cursor.execute("""
-            SELECT estado, COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as total
-            FROM a_prestamos
-            GROUP BY estado
-        """)
+        cursor.execute(sqlconstants.DASHB_PRRET_PRESTAMOS_ESTADO)
         prestamos_por_estado = cursor.fetchall()
+
         # Préstamos por tipo
-        cursor.execute("""
-            SELECT tp.descripcion, COUNT(*) as cantidad, COALESCE(SUM(p.saldo_pendiente), 0) as total
-            FROM a_prestamos p
-            JOIN a_tipos tp ON tp.tipo='DEUDA' AND p.tipo_prestamo = tp.id
-            WHERE p.estado IN ('pendiente', 'aprobado')
-            GROUP BY tp.descripcion
-        """)
+        cursor.execute(sqlconstants.DASHB_PRRET_PRESTAMOS_TIPOS)
         prestamos_por_tipo = cursor.fetchall()
         
-        # Top 5 padrones con más aportes
-        cursor.execute("""
-            SELECT p.placa, s.nombre, p.monto0
-            FROM a_padrones p
-            JOIN a_socios s ON p.socio = s.id
-            ORDER BY p.monto0 DESC
-            LIMIT 5
-        """)
+        # Top 6 padrones con más aportes
+        cursor.execute(sqlconstants.DASHB_PRRET_PAD_MAY_APORTES)
         top_padrones = cursor.fetchall()
         
         # Últimos movimientos
-        cursor.execute("""
-            (SELECT 'Préstamo' as tipo, 
-                    s.nombre,
-                    pr.placa,
-                    p.monto_solicitado as monto,
-                    p.estado,
-                    p.fecha_solicitud as fecha
-             FROM a_prestamos p
-             JOIN a_padrones pr ON p.padron = pr.id
-             JOIN a_socios s ON pr.socio = s.id
-             ORDER BY p.fecha_solicitud DESC
-             LIMIT 5)
-            UNION ALL
-            (SELECT 'Retiro' as tipo,
-                    s.nombre,
-                    pr.placa,
-                    r.monto_retirado as monto,
-                    'completado' as estado,
-                    r.fecha_retiro as fecha
-             FROM a_retiros r
-             JOIN a_padrones pr ON r.padron = pr.id
-             JOIN a_socios s ON pr.socio = s.id
-             ORDER BY r.fecha_retiro DESC
-             LIMIT 5)
-            ORDER BY fecha DESC
-            LIMIT 10
-        """)
+        cursor.execute(sqlconstants.DASHB_PRRET_MOVS_RET_PREST)
         ultimos_movimientos = cursor.fetchall()
     
     conn.close()
     return render_template('dashboardP.html',
                          now=datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 
-                         total_socios=total_socios,
-                         total_padrones=total_padrones,
+                         total_socios_mes=total_socios_mes,
+                         total_retiros=total_retiros,
                          total_aportes=total_aportes,
                          total_prestamos=total_prestamos,
                          prestamos_por_estado=prestamos_por_estado,

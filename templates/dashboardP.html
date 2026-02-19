@@ -24,20 +24,20 @@
     <div class="col-md-3">
         <div class="card card-dashboard bg-primary text-white">
             <div class="card-body">
-                <h6 class="card-title">#Socios Deudores</h6>
-                <h2 class="display-6">{{ total_socios }}</h2>
+                <h6 class="card-title"># <a class="btn btn-warning" href="{{ url_for('listar_socios') }}">Socios</a> Activos Ultimo Mes</h6>
+                <h2 class="display-6">{{ total_socios_mes }}</h2>
                 <i class="bi bi-people card-icon"></i>
                 <small>Registrados en el último mes</small>
             </div>
-        </div>
+        </div> 
     </div>
     <div class="col-md-3">
         <div class="card card-dashboard bg-success text-white">
             <div class="card-body">
                 <h6 class="card-title">Total <a class="btn btn-warning" href="{{ url_for('retiros') }}">Retiros</a></h6>
-                <h2 class="display-6">{{ total_padrones }}</h2>
+                <h2 class="display-6">S/ {{ total_retiros }}</h2>
                 <i class="bi bi-files card-icon"></i>
-                <small>Total retiros otorgados</small>
+                <small>Total retiros otorgados hoy</small>
             </div>
         </div>
     </div>
@@ -45,19 +45,19 @@
         <div class="card card-dashboard bg-info text-white">
             <div class="card-body">
                 <h6 class="card-title">Total <a class="btn btn-warning" href="{{ url_for('aportes') }}">Aportes</a></h6>
-                <h2 class="display-6">${{ "{:,.0f}".format(total_aportes) }}</h2>
+                <h2 class="display-6">S/ {{ "{:,.2f}".format(total_aportes) }}</h2>
                 <i class="bi bi-piggy-bank card-icon"></i>
-                <small>Suma de todos los aportes</small>
+                <small>Suma de todos los aportes de hoy</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card card-dashboard bg-secondary text-white">
             <div class="card-body">
-                <h6 class="card-title"><a class="btn btn-warning" href="{{ url_for('prestamos') }}">Préstamos</a> Activos</h6>
-                <h2 class="display-6">${{ "{:,.0f}".format(total_prestamos) }}</h2>
+                <h6 class="card-title">Total <a class="btn btn-warning" href="{{ url_for('prestamos') }}">Préstamos</a> </h6>
+                <h2 class="display-6">S/ {{ "{:,.2f}".format(total_prestamos) }}</h2>
                 <i class="bi bi-cash card-icon"></i>
-                <small>Saldo pendiente total</small>
+                <small>Total monto prestado hoy</small>
             </div>
         </div>
     </div>
@@ -95,7 +95,7 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ estado.cantidad }}</td>
-                                <td>${{ "{:,.2f}".format(estado.total) }}</td>
+                                <td style="text-align: right;">S/ {{ "{:,.2f}".format(estado.total) }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -124,9 +124,9 @@
                         <tbody>
                             {% for tipo in prestamos_por_tipo %}
                             <tr>
-                                <td>{{ tipo.nombre }}</td>
+                                <td>{{ tipo.descripcion }}</td>
                                 <td>{{ tipo.cantidad }}</td>
-                                <td>${{ "{:,.2f}".format(tipo.total) }}</td>
+                                <td style="text-align: right;">S/ {{ "{:,.2f}".format(tipo.total) }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -157,9 +157,9 @@
                         <tbody>
                             {% for padron in top_padrones %}
                             <tr>
-                                <td>{{ padron.nombre }} {{ padron.apellido }}</td>
-                                <td>{{ padron.numero_padron }}</td>
-                                <td class="text-success">${{ "{:,.2f}".format(padron.monto0) }}</td>
+                                <td>{{ padron.nombre }} </td>
+                                <td>{{ padron.placa }}</td>
+                                <td class="text-success" style="text-align: right;">S/ {{ "{:,.2f}".format(padron.aportado) }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -192,18 +192,18 @@
                             <tr>
                                 <td>
                                     {% if mov.tipo == 'Préstamo' %}
-                                        <span class="badge bg-warning text-dark">Préstamo</span>
+                                        <span class="badge bg-secondary">Préstamo</span>
                                     {% else %}
                                         <span class="badge bg-info">Retiro</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ mov.socio }}</td>
-                                <td>{{ mov.numero_padron }}</td>
-                                <td>
+                                <td>{{ mov.placa }}</td>
+                                <td style="text-align: right;">
                                     {% if mov.tipo == 'Préstamo' %}
-                                        <span class="text-warning">${{ "{:,.2f}".format(mov.monto) }}</span>
+                                        <span class="text-secondary">S/{{ "{:,.2f}".format(mov.monto) }}</span>
                                     {% else %}
-                                        <span class="text-info">${{ "{:,.2f}".format(mov.monto) }}</span>
+                                        <span class="text-info">S/{{ "{:,.2f}".format(mov.monto) }}</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ mov.fecha.strftime('%d/%m/%Y') }}</td>

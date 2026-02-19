@@ -192,3 +192,17 @@ ORDER BY r.fecha_retiro DESC
 INS_RETIRO = "INSERT INTO a_retiros (padron,socio,fecha_solicitud,tipo_aporte,monto_solicitado,saldo_final_dia,monto_retirado,descripcion,estado,modified,webuser) VALUES (%s, 0, %s, %s, %s, %s, 0, %s, %s, now(), %s)"
 APR_RETIRO = "UPDATE a_retiros SET estado='aprobado',monto_retirado=monto_solicitado,fecha_retiro=curdate() WHERE id = %s"
 RCH_RETIRO = "UPDATE a_retiros SET estado='rechazado',monto_retirado=0 WHERE id = %s"
+DASHB_PRRET_SOCIOS = "SELECT COALESCE(COUNT(distinct p.socio )) as total FROM a_recibos_detalle rd, a_recibos r, a_padrones p WHERE r.id = rd.recibo and r.active='S' and date(r.fecha)>=DATE_ADD(now(), INTERVAL -30 DAY) and rd.monto>0 and p.id=r.padron"
+DASHB_PRRET_RETIROS = "SELECT COALESCE(SUM(monto_retirado)) as total FROM a_retiros r WHERE estado='aprobado' and date(r.fecha_retiro)=curdate()"
+DASHB_PRRET_APORTES = "SELECT COALESCE(SUM(monto)) as total FROM a_recibos_detalle rd, a_recibos r WHERE r.id = rd.recibo and r.active='S' and date(r.fecha)=curdate()"
+DASHB_PRRET_PRESTAMOS = "SELECT COALESCE(SUM(monto_aprobado), 0) as total FROM a_prestamos WHERE estado='aprobado' and date(fecha_aprobacion)=curdate()"
+DASHB_PRRET_PRESTAMOS_ESTADO = "SELECT estado, COUNT(*) as cantidad, COALESCE(SUM(saldo_pendiente), 0) as total FROM a_prestamos GROUP BY estado"
+DASHB_PRRET_PRESTAMOS_TIPOS = "SELECT tp.descripcion, COUNT(*) as cantidad, COALESCE(SUM(p.saldo_pendiente), 0) as total FROM a_prestamos p JOIN a_tipos tp ON tp.tipo='DEUDA' AND p.tipo_prestamo = tp.codigo WHERE p.estado IN ('pendiente', 'aprobado') GROUP BY tp.descripcion"
+DASHB_PRRET_PAD_MAY_APORTES = "select placa,nombre,sum(aportado) aportado from av_total_aportes_x_padron group by placa,nombre order by 3 desc limit 6"
+DASHB_PRRET_MOVS_RET_PREST = """
+(SELECT 'Préstamo' as tipo, pr.placa, p.monto_solicitado as monto, p.estado, p.fecha_solicitud as fecha FROM a_prestamos p JOIN a_padrones pr ON p.padron = pr.id and estado='aprobado' ORDER BY p.id DESC LIMIT 3)
+UNION ALL
+(SELECT 'Retiro' as tipo,   pr.placa, r.monto_solicitado as monto, r.estado, r.fecha_solicitud as fecha FROM a_retiros   r JOIN a_padrones pr ON r.padron = pr.id and estado='aprobado' ORDER BY r.id DESC LIMIT 3)
+ORDER BY fecha DESC
+LIMIT 10
+"""
