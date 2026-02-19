@@ -35,7 +35,7 @@
             <div class="dashboard-icon">
                 <i class="bi bi-people"></i>
             </div>
-            <h3>Recibos</h3>
+            <h3>Aportes</h3>
             <p>Reporte de recibos por Fechas y Aportes</p>
             <a href="{{ url_for('rep2recibos') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
@@ -50,11 +50,10 @@
                 <i class="bi bi-person-check"></i>
             </div>
             <h3>Rep.de Prestamos</h3>
-            <p>Revisión completa de los Prestamos</p>
-            <a href="{{ url_for('listar_socios') if session.user_rol == 'ADMIN' else '#' }}" 
-               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
-                <i class="bi bi-eye"></i> Ver Socios
-            </a>
+            <p>Reporte multiple de los Prestamos</p>
+            <button class="btn btn-secondary" disabled>
+                <i class="bi bi-tools"></i> Próximamente
+            </button>
         </div>
     </div>
 
