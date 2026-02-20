@@ -1,3 +1,4 @@
+REP0PCGE = "SELECT concat(elemento) d1, concat(cuenta) d2, concat(coalesce(nombre,'.')) d3,concat(id) d4 FROM av_plan_contable_general ORDER BY 1,2 LIMIT 9000"
 REP1APORTES = """
   SELECT
     CONCAT('0',serie,'-',LPAD(id,6,'0')) d1,
@@ -84,9 +85,9 @@ SELECT_DETALLE1 = "SELECT rd.*,tt.codigo,tt.descripcion FROM a_recibos_detalle r
 DETALLE_SERIE_1 = """
 SELECT t.codigo,t.descripcion,
   COALESCE((CASE
-      WHEN t.codigo='CP.TRABAJO' THEN p.monto1
-      WHEN t.codigo='APAHORRO'   THEN p.monto2
-      WHEN t.codigo='APAPORTE'   THEN p.monto3
+      WHEN t.codigo='FDO.PAPEL' THEN p.monto1
+      WHEN t.codigo='APAHORRO'  THEN p.monto2
+      WHEN t.codigo='APAPORTE'  THEN p.monto3
       ELSE t.monto1
   END),0) monto, 0 prestamo, '' tipodeuda, t.id idx0
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'

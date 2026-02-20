@@ -27,7 +27,7 @@ $(document).ready(function() {
                 <div class="card-body">
                     <!-- Barra de búsqueda -->
                     <div class="row mb-4">
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                                 <input type="text" id="p1" name="p1" value="{{p1}}" class="form-control" placeholder="Buscar cuenta contable...">
@@ -38,6 +38,11 @@ $(document).ready(function() {
                                 <i class="bi bi-save"></i> Consultar
                             </button>
                         </div>                    
+                        <div class="col-md-2 text-end">
+                            <a href="{{ url_for('generar_reporte_plan_contable') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Reporte
+                            </a>
+                        </div>
                         <div class="col-md-2 text-end">
                             <a href="{{ url_for('configuracion') }}" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left"></i> Volver al Menu

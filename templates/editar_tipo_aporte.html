@@ -33,10 +33,18 @@
                                 <option value="3" {{ 'selected' if tipo.atributo1 == '3' }}>003</option>
                                 <option value="4" {{ 'selected' if tipo.atributo1 == '4' }}>004</option>
                                 <option value="5" {{ 'selected' if tipo.atributo1 == '5' }}>005</option>
+                                <option value="6" {{ 'selected' if tipo.atributo1 == '6' }}>006</option>
+                                <option value="7" {{ 'selected' if tipo.atributo1 == '7' }}>007</option>
+                                <option value="8" {{ 'selected' if tipo.atributo1 == '8' }}>008</option>
+                                <option value="9" {{ 'selected' if tipo.atributo1 == '9' }}>009</option>
                             </select>
                         </div>
                     </div>
                     <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="atributo3" class="form-label">Cod.Plan Contable GE</label>
+                            <input type="number" class="form-control" id="atributo3" name="atributo3" min="0" max="999" value="{{ tipo.atributo3 }}" maxlength="4">
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Permite Retiro</label>
                             <select class="form-select" id="atributo4" name="atributo4" required>

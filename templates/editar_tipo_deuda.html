@@ -20,6 +20,12 @@
                             <input type="text" class="form-control" id="descripcion" name="descripcion" maxlength="50" value="{{ tipo.descripcion }}" required>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="atributo3" class="form-label">Cod.Plan Contable GE</label>
+                            <input type="number" class="form-control" id="atributo3" name="atributo3" min="0" max="999" value="{{ tipo.atributo3 }}" maxlength="4">
+                        </div>
+                    </div>
 
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary">

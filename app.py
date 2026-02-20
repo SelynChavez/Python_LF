@@ -452,6 +452,7 @@ def imprimir_recibo(l_id):
 @admin_required
 def listar_tipos_deudas():
     tipo = 'DEUDA'
+    a3 = "Cod.PCGE"
     connection = get_db_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
@@ -459,7 +460,7 @@ def listar_tipos_deudas():
         tipos = cursor.fetchall()
         cursor.close()
         connection.close()
-        return render_template('tipos_deudas.html', tipos=tipos, tipo=tipo)
+        return render_template('tipos_deudas.html', tipos=tipos, tipo=tipo, a3=a3)
     else:
         flash('Error de conexión a la base de datos.', 'danger')
     return redirect(url_for('configuracion'))
@@ -510,9 +511,10 @@ def editar_tipo_deuda(id):
     if request.method == 'POST':
         codigo = request.form.get('codigo')
         descripcion = request.form.get('descripcion')
+        atributo3 = request.form.get('atributo3')
         try:
             cursor = connection.cursor()
-            cursor.execute(sqlconstants.UPDATE_TIPO, (codigo, descripcion, '0','0','','','','','', id))
+            cursor.execute(sqlconstants.UPDATE_TIPO, (codigo, descripcion, '0','0','','',atributo3,'','', id))
             connection.commit()
             cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_tipo_deuda', f'LOG::Editó el tipo: {codigo}'))
             connection.commit()
@@ -582,6 +584,7 @@ def listar_tipos_aportes():
     tipo = 'APORTE'
     m1 = "Aporte Fijo"
     a1 = "Serie"
+    a3 = "Cod.PCGE"
     a4 = "Retiros?"
     connection = get_db_connection()
     if connection:
@@ -590,7 +593,7 @@ def listar_tipos_aportes():
         tipos = cursor.fetchall()
         cursor.close()
         connection.close()
-        return render_template('tipos_aportes.html', tipos=tipos, tipo=tipo, m1=m1, a1= a1, a4=a4)
+        return render_template('tipos_aportes.html', tipos=tipos, tipo=tipo, m1=m1, a1= a1, a3=a3, a4=a4)
     else:
         flash('Error de conexión a la base de datos.', 'danger')
     return redirect(url_for('configuracion'))
@@ -1182,6 +1185,11 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
         pdf.cell(18, 5, "TipRec", 1)
         pdf.cell(15, 5, "Mon", 1)
         pdf.cell(20, 5, "Aportado", 1, 0, 'R')
+    elif(cod=="REP-PCGE"):
+        pdf.cell(15, 5, "Elmnto", 1)
+        pdf.cell(20, 5, "Cuenta", 1)
+        pdf.cell(140, 5, "Nombre de la Cuenta Contable", 1)
+        pdf.cell(10, 5, "ID", 1)
     else:
         pdf.cell(15, 5, "ID", 1)
     pdf.ln()
@@ -1199,6 +1207,8 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
     query = sqlconstants.REP1APORTES
     if (cod=="REP2APORTES"):
         query = sqlconstants.REP2APORTES
+    if (cod=="REP-PCGE"):
+        query = sqlconstants.REP0PCGE
     # Filtrar datos
     connection = get_db_connection()
     if connection:
@@ -1243,6 +1253,11 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
             pdf.cell(15, 5, dato["d6"], 1)
             pdf.cell(20, 5, dato["d7"], 1, 0, 'R')
             to1 += float(dato["d7"])
+        elif(cod=="REP-PCGE"):
+            pdf.cell(15, 5, str(dato["d1"]), 1)
+            pdf.cell(20, 5, str(dato["d2"]), 1)
+            pdf.cell(140, 5, str(dato["d3"]), 1)
+            pdf.cell(10, 5, str(dato["d4"]), 1)
         else:
             pdf.cell(15, 5, str(lin), 1)
         pdf.ln()
@@ -1255,7 +1270,10 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
     print('Finalizando Reporte..')
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, f"#REGS:...{rgt} :: TOTAL APORTADO:... {to1}", 0, 1)
+    total9 = f"TOTAL APORTADO:... {to1}"
+    if(cod=="REP-PCGE"):
+        total9 = ""
+    pdf.cell(0, 10, f"#REGS:...{rgt} :: {total9}", 0, 1)
     pdf_output = pdf.output(dest='S').encode('latin-1')
     buffer.write(pdf_output)
     buffer.seek(0)
@@ -1283,6 +1301,22 @@ def generar_reporte():
         return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod=cod)    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/generar_reporte_plan_contable', methods=['POST', 'GET'])
+def generar_reporte_plan_contable():
+    try:
+        # Obtener parámetros del formulario
+        cod = 'REP-PCGE'
+        titulo = 'PLAN CONTABLE GENERAL'
+        subtitulo = 'LISTADO DE CUENTA CONTABLES'
+        # Generar PDF
+        pdf_buffer = generar_pdf_reporte(cod, titulo, subtitulo, p1='', p2='', p3='', p4='', p5='', p6='')
+        # Convertir a base64 para mostrar en HTML
+        pdf_base64 = base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
+        return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod=cod)    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 ## ---- END PDF ----------------------------------------------------------------------------------------------------------
 
 class ReciboTicket(FPDF):
