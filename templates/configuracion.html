@@ -99,7 +99,22 @@
             </button>
         </div>
     </div>
-    
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-cash-coin"></i>
+            </div>
+            <h3>Cuentas Contables</h3>
+            <p>Plan Contable General Configuracion</p>
+            <a href="{{ url_for('cuentas_contables') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Plan Contable
+            </a>
+        </div>
+    </div>
+   
+
 </div>
 
 {% endblock %}

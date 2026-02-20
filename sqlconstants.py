@@ -192,6 +192,7 @@ WHERE (r.fecha_solicitud>=date('$p1$') AND r.fecha_solicitud<=date('$p2$')) AND
       (r.padron='$p3$' OR '$p3$'='0') AND ('$p4$'='' OR r.tipo_aporte='$p4$')
 ORDER BY r.fecha_retiro DESC
 """
+LISTA_CTAS_CONTABLES = "SELECT * FROM a_pcge WHERE (cuenta like '%$p1$%' OR nombre like '%$p1$%' OR entidad like '%$p1$%') ORDER BY cuenta LIMIT 50"
 INS_RETIRO = "INSERT INTO a_retiros (padron,socio,fecha_solicitud,tipo_aporte,monto_solicitado,saldo_final_dia,monto_retirado,descripcion,estado,modified,webuser) VALUES (%s, 0, %s, %s, %s, %s, 0, %s, %s, now(), %s)"
 APR_RETIRO = "UPDATE a_retiros SET estado='aprobado',monto_retirado=monto_solicitado,fecha_retiro=curdate() WHERE id = %s"
 RCH_RETIRO = "UPDATE a_retiros SET estado='rechazado',monto_retirado=0 WHERE id = %s"
@@ -209,3 +210,7 @@ UNION ALL
 ORDER BY fecha DESC
 LIMIT 10
 """
+UPDATE_CUENTA_CONTABLE = "UPDATE a_pcge SET elemento=%s, cuenta=%s, nombre=%s, dinamico=%s, entidad=%s, codigo=%s, auxiliar=%s, observaciones=%s WHERE id=%s "
+SELECT_CUENTA_CONTABLE = "SELECT t.* FROM a_pcge t WHERE t.id = %s"
+SEL_NM_CUENTA_CONTABLE = "SELECT nombre FROM a_pcge WHERE id = %s"
+DELETE_CUENTA_CONTABLE = "DELETE FROM a_pcge WHERE id = %s"

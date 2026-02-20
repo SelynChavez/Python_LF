@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Editar Cuenta Contable{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Cuenta: {{ cuenta.nombre }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('editar_cuenta', id=cuenta.id) }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Elemento</label>
+                            <select class="form-select" id="ele" name="ele" required>
+                                <option value="1" {{ 'selected' if cuenta.elemento == '1' }}>1</option>
+                                <option value="2" {{ 'selected' if cuenta.elemento == '2' }}>2</option>
+                                <option value="3" {{ 'selected' if cuenta.elemento == '3' }}>3</option>
+                                <option value="4" {{ 'selected' if cuenta.elemento == '4' }}>4</option>
+                                <option value="5" {{ 'selected' if cuenta.elemento == '5' }}>5</option>
+                                <option value="6" {{ 'selected' if cuenta.elemento == '6' }}>6</option>
+                                <option value="7" {{ 'selected' if cuenta.elemento == '7' }}>7</option>
+                                <option value="8" {{ 'selected' if cuenta.elemento == '8' }}>8</option>
+                                <option value="9" {{ 'selected' if cuenta.elemento == '9' }}>9</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cta" class="form-label">Cuenta Contable</label>
+                            <input type="text" class="form-control" id="cta" name="cta" value="{{ cuenta.cuenta }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nom" class="form-label">Nombre Cuenta Contable *</label>
+                            <input type="text" class="form-control" id="nom" name="nom" value="{{ cuenta.nombre }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Dinamico</label>
+                            <select class="form-select" id="din" name="din" required>
+                                <option value="S" {{ 'selected' if cuenta.dinamico == 'S' }}>SI</option>
+                                <option value="N" {{ 'selected' if cuenta.dinamico == 'N' }}>NO</option>
+                                <option value=""  {{ 'selected' if cuenta.dinamico == ''  }}>--</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Entidad</label>
+                            <select class="form-select" id="ent" name="ent" required>
+                                <option value="COMBUSTIBLES" {{ 'selected' if cuenta.entidad == 'COMBUSTIBLES' }}>COMBUSTIBLES</option>
+                                <option value="EMPLEADOS" {{ 'selected' if cuenta.entidad == 'EMPLEADOS' }}>EMPLEADOS</option>
+                                <option value="PADRONES" {{ 'selected' if cuenta.entidad == 'PADRONES' }}>PADRONES</option>
+                                <option value="PRODUCTOS" {{ 'selected' if cuenta.entidad == 'PRODUCTOS' }}>PRODUCTOS</option>
+                                <option value="PROVEEDORES" {{ 'selected' if cuenta.entidad == 'PROVEEDORES' }}>PROVEEDORES</option>
+                                <option value="SOCIOS" {{ 'selected' if cuenta.entidad == 'SOCIOS' }}>SOCIOS</option>
+                                <option value="TERCEROS" {{ 'selected' if cuenta.entidad == 'TERCEROS' }}>TERCEROS</option>
+                                <option value="TIPOS" {{ 'selected' if cuenta.entidad == 'TIPOS' }}>TIPOS</option>
+                                <option value="TIPOS+BUS" {{ 'selected' if cuenta.entidad == 'TIPOS+BUS' }}>TIPOS + BUS</option>
+                                <option value="TIPOS+PADRON" {{ 'selected' if cuenta.entidad == 'TIPOS+PADRON' }}>TIPOS + PADRON</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cod" class="form-label">Codigo</label>
+                            <input type="text" class="form-control" id="cod" name="cod" value="{{ cuenta.codigo }}" >
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="aux" class="form-label">Auxiliar</label>
+                            <input type="text" class="form-control" id="aux" name="aux" value="{{ cuenta.auxiliar }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="obs" class="form-label">Observaciones</label>
+                            <input type="text" class="form-control" id="obs" name="obs" value="{{ cuenta.observaciones }}">
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        Los campos marcados con * son obligatorios
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                        <a href="{{ url_for('cuentas_contables') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Cuentas Contables{% endblock %}
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Confirmación para eliminar
+    $('.btn-eliminar').on('click', function(e) {
+        e.preventDefault();
+        const url = $(this).attr('href');
+        const nombre = $(this).data('nombre');
+        if (confirm(`¿Está seguro de eliminar la cuenta "${nombre}"? Esta acción no se puede deshacer.`)) {
+            window.location.href = url;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-people"></i> Gestión de Cuentas Contables</h4>
+            </div>
+            <form method="POST" action="{{ url_for('cuentas_contables') }}">
+                <div class="card-body">
+                    <!-- Barra de búsqueda -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="p1" name="p1" value="{{p1}}" class="form-control" placeholder="Buscar cuenta contable...">
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Consultar
+                            </button>
+                        </div>                    
+                        <div class="col-md-2 text-end">
+                            <a href="{{ url_for('configuracion') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver al Menu
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Tabla Lista -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Elemento</th>
+                                    <th>Cuenta</th>
+                                    <th>Nombre</th>
+                                    <th>Dinamico</th>
+                                    <th>Entidad</th>
+                                    <th>Codigo</th>
+                                    <th>Auxiliar</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cta in cuentas %}
+                                <tr class="fila-cuenta">
+                                    <td>{{ cta.id }}</td>
+                                    <td>{{ cta.elemento }}</td>
+                                    <td style="background-color:rgb(245, 247, 241)"><strong>{{ cta.cuenta }}</strong></td>
+                                    <td><strong>{{ cta.nombre }}</strong></td>
+                                    <td>{{ cta.dinamico }}</td>
+                                    <td>{{ cta.entidad }}</td>
+                                    <td>{{ cta.codigo }}</td>
+                                    <td>{{ cta.auxiliar }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('editar_cuenta', id=cta.id) }}" 
+                                            class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{{ url_for('eliminar_cuenta', id=cta.id) }}" 
+                                            class="btn btn-sm btn-danger btn-eliminar" 
+                                            data-nombre="{{ cta.nombre }}"
+                                            title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </form>    
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -156,6 +156,102 @@ def administracion():
 def configuracion():
     return render_template('configuracion.html')
 
+## ========================== PLAN CONTABLE ====================================
+@app.route('/cuentas_contables', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def cuentas_contables():
+    cuentas = []
+    print("sadasdasdas")
+    if request.method == 'POST':
+        p1 = request.form.get('p1', '')  
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            query = sqlconstants.LISTA_CTAS_CONTABLES
+            query = query.replace("$p1$", str(p1))
+            print(query)
+            cursor.execute(query)
+            cuentas = cursor.fetchall()
+            cursor.close()
+            connection.close() 
+            return render_template('cuentas_contables.html', cuentas=cuentas, p1=p1)
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')
+            return redirect(url_for('dashboard'))
+    else:
+        flash('Listo para consultar.', 'success')
+        return render_template('cuentas_contables.html', p1='', cuentas=[])
+
+@app.route('/cuentas/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def editar_cuenta(id):
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('cuentas_contables'))    
+    if request.method == 'POST':
+        ele = request.form.get('ele')
+        cta = request.form.get('cta')
+        nom = request.form.get('nom')
+        din = request.form.get('din')
+        ent = request.form.get('ent')
+        cod = request.form.get('cod')
+        aux = request.form.get('aux')
+        obs = request.form.get('obs')
+        try:
+            cursor = connection.cursor()
+            cursor.execute(sqlconstants.UPDATE_CUENTA_CONTABLE, (ele, cta, nom, din, ent, cod, aux, obs, id))            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Cuenta contable actualizada exitosamente.', 'success')
+            return redirect(url_for('cuentas_contables'))
+        except Error as e:
+            if 'Duplicate entry' in str(e):
+                flash('La cuenta ya existe.', 'danger')
+            else:
+                flash(f'Error al actualizar cta: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+            return redirect(url_for('editar_cuenta', id=id))
+    # GET: Obtener datos del socio
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.SELECT_CUENTA_CONTABLE, (id,))
+    cuenta = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if not cuenta:
+        flash('Cuenta no encontrada.', 'danger')
+        return redirect(url_for('cuentas_contables'))
+    return render_template('editar_cuenta.html', cuenta=cuenta)
+
+@app.route('/cuentas/eliminar/<int:id>')
+@login_required
+@admin_required
+def eliminar_cuenta(id):
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(sqlconstants.SEL_NM_CUENTA_CONTABLE, (id,))
+            socio = cursor.fetchone()
+            cursor.execute(sqlconstants.DELETE_CUENTA_CONTABLE, (id,))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Cuenta eliminada exitosamente.', 'success')
+        except Error as e:
+            flash(f'Error al eliminar cuenta: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')   
+    return redirect(url_for('cuentas_contables'))
+
 ## ========================== CONSULTAS ====================================
 # lista aportes HLF
 @app.route('/aportes', methods=['GET', 'POST'])
@@ -1191,7 +1287,7 @@ def generar_reporte():
 
 class ReciboTicket(FPDF):
     def __init__(self):
-        super().__init__(orientation='P', unit='mm', format=(80, 200))
+        super().__init__(orientation='P', unit='mm', format=(80, 140))
         self.set_auto_page_break(auto=True, margin=10)
         self.set_margins(5, 5, 5)
         self.width = 80
@@ -1219,7 +1315,10 @@ class ReciboTicket(FPDF):
         self.set_font('Arial', 'B', 10)
         self.cell(0, 6, data['titulo'], 0, 1, 'C')
         self.set_font('Arial', 'B', 9)
-        self.cell(0, 4, '[ S0'+data['serie']+'-0'+data['numero']+' ]', 0, 1, 'C')
+        dserie = "RP-0"
+        if (data['serie'] == '1'):
+            dserie = "RI-0"
+        self.cell(0, 4, '[ '+dserie+data['serie']+'-0'+data['numero']+' ]', 0, 1, 'C')
         self.ln(1)
         # Información del socio
         self.set_font('Arial', 'B', 7)
@@ -1296,7 +1395,7 @@ def generar_recibo(tipo_doc, serie, numero_doc, codigo_padron, nombre_socio, fec
     pdf.add_receipt_info(datos)
     total = pdf.add_items_table(items)
     if nombre_archivo is None:
-        nombre_archivo = f"recibos_/recibo_{codigo_padron}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        nombre_archivo = f"recibos_/recibo_{serie}_{codigo_padron}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     # Guardar PDF
     pdf.output(nombre_archivo)
     print(f"Recibo generado: {nombre_archivo}")
