@@ -156,6 +156,11 @@ def administracion():
 def configuracion():
     return render_template('configuracion.html')
 
+@app.route('/menurecibos')
+@login_required
+def menurecibos():
+    return render_template('menurecibos.html')
+
 ## ========================== PLAN CONTABLE ====================================
 @app.route('/cuentas_contables', methods=['GET', 'POST'])
 @login_required
@@ -254,6 +259,41 @@ def eliminar_cuenta(id):
 
 ## ========================== CONSULTAS ====================================
 # lista aportes HLF
+@app.route('/aportes_s2', methods=['GET', 'POST'])
+@login_required
+def aportes_s2():
+    total = 0
+    line0 = 0
+    recs = []
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+        p3 = request.form.get('p3')  # Padron
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            query = sqlconstants.REP_S2_APORTES
+            query = query.replace("$p1$", str(p1))
+            query = query.replace("$p2$", str(p2))
+            query = query.replace("$p3$", str(p3))
+            cursor.execute(query)
+            recibos = cursor.fetchall()
+            cursor.close()
+            connection.close() 
+            for reg in recibos:
+                line0 += 1
+                reg['d0'] = str(line0)
+                total += float(reg['d7'])
+            return render_template('aportes_s2.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3)
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')
+            return redirect(url_for('menurecibos'))
+    else:
+        px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Ini
+        flash('Listo para consultar.', 'success')
+        return render_template('aportes_s2.html', p1=px, p2=px, p3=0, recibos=recs, total=total)
+
+
 @app.route('/aportes', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -265,6 +305,7 @@ def aportes():
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
         p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
         p3 = request.form.get('p3')  # Padron
+        sr = request.form.get('sr')  # Serie
         connection = get_db_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
@@ -280,20 +321,128 @@ def aportes():
                 line0 += 1
                 reg['d0'] = str(line0)
                 total += float(reg['d7'])
-            return render_template('aportes.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3)
+            return render_template('aportes.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3, sr=sr)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('menurecibos'))
     else:
         px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Ini
         flash('Listo para consultar.', 'success')
         return render_template('aportes.html', p1=px, p2=px, p3=0, recibos=recs, total=total)
 
+@app.route('/recibos/crear_s2', methods=['GET', 'POST'])
+@login_required
+def crear_recibo_s2():
+    if request.method == 'POST':
+        act = request.form.get('act')
+        fec = request.form.get('fec')
+        pad = request.form.get('pad')
+        com = request.form.get('com')
+        lid = request.form.get('lid')
+        num = request.form.get('num')
+        ser = '2'
+        nom = ""
+        if not all([fec, pad]):
+            flash('Por favor, complete todos los campos con (*).', 'danger')
+            return render_template('crear_recibo_s2.html')
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            consulta = sqlconstants.DETALLE_SERIE_2
+            consulta = consulta.replace("$pad$", pad)
+            cursor.execute(consulta)
+            items = cursor.fetchall()
+            cursor.close()
+            if act == '-':
+                try:
+                    curs0r = connection.cursor()
+                    quer0 = sqlconstants.INSERT_CORREL_X
+                    quer0 = quer0.replace("$serie$", ser)
+                    curs0r.execute(quer0)
+                    num = curs0r.lastrowid
+                    curs0r.close()
+
+                    cursor = connection.cursor()
+                    query = sqlconstants.INSERT_RECIBO_X
+                    cursor.execute(query, (ser, num, fec, pad, com, act, session['user_username'])) 
+                    lid = cursor.lastrowid
+                    connection.commit()
+                    act = '*'
+                    # --- comenzar con detalle
+                    nom = get_nombre_padron(pad)
+                    connection.close()
+                    flash('Continuar con detalles.', 'success')
+                    return render_template('crear_recibo_s2.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num)
+                except Error as e:
+                    if 'Duplicate entry' in str(e):
+                        flash('1.key record ya existe.', 'danger')
+                    else:
+                        flash(f'2.Error al crear: {str(e)}', 'danger')
+                    connection.rollback()
+                    cursor.close()
+                    connection.close()
+            if act == '*':
+                try:
+                    lin = 0
+                    total = 0
+                    nom = request.form.get('nom')
+                    cursor = connection.cursor()
+                    for i0 in items:
+                        lin += 1
+                        mnt = request.form.get(i0['codigo'])
+                        mnt0 = float(mnt)
+                        if mnt and mnt0 > 0:
+                            i0['monto'] = Decimal(mnt0)
+                            query = sqlconstants.INSERT_DETREC_X
+                            query = query.replace("$apo$", i0['codigo'])
+                            query = query.replace("$rec$", lid)
+                            query = query.replace("$mnt$", mnt)
+                            query = query.replace("$pre$", '0')
+                            query = query.replace("$tip$", '')
+                            query = query.replace("$usr$", session['user_username'])
+                            cursor = connection.cursor()
+                            cursor.execute(query)
+                    query9 = sqlconstants.UPDATE_RECIBO_X
+                    query9 = query9.replace("$recibo$",lid)
+                    cursor.execute(query9)
+                    connection.commit()
+                    cursor.close()
+                    connection.close()
+                    flash('Recibo registrado.', 'success')
+                   # Datos de ejemplo
+                    codigo_padron = pad
+                    nombre_socio = nom
+                    fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
+                    date_format = '%Y-%m-%d'
+                    date_obj = datetime.datetime.strptime(fec, date_format)
+                    fecha_giro = date_obj.strftime('%d-%m-%Y')
+                    # Generar recibo
+                    archivo = generar_recibo('RECIBO DE PAGO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
+                    # Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
+                    try:
+                        if os.name == 'nt':  # Windows
+                            os.startfile(archivo)
+                        elif os.name == 'posix':  # Linux o macOS
+                            os.system(f'open "{archivo}"')
+                    except:
+                        print(f"Recibo guardado en: {os.path.abspath(archivo)}")
+                    return render_template('crear_recibo_s2.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
+                except Error as e:
+                    if 'Duplicate entry' in str(e):
+                        flash('El nombre/dni de socio o email ya existe.', 'danger')
+                    else:
+                        flash(f'Error al crear socio: {str(e)}', 'danger')
+                    connection.rollback()
+                    cursor.close()
+                    connection.close()
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')
+    return render_template('crear_recibo_s2.html', act='-',but='Continuar')
+
 # ------------------------------------------------------------------------------------
 # RECIBOS (para demostrar funcionalidad reactiva) ## SERIE 001
 @app.route('/recibos/crear', methods=['GET', 'POST'])
 @login_required
-@admin_required
 def crear_recibo():
     if request.method == 'POST':
         act = request.form.get('act')
@@ -301,6 +450,8 @@ def crear_recibo():
         pad = request.form.get('pad')
         com = request.form.get('com')
         lid = request.form.get('lid')
+        num = request.form.get('num')
+        ser = '1'
         nom = ""
         if not all([fec, pad]):
             flash('Por favor, complete todos los campos con (*).', 'danger')
@@ -309,9 +460,16 @@ def crear_recibo():
         if act == '-':
             if connection:
                 try:
+                    curs0r = connection.cursor()
+                    quer0 = sqlconstants.INSERT_CORREL_X
+                    quer0 = quer0.replace("$serie$", ser)
+                    curs0r.execute(quer0)
+                    num = curs0r.lastrowid
+                    curs0r.close()
+
                     cursor = connection.cursor()
-                    query = sqlconstants.INSERT_RECIBO_1
-                    cursor.execute(query, (fec, pad, com, act, session['user_username'])) 
+                    query = sqlconstants.INSERT_RECIBO_X
+                    cursor.execute(query, (ser, num, fec, pad, com, act, session['user_username'])) 
                     lid = cursor.lastrowid
                     connection.commit()
                     act = '*'
@@ -325,8 +483,7 @@ def crear_recibo():
                     nom = get_nombre_padron(pad)
                     connection.close()
                     flash('Continuar con detalles.', 'success')
-                    return render_template('crear_recibo.html', 
-                    act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid)
+                    return render_template('crear_recibo.html', ser=ser, act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('El nombre/dni de socio o email ya existe.', 'danger')
@@ -355,12 +512,12 @@ def crear_recibo():
                         mnt0 = float(mnt)
                         if mnt and mnt0 > 0:
                             i0['monto'] = Decimal(mnt0)
-                            query = sqlconstants.INSERT_DETREC_1
+                            query = sqlconstants.INSERT_DETREC_X
                             query = query.replace("$apo$", i0['codigo'])
                             query = query.replace("$rec$", lid)
                             query = query.replace("$mnt$", mnt)
                             query = query.replace("$pre$", str(i0['prestamo']))
-                            query = query.replace("$tip$", i0['tipodeuda'])
+                            query = query.replace("$tip$", str(i0['tipodeuda']))
                             query = query.replace("$usr$", session['user_username'])
                             cursor = connection.cursor()
                             cursor.execute(query)
@@ -370,7 +527,7 @@ def crear_recibo():
                                 quer0 = quer0.replace("$pre$", str(deu))
                                 quer0 = quer0.replace("$mnt$", str(mnt))
                                 cursor.execute(quer0)
-                    query9 = sqlconstants.UPDATE_RECIBO_1
+                    query9 = sqlconstants.UPDATE_RECIBO_X
                     query9 = query9.replace("$recibo$",lid)
                     cursor = connection.cursor()
                     cursor.execute(query9)
@@ -378,9 +535,7 @@ def crear_recibo():
                     cursor.close()
                     connection.close()
                     flash('Recibo registrado.', 'success')
-
                     # Datos de ejemplo
-                    serie = '1'
                     codigo_padron = pad
                     nombre_socio = nom
                     fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
@@ -388,7 +543,7 @@ def crear_recibo():
                     date_obj = datetime.datetime.strptime(fec, date_format)
                     fecha_giro = date_obj.strftime('%d-%m-%Y')
                     # Generar recibo
-                    archivo = generar_recibo('RECIBO DE PAGO', serie, lid, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
+                    archivo = generar_recibo('RECIBO DE INGRESO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
                     # Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
                     try:
                         if os.name == 'nt':  # Windows
@@ -420,7 +575,7 @@ def imprimir_recibo(l_id):
         connection = get_db_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
-            queryHead = sqlconstants.SELECT_RECIBO_1
+            queryHead = sqlconstants.SELECT_RECIBO_X
             queryHead = queryHead.replace("$pX$", lid)
             cursor.execute(queryHead)
             recibo = cursor.fetchone()
@@ -432,7 +587,7 @@ def imprimir_recibo(l_id):
             fec = date_obj.strftime('%d-%m-%Y')
             date_obj = datetime.datetime.strptime(recibo['gir'], date_format)
             gir = date_obj.strftime('%d-%m-%Y')
-            consulta = sqlconstants.SELECT_DETALLE1
+            consulta = sqlconstants.SELECT_DETALLEX
             consulta = consulta.replace("$pX$", lid)
             cursor.execute(consulta)
             items = cursor.fetchall()

@@ -21,11 +21,10 @@
             <div class="dashboard-icon">
                 <i class="bi bi-receipt-cutoff"></i>
             </div>
-            <h3>Aportes</h3>
-            <p>Gestión de Recibos y Aportes</p>
-            <a href="{{ url_for('aportes') if session.user_rol == 'ADMIN' else '#' }}" 
-               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
-                <i class="bi bi-eye"></i> Ver Aportes
+            <h3>Recibos</h3>
+            <p>Menu de Recibos y Aportes</p>
+            <a href="{{ url_for('menurecibos') }}" class="btn btn-primary" >
+                <i class="bi bi-eye"></i> Gestion de Recibos
             </a>
         </div>
     </div>

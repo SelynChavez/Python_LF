@@ -5,20 +5,20 @@
     <div class="col-md-8 mx-auto">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Recibo Socio</h4>
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Recibo Padron Serie #2</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('crear_recibo') }}">
+                <form method="POST" action="{{ url_for('crear_recibo_s2') }}">
                     <input type="hidden" id="act" name="act" value="{{act}}">
                     <input type="hidden" id="lid" name="lid" value="{{lid}}">
                     <input type="hidden" id="num" name="num" value="{{num}}">
                     <input type="hidden" id="nom" name="nom" value="{{nom}}">
-                    <input type="hidden" id="ser" name="ser" value="1">
+                    <input type="hidden" id="ser" name="ser" value="2">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="fec" class="form-label">Fecha *</label>
                             <input type="date" class="form-control" id="fec" name="fec" value="{{fec}}" required>
-                            <div class="form-text">[ {{lid}} ]</div>
+                            <div class="form-text">{{act}}</div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="pad" class="form-label">Padron *</label>
@@ -70,7 +70,7 @@
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-check-circle"></i> {{but}}
                         </button>
-                        <a href="{{ url_for('aportes') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('aportes_s2') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>
