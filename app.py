@@ -1173,14 +1173,22 @@ def imprimir_recibo(l_id):
             if (recibo['serie']=='1'):
                 titulo = 'RECIBO DE INGRESO'
             archivo = generar_recibo(titulo, recibo['serie'], recibo['numero'], recibo['padron'], recibo['nombre'], fec, gir, items)
-            try:     ### Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
-                if os.name == 'nt':  # Windows
-                    os.startfile(archivo)
-                elif os.name == 'posix':  # Linux o macOS
-                    os.system(f'open "{archivo}"')
-            except:
-                print(f"Recibo guardado en: {os.path.abspath(archivo)}")
-    ## por el recibo.serie puedo ir a aportes,aportes_s2,aportes_sX            
+            ##try:     ### Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
+            ##    if os.name == 'nt':  # Windows
+            ##        os.startfile(archivo)
+            ##    elif os.name == 'posix':  # Linux o macOS
+            ##        os.system(f'open "{archivo}"')
+            ##except:
+            print(f"Recibo guardado en: {os.path.abspath(archivo)}")
+    ## por el recibo.serie puedo ir a aportes,aportes_s2,aportes_sX 
+    # Para archivos binarios, usa 'rb'
+            try:
+                with open(archivo, 'rb') as archivobin:
+                    pdf_buffer = archivobin.read()
+                    pdf_base64 = base64.b64encode(pdf_buffer).decode('utf-8')
+                    return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod='Recibo')    
+            except FileNotFoundError:
+                print("El archivo no existe.")
     return render_template('menurecibos.html')
 # ------------------------------------------------------------------------------------
 # TIPOS DEUDAS (para demostrar funcionalidad reactiva)
