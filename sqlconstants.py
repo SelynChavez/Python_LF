@@ -94,12 +94,12 @@ INSERT_DETREC_X = "INSERT INTO a_recibos_detalle (aporte, recibo, monto, prestam
 SELECT_RECIBO_X = "SELECT r.*,nombPadronSocio(r.padron) nombre, concat(fecha) fec, concat(giro) gir FROM a_recibos r WHERE r.id='$pX$'"
 SELECT_DETALLEX = "SELECT rd.*,tt.codigo,tt.descripcion FROM a_recibos_detalle rd, a_tipos tt WHERE recibo='$pX$' AND tt.tipo='APORTE' AND tt.codigo=rd.aporte ORDER BY rd.id"
 DETALLE_SERIE_1 = """ SELECT t.codigo,t.descripcion,
-  COALESCE((CASE
+  ROUND(COALESCE((CASE
       WHEN t.codigo='FDO.PAPEL' THEN p.monto1
       WHEN t.codigo='APAHORRO'  THEN p.monto2
       WHEN t.codigo='APAPORTE'  THEN p.monto3
       ELSE t.monto1
-  END),0) monto, 0 prestamo, '' tipodeuda, t.id idx0
+  END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
 WHERE t.tipo='APORTE' and t.atributo1='1' and (t.codigo not in ('PRESTAMO'))
 UNION ALL
