@@ -1,16 +1,15 @@
 {% extends "base.html" %}
-{% block title %}ETLF - Aportes{% endblock %}
+{% block title %}ETLF - Recibo Aportes Serie 005{% endblock %}
 {% block content %}
 <div class="row">
     <div class="col-12 mb-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Gestión de Recibos de Aportes por Padron - Serie #1</h4> &nbsp;&nbsp;
-                <a href="{{ url_for('crear_recibo') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nuevo Recibo </a>
+                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Gestión de Recibos de Serie 005 por Padron</h4> &nbsp;&nbsp;
+                <a href="{{ url_for('crear_recibo_s5') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nuevo Recibo </a>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('aportes') }}">
-                    <input type="hidden" id="sr" name="sr" value="1">
+                <form method="POST" action="{{ url_for('aportes_s5') }}">
                     <!-- Barra de búsqueda -->
                     <div class="row mb-4">
                         <div class="col-md-2 mb-3">
@@ -64,7 +63,7 @@
                                     <td>{{ r3.d3 }}</td>
                                     <td>{{ r3.d4 }}</td>
                                     <td><strong>{{ r3.d6 }}</strong></td>
-                                    <td style="text-align:right;background-color:rgb(226, 247, 185)"><b>S/{{ r3.d7 }}</b></td>
+                                    <td style="text-align:right;background-color:#dce8f7"><b>S/{{ r3.d7 }}</b></td>
                                     <td>
                                         <span class="badge {{ 'badge-activo' if r3.d8 == 'S' else 'badge-inactivo' }}">
                                             {{ 'S' if r3.d8 == 'S' else 'N' }}
@@ -77,7 +76,7 @@
                                             <a href="{{ url_for('imprimir_recibo', l_id=r3.d10 ) }}" 
                                                class="btn btn-outline-primary" 
                                                title="Imprimir Recibo">
-                                                <i class="bi-eye"></i>
+                                                <i class="bi-pencil"></i>
                                             </a>
                                         </div>
                                     </td>
@@ -85,7 +84,7 @@
                                 {% endfor %}
                             </tbody>
                             <tfoot><td colspan="6"></td>
-                                <td style="text-align:right;background-color:rgb(226, 247, 185)"><b>S/{{ total }}</b></td>
+                                <td style="text-align:right;background-color:#dce8f7"><b>S/{{ total }}</b></td>
                                 <td></td></tfoot>
                         </table>
                     </div>

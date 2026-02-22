@@ -1,27 +1,37 @@
 REP0PCGE = "SELECT concat(elemento) d1, concat(cuenta) d2, concat(coalesce(nombre,'.')) d3,concat(id) d4 FROM av_plan_contable_general ORDER BY 1,2 LIMIT 9000"
-REP_S2_APORTES = """
-SELECT CONCAT('RI-',serie,'-',LPAD(numero,6,'0')) d1,  dateDMY(fecha) d2,  dateDMY(giro) d3,
+REP_S3_APORTES = """
+SELECT CONCAT( 'RP0',serie,'-',LPAD(numero,6,'0')) d1,  dateDMY(fecha) d2,  dateDMY(giro) d3,
   if(fecha>giro,'ATRAZADO',if(fecha<giro,'ADELANTO','NORMAL')) d4,
   (SELECT CONCAT(p.id,':',p.placa,':',s.nombre) FROM a_padrones p, a_socios s WHERE p.socio=s.id AND v.padron=p.id) d6,
   concat(round((SELECT SUM(monto) FROM a_recibos_detalle d WHERE d.recibo=v.id),2),'') d7,
   v.active d8,  upper(substr(v.webuser,1,10)) d9,  concat(v.id) d10,  concat(v.padron) d11,  '0' d0 
 FROM a_recibos v 
-WHERE serie='2' and v.fecha>=date('$p1$') and v.fecha<=date('$p2$') and (v.padron='$p3$' or '0'='$p3$') and (v.active='S') 
-ORDER BY v.fecha, v.padron, v.id 
+WHERE serie='$serie$' and v.fecha>=date('$p1$') and v.fecha<=date('$p2$') and (v.padron='$p3$' or '0'='$p3$') and (v.active='S') 
+ORDER BY v.fecha, v.padron, v.id  
+"""
+REP_S2_APORTES = """
+SELECT t01.*, concat(d7i,'') d7, concat(round((d7i*0.18),2),'') d12, concat(round(d7i+(d7i*0.18),2),'') d13 FROM (
+SELECT CONCAT((CASE WHEN serie='2' THEN 'BE0' ELSE 'RP0' END),serie,'-',LPAD(numero,6,'0')) d1,  dateDMY(fecha) d2,  dateDMY(giro) d3,
+  if(fecha>giro,'ATRAZADO',if(fecha<giro,'ADELANTO','NORMAL')) d4,
+  (SELECT CONCAT(p.id,':',p.placa,':',s.nombre) FROM a_padrones p, a_socios s WHERE p.socio=s.id AND v.padron=p.id) d6,
+  round((SELECT SUM(monto) FROM a_recibos_detalle d WHERE d.recibo=v.id),2) d7i,
+  v.active d8,  upper(substr(v.webuser,1,10)) d9,  concat(v.id) d10,  concat(v.padron) d11,  '0' d0  
+FROM a_recibos v 
+WHERE serie='$serie$' and v.fecha>=date('$p1$') and v.fecha<=date('$p2$') and (v.padron='$p3$' or '0'='$p3$') and (v.active='S') 
+ORDER BY v.fecha, v.padron, v.id ) AS t01 
 """
 REP1APORTES = """
-SELECT CONCAT('RP-',serie,'-',LPAD(numero,6,'0')) d1,  dateDMY(fecha) d2,  dateDMY(giro) d3,
+SELECT CONCAT('RI0',serie,'-',LPAD(numero,6,'0')) d1,  dateDMY(fecha) d2,  dateDMY(giro) d3,
   if(fecha>giro,'ATRAZADO',if(fecha<giro,'ADELANTO','NORMAL')) d4,
   (SELECT CONCAT(p.id,':',p.placa,':',s.nombre) FROM a_padrones p, a_socios s WHERE p.socio=s.id AND v.padron=p.id) d6,
   concat(round((SELECT SUM(monto) FROM a_recibos_detalle d WHERE d.recibo=v.id),2),'') d7,
   v.active d8,  upper(substr(v.webuser,1,10)) d9,  concat(v.id) d10,  concat(v.padron) d11,  '0' d0 
 FROM a_recibos v 
 WHERE serie='1' and v.fecha>=date('$p1$') and v.fecha<=date('$p2$') and (v.padron='$p3$' or '0'='$p3$') and (v.active='S') 
-ORDER BY v.fecha, v.padron, v.id 
-"""
+ORDER BY v.fecha, v.padron, v.id  """
 REP2APORTES = """
   SELECT 
-    CONCAT('0',v.serie,'-',LPAD(v.numero,6,'0')) d1,
+    CONCAT('RI-',v.serie,'-',LPAD(v.numero,6,'0')) d1,
     dateDMY(v.giro) d2,
     IF(v.padron IS NULL,LPAD(v.socio,4,'0'),LPAD(v.padron,4,'0')) d3,
     (SELECT CONCAT(p.id,':',p.placa,':',s.nombre) FROM a_padrones p, a_socios s WHERE p.socio=s.id AND v.padron=p.id) d4,
@@ -78,7 +88,7 @@ DROPLIST_APORTES = "SELECT codigo d1,concat(codigo,':',descripcion) d2 FROM nlf_
 INSERT_LOGUSUARIO = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion) VALUES (%s, %s, %s)"
 
 INSERT_CORREL_X = "INSERT INTO a_corrrec_$serie$ VALUES (null,'X',now())"
-INSERT_RECIBO_X = "INSERT INTO a_recibos (serie, numero, fecha, giro, padron, comentarios, active, modified, webuser) VALUES (%s, %s, now(), %s, %s, %s, %s, now(), %s)"
+INSERT_RECIBO_X = "INSERT INTO a_recibos (serie, numero, fecha, giro, padron, comentarios, active, modified, webuser, igv) VALUES (%s, %s, now(), %s, %s, %s, %s, now(), %s, %s)"
 UPDATE_RECIBO_X = "UPDATE a_recibos SET active='S' WHERE id='$recibo$'"
 INSERT_DETREC_X = "INSERT INTO a_recibos_detalle (aporte, recibo, monto, prestamo, tipodeuda, modified, webuser) VALUES ('$apo$', '$rec$', '$mnt$', '$pre$', '$tip$', now(), '$usr$')"
 SELECT_RECIBO_X = "SELECT r.*,nombPadronSocio(r.padron) nombre, concat(fecha) fec, concat(giro) gir FROM a_recibos r WHERE r.id='$pX$'"
@@ -97,12 +107,12 @@ SELECT t.codigo,t.descripcion,p.cuota monto,p.id prestamo,p.tipo_prestamo tipode
 FROM a_prestamos p,a_tipos t 
 WHERE p.padron='$pad$' and p.estado='aprobado' and t.tipo='APORTE' and t.codigo='PRESTAMO'  """
 DETALLE_SERIE_2 = """ SELECT t.codigo,t.descripcion,
-  COALESCE((CASE
+  ROUND(COALESCE((CASE
       WHEN t.codigo='AP.ESPECIAL' THEN p.monto4
       ELSE t.monto1
-  END),0) monto, 0 prestamo, '' tipodeuda, t.id idx0
+  END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
-WHERE t.atributo1='2'   """
+WHERE t.atributo1='$serie$'   """
 DASHB_COMB_TOTAL_HOY = """
 SELECT COALESCE(SUM(galones_vendidos), 0) as total_gallons,
        COALESCE(SUM(total_precio), 0) as total_revenue,
