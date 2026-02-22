@@ -2141,14 +2141,15 @@ class ReciboTicket(FPDF):
             codigo = item['codigo']
             descripcion = item['descripcion']
             monto = item['monto']
-            total += monto
-            self.cell(15, 4, codigo, 0, 0, 'L')
-            if len(descripcion) > 22:
-                desc_line1 = descripcion[:22]
-                self.cell(30, 4, desc_line1, 0, 0, 'L')
-            else:
-                self.cell(30, 4, descripcion, 0, 0, 'L')
-            self.cell(15, 4, f"S/. {monto:.2f}", 0, 1, 'R')
+            if float(monto) > 0:
+                total += monto
+                self.cell(15, 4, codigo, 0, 0, 'L')
+                if len(descripcion) > 22:
+                    desc_line1 = descripcion[:22]
+                    self.cell(30, 4, desc_line1, 0, 0, 'L')
+                else:
+                    self.cell(30, 4, descripcion, 0, 0, 'L')
+                self.cell(15, 4, f"S/. {monto:.2f}", 0, 1, 'R')
         self.ln(1)
         self.line(5, self.get_y(), self.width - 5, self.get_y())
         self.ln(1)
