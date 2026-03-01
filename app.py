@@ -167,7 +167,6 @@ def menurecibos():
 @admin_required
 def cuentas_contables():
     cuentas = []
-    print("sadasdasdas")
     if request.method == 'POST':
         p1 = request.form.get('p1', '')  
         connection = get_db_connection()
@@ -694,7 +693,6 @@ def crear_recibo_s5():
         else:
             flash('Error de conexión a la base de datos.', 'danger')
     return render_template('crear_recibo_s5.html', act='-',but='Continuar')
-
 
 @app.route('/recibos/crear_s4', methods=['GET', 'POST'])
 @login_required
@@ -1320,6 +1318,207 @@ def eliminar_tipo(id):
         flash('Error de conexión a la base de datos.', 'danger')   
     return redirect(url_for(url))
 
+
+# ------------------------------------------------------------------------------------
+# TIPOS INGRESOS
+@app.route('/tipos_ingresos')
+@login_required
+@admin_required
+def listar_tipos_ingresos():
+    tipo = 'INGRESO'
+    a2 = "Cta.Contable"
+    a3 = "Indice Cta.Cble"
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_TIPOS, (tipo,) )
+        tipos = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return render_template('tipos_ingresos.html', tipos=tipos, tipo=tipo, a2=a2, a3=a3)
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')
+    return redirect(url_for('configuracion'))
+
+@app.route('/tiposingresos/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_tipo_ingreso():
+    if request.method == 'POST':
+        tipo = request.form.get('tipo')
+        codigo = request.form.get('codigo')
+        descripcion = request.form.get('descripcion')
+        if not all([codigo, descripcion]):
+            flash('Por favor, complete todos los campos.', 'danger')
+            return render_template('crear_tipo_ingreso.html')
+        connection = get_db_connection()
+        if connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute(sqlconstants.INSERT_TIPO, (tipo, codigo, descripcion, session['user_username']))
+                connection.commit()
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_tipo_aporte', f'LOG::Creó el Tipo: {codigo}'))
+                connection.commit()
+                cursor.close()
+                connection.close()
+                flash('Tipo Ingreso creado exitosamente.', 'success')
+                return redirect(url_for('listar_tipos_ingresos'))
+            except Error as e:
+                if 'Duplicate entry' in str(e):
+                    flash('Codigo ya existe.', 'danger')
+                else:
+                    flash(f'Error al crear tipo : {str(e)}', 'danger')
+                connection.rollback()
+                cursor.close()
+                connection.close()
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')    
+    return render_template('crear_tipo_ingreso.html')
+
+@app.route('/tiposingresos/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def editar_tipo_ingreso(id):
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('listar_tipos_ingresos'))    
+    if request.method == 'POST':
+        codigo = request.form.get('codigo')
+        descripcion = request.form.get('descripcion')
+        atributo1 = request.form.get('atributo1')
+        atributo2 = request.form.get('atributo2')
+        atributo3 = request.form.get('atributo3')
+        atributo4 = request.form.get('atributo4')
+        try:
+            cursor = connection.cursor()
+            cursor.execute(sqlconstants.UPDATE_TIPO, (codigo, descripcion, '0','0',atributo1,atributo2,atributo3,atributo4,'', id))
+            connection.commit()
+            cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_tipo_ingreso', f'LOG::Editó el tipo: {codigo}'))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Codigo actualizado exitosamente.', 'success')
+            return redirect(url_for('listar_tipos_salidas'))
+        except Error as e:
+            if 'Duplicate entry' in str(e):
+                flash('Codigo ya existe.', 'danger')
+            else:
+                flash(f'Error al actualizar tipo: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+            return redirect(url_for('editar_tipo_ingreso', id=id))    
+    # GET: Obtener datos del socio
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.SELECT_TIPO, (id,))
+    tipo = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if not tipo:
+        flash('Tipo/Codigo no encontrado.', 'danger')
+        return redirect(url_for('listar_tipos_ingresos'))
+    return render_template('editar_tipo_ingreso.html', id=id, tipo=tipo)
+# ------------------------------------------------------------------------------------
+# TIPOS SALIDAS 
+@app.route('/tipos_salidas')
+@login_required
+@admin_required
+def listar_tipos_salidas():
+    tipo = 'SALIDA'
+    a3 = "Cta.Contable"
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_TIPOS, (tipo,) )
+        tipos = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return render_template('tipos_salidas.html', tipos=tipos, tipo=tipo, a3=a3 )
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')
+    return redirect(url_for('configuracion'))
+
+@app.route('/tipossalidas/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_tipo_salida():
+    if request.method == 'POST':
+        tipo = request.form.get('tipo')
+        codigo = request.form.get('codigo')
+        descripcion = request.form.get('descripcion')
+        if not all([codigo, descripcion]):
+            flash('Por favor, complete todos los campos.', 'danger')
+            return render_template('crear_tipo_salida.html')
+        connection = get_db_connection()
+        if connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute(sqlconstants.INSERT_TIPO, (tipo, codigo, descripcion, session['user_username']))
+                connection.commit()
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_tipo_salida', f'LOG::Creó el Tipo: {codigo}'))
+                connection.commit()
+                cursor.close()
+                connection.close()
+                flash('Tipo Aporte creado exitosamente.', 'success')
+                return redirect(url_for('listar_tipos_salidas'))
+            except Error as e:
+                if 'Duplicate entry' in str(e):
+                    flash('Codigo ya existe.', 'danger')
+                else:
+                    flash(f'Error al crear tipo : {str(e)}', 'danger')
+                connection.rollback()
+                cursor.close()
+                connection.close()
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')    
+    return render_template('crear_tipo_salida.html')
+
+@app.route('/tipossalidas/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def editar_tipo_salida(id):
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('listar_tipos_salidas'))    
+    if request.method == 'POST':
+        codigo = request.form.get('codigo')
+        descripcion = request.form.get('descripcion')
+        atributo1 = request.form.get('atributo1')
+        atributo2 = request.form.get('atributo2')
+        atributo3 = request.form.get('atributo3')
+        atributo4 = request.form.get('atributo4')
+        try:
+            cursor = connection.cursor()
+            cursor.execute(sqlconstants.UPDATE_TIPO, (codigo, descripcion, '0','0',atributo1,atributo2,atributo3,atributo4,'', id))
+            connection.commit()
+            cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_tipo_salida', f'LOG::Editó el tipo: {codigo}'))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Codigo actualizado exitosamente.', 'success')
+            return redirect(url_for('listar_tipos_salidas'))
+        except Error as e:
+            if 'Duplicate entry' in str(e):
+                flash('Codigo ya existe.', 'danger')
+            else:
+                flash(f'Error al actualizar tipo: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+            return redirect(url_for('editar_tipo_salida', id=id))    
+    # GET: Obtener datos del socio
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.SELECT_TIPO, (id,))
+    tipo = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if not tipo:
+        flash('Tipo/Codigo no encontrado.', 'danger')
+        return redirect(url_for('listar_tipos_salidas'))
+    return render_template('editar_tipo_salida.html', id=id, tipo=tipo)
+
 # ------------------------------------------------------------------------------------
 # TIPOS APORTES (para demostrar funcionalidad reactiva)
 @app.route('/tipos_aportes')
@@ -1334,7 +1533,7 @@ def listar_tipos_aportes():
     connection = get_db_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute(sqlconstants.LISTA_TIPOS, (tipo,) )
+        cursor.execute(sqlconstants.LISTA_TIPOS_APORTE, (tipo,) )
         tipos = cursor.fetchall()
         cursor.close()
         connection.close()
@@ -1423,7 +1622,6 @@ def editar_tipo_aporte(id):
         flash('Tipo/Codigo no encontrado.', 'danger')
         return redirect(url_for('listar_tipos_aportes'))
     return render_template('editar_tipo_aporte.html', id=id, tipo=tipo)
-
 # ------------------------------------------------------------------------------------
 # PADRONES (para demostrar funcionalidad reactiva)
 @app.route('/padrones')

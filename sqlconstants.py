@@ -77,7 +77,8 @@ SEL_NM_PADRON = "SELECT placa FROM a_padrones WHERE id = %s"
 DELETE_PADRON = "DELETE FROM a_padrones WHERE id = %s"
 GET_NOMBRE_PADRON = "SELECT concat(p.id,':',p.placa,':',s.nombre) as n0 FROM a_padrones p, a_socios s WHERE p.id=%s and p.socio=s.id "
 
-LISTA_TIPOS = "SELECT t.*,concat('S00',atributo1) serie FROM a_tipos t WHERE t.tipo=%s ORDER BY t.modified DESC "
+LISTA_TIPOS_APORTE = "SELECT t.*,concat('S00',atributo1) serie FROM a_tipos t WHERE t.tipo=%s ORDER BY t.modified DESC "
+LISTA_TIPOS = "SELECT t.* FROM a_tipos t WHERE t.tipo=%s ORDER BY t.modified DESC "
 INSERT_TIPO = "INSERT INTO a_tipos (tipo, codigo, descripcion, monto1, monto2, atributo1, atributo2, atributo3, atributo4, atributo5, modified, webuser) VALUES (%s, %s, %s, '0','0','','','','','', now(), %s)"
 UPDATE_TIPO = "UPDATE a_tipos SET codigo=%s, descripcion=%s, monto1=%s,monto2=%s,atributo1=%s,atributo2=%s,atributo3=%s,atributo4=%s,atributo5=%s, modified=now() WHERE id=%s "
 SELECT_TIPO = "SELECT t.* FROM a_tipos t WHERE t.id = %s"
@@ -108,7 +109,7 @@ FROM a_prestamos p,a_tipos t
 WHERE p.padron='$pad$' and p.estado='aprobado' and t.tipo='APORTE' and t.codigo='PRESTAMO'  """
 DETALLE_SERIE_2 = """ SELECT t.codigo,t.descripcion,
   ROUND(COALESCE((CASE
-      WHEN t.codigo='AP.ESPECIAL' THEN p.monto4
+      WHEN t.codigo='AP.ESPECIALX' THEN p.monto4
       ELSE t.monto1
   END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
@@ -209,7 +210,7 @@ WHERE (r.fecha_solicitud>=date('$p1$') AND r.fecha_solicitud<=date('$p2$')) AND
       (r.padron='$p3$' OR '$p3$'='0') AND ('$p4$'='' OR r.tipo_aporte='$p4$')
 ORDER BY r.fecha_retiro DESC
 """
-LISTA_CTAS_CONTABLES = "SELECT * FROM a_pcge WHERE (cuenta like '%$p1$%' OR nombre like '%$p1$%' OR entidad like '%$p1$%') ORDER BY cuenta LIMIT 50"
+LISTA_CTAS_CONTABLES = "SELECT * FROM a_pcge WHERE (cuenta like '$p1$%' OR nombre like '%$p1$%' OR entidad like '%$p1$%') ORDER BY cuenta LIMIT 100"
 INS_RETIRO = "INSERT INTO a_retiros (padron,socio,fecha_solicitud,tipo_aporte,monto_solicitado,saldo_final_dia,monto_retirado,descripcion,estado,modified,webuser) VALUES (%s, 0, %s, %s, %s, %s, 0, %s, %s, now(), %s)"
 APR_RETIRO = "UPDATE a_retiros SET estado='aprobado',monto_retirado=monto_solicitado,fecha_retiro=curdate() WHERE id = %s"
 RCH_RETIRO = "UPDATE a_retiros SET estado='rechazado',monto_retirado=0 WHERE id = %s"
