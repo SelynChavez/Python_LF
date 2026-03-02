@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Prestamos {% endblock %}
+{% block content %}
+<div class="row">
+    <div class="container-fluid">
+        <!-- Título -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list-check"></i>
+                Listado de Salidas de Dinero
+            </div>
+        </div>
+        
+        <!-- Filtros -->
+        <div class="card">
+            <div class="card-body">
+                <form id="form-filtros" class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="bi bi-calendar-start"></i> Fecha Desde</label>
+                        <input type="date" class="form-control" id="fecha_desde" value="{{ fecha_desde }}" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><i class="bi bi-calendar-end"></i> Fecha Hasta</label>
+                        <input type="date" class="form-control" id="fecha_hasta" value="{{ fecha_hasta }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label"><i class="bi bi-diagram-3"></i> Tipo de Salida</label>
+                        <select class="form-select" id="tipo_salida">
+                            <option value="">TODOS LOS TIPOS</option>
+                            {% for tipo in tipos_salida %}
+                            <option value="{{ tipo.codigo }}">{{ tipo.codigo }}: {{ tipo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Buscar
+                        </button>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <a href="{{ url_for('menuiocash') }}" class="btn btn-secondary"> <i class="bi bi-arrow-left me-2"></i> Regresar </a>                        
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+
+        
+        <!-- Tabla de resultados -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Tipo Salida</th>
+                                <th>Beneficiario</th>
+                                <th>Documento</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Archivo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-resultados">
+                            <!-- Los resultados se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="loading-spinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando datos...</p>
+                </div>
+                
+                <div id="no-results" class="text-center py-5 text-muted" style="display: none;">
+                    <i class="bi bi-inbox fs-1"></i>
+                    <p class="mt-3">No se encontraron registros para los filtros seleccionados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para ver PDF -->
+    <div class="modal fade" id="pdfModal" tabindex="-1">
+        <div class="modal-dialog modal-pdf">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-pdf text-danger"></i>
+                        Visualizar Documento
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <iframe class="pdf-frame" id="pdfFrame" src=""></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para subir archivo -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-upload"></i>
+                        Subir Archivo PDF
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-upload" enctype="multipart/form-data">
+                        <input type="hidden" id="upload_id" name="upload_id">
+                        <div class="mb-3">
+                            <label class="form-label">Seleccionar archivo PDF</label>
+                            <input type="file" class="form-control" id="archivo" name="archivo" accept=".pdf" required>
+                            <div class="form-text">Máximo 16MB. Solo archivos PDF.</div>
+                        </div>
+                        <div class="progress mb-3" style="display: none;" id="upload-progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%">0%</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btn-subir">
+                        <i class="bi bi-cloud-upload"></i> Subir Archivo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de confirmación para anular -->
+    <div class="modal fade" id="anularModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Confirmar Anulación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Está seguro que desea anular este registro?</p>
+                    <p class="text-danger"><strong>ID: <span id="anular-id"></span></strong></p>
+                    <p class="text-muted">Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btn-confirmar-anular">
+                        <i class="bi bi-trash"></i> Anular Registro
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables globales
+        let currentAnularId = null;
+        let currentUploadId = null;
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar datos iniciales
+            buscarSalidas();
+            
+            // Configurar eventos
+            document.getElementById('form-filtros').addEventListener('submit', function(e) {
+                e.preventDefault();
+                buscarSalidas();
+            });
+            
+            document.getElementById('btn-subir').addEventListener('click', subirArchivo);
+            document.getElementById('btn-confirmar-anular').addEventListener('click', confirmarAnular);
+        });
+        
+        // Función para buscar salidas
+        function buscarSalidas() {
+            const fechaDesde = document.getElementById('fecha_desde').value;
+            const fechaHasta = document.getElementById('fecha_hasta').value;
+            const tipoSalida = document.getElementById('tipo_salida').value;
+            
+            // Validar fechas
+            if (!fechaDesde || !fechaHasta) {
+                alert('Debe seleccionar ambas fechas');
+                return;
+            }
+            
+            // Mostrar spinner
+            document.getElementById('loading-spinner').style.display = 'block';
+            document.getElementById('tabla-resultados').innerHTML = '';
+            document.getElementById('no-results').style.display = 'none';
+            
+            // Mostrar filtros activos
+            document.getElementById('filtros-activos').style.display = 'block';
+            document.getElementById('filtro-fechas').innerHTML = `<i class="bi bi-calendar"></i> ${fechaDesde} al ${fechaHasta}`;
+            document.getElementById('filtro-tipo').innerHTML = `<i class="bi bi-tag"></i> ${tipoSalida || 'TODOS LOS TIPOS'}`;
+            
+            fetch(`/buscar_salidas?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&tipo_salida=${tipoSalida || ''}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    
+                    if (data.success && data.data.length > 0) {
+                        mostrarResultados(data.data);
+                        actualizarResumen(data.data);
+                    } else {
+                        document.getElementById('no-results').style.display = 'block';
+                        actualizarResumen([]);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    alert('Error al buscar los datos');
+                });
+        }
+        
+        // Función para mostrar resultados
+        function mostrarResultados(datos) {
+            const tbody = document.getElementById('tabla-resultados');
+            tbody.innerHTML = '';
+            
+            datos.forEach(item => {
+                const estadoClass = {
+                    'CONFIRMADO': 'badge-confirmado',
+                    'PENDIENTE': 'badge-pendiente',
+                    'ANULADO': 'badge-anulado'
+                }[item.estado] || 'badge-pendiente';
+                
+                const archivoHtml = item.archivo 
+                    ? `<a href="#" class="file-link" onclick="verPDF('${item.archivo}', ${item.id})">
+                        <i class="bi bi-file-pdf text-danger"></i> Ver PDF
+                       </a>`
+                    : `<button class="btn btn-sm btn-outline-primary btn-action" onclick="mostrarUploadModal(${item.id})">
+                        <i class="bi bi-upload"></i>
+                       </button>`;
+                
+                const acciones = item.estado !== 'ANULADO' 
+                    ? `<button class="btn btn-sm btn-danger btn-action" onclick="mostrarAnularModal(${item.id})" title="Anular">
+                        <i class="bi bi-trash"></i>
+                       </button>`
+                    : '<span class="text-muted">-</span>';
+                
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td><strong>#${item.id}</strong></td>
+                    <td>${item.fecha}</td>
+                    <td>${item.tipo_salida || '-'}</td>
+                    <td>
+                        ${item.beneficiario_nombre || '-'}
+                        <br><small class="text-muted">${item.tipo_beneficiario || ''}</small>
+                    </td>
+                    <td>
+                        ${item.tipo_doc || ''} ${item.numero_doc || ''}
+                        <br><small class="text-muted">${item.periodo || ''}</small>
+                    </td>
+                    <td class="fw-bold text-success" style="text-align:right">S/${Number(item.monto).toFixed(2)}</td>
+                    <td><span class="badge-estado ${estadoClass}">${item.estado}</span></td>
+                    <td>${archivoHtml}</td>
+                    <td>${acciones}</td>
+                `;
+                tbody.appendChild(fila);
+            });
+        }
+        
+        // Función para actualizar resumen
+        function actualizarResumen(datos) {
+            const totalRegistros = datos.length;
+            const totalMonto = datos.reduce((sum, item) => sum + Number(item.monto), 0);
+            const totalConfirmados = datos.filter(item => item.estado === 'CONFIRMADO').length;
+            const totalPendientes = datos.filter(item => item.estado === 'PENDIENTE').length;
+            
+            document.getElementById('total-registros').textContent = totalRegistros;
+            document.getElementById('total-monto').textContent = `S/${totalMonto.toFixed(2)}`;
+            document.getElementById('total-confirmados').textContent = totalConfirmados;
+            document.getElementById('total-pendientes').textContent = totalPendientes;
+        }
+        
+        // Función para ver PDF
+        function verPDF(ruta, id) {
+            const pdfFrame = document.getElementById('pdfFrame');
+            pdfFrame.src = `/ver_pdf/${id}`;
+            
+            const modal = new bootstrap.Modal(document.getElementById('pdfModal'));
+            modal.show();
+        }
+        
+        // Función para mostrar modal de upload
+        function mostrarUploadModal(id) {
+            currentUploadId = id;
+            document.getElementById('upload_id').value = id;
+            
+            const modal = new bootstrap.Modal(document.getElementById('uploadModal'));
+            modal.show();
+        }
+        
+        // Función para subir archivo
+        function subirArchivo() {
+            const formData = new FormData();
+            const archivo = document.getElementById('archivo').files[0];
+            const id = document.getElementById('upload_id').value;
+            
+            if (!archivo) {
+                alert('Por favor seleccione un archivo');
+                return;
+            }
+            
+            if (archivo.type !== 'application/pdf') {
+                alert('Solo se permiten archivos PDF');
+                return;
+            }
+            
+            if (archivo.size > 16 * 1024 * 1024) {
+                alert('El archivo no debe superar los 16MB');
+                return;
+            }
+            
+            formData.append('archivo', archivo);
+            formData.append('id', id);
+            
+            // Mostrar progreso
+            document.getElementById('upload-progress').style.display = 'block';
+            document.getElementById('btn-subir').disabled = true;
+            
+            fetch('/subir_archivo', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Archivo subido correctamente');
+                    bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+                    buscarSalidas(); // Recargar datos
+                } else {
+                    alert('Error al subir archivo: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al subir el archivo');
+            })
+            .finally(() => {
+                document.getElementById('upload-progress').style.display = 'none';
+                document.getElementById('btn-subir').disabled = false;
+                document.getElementById('archivo').value = '';
+            });
+        }
+        
+        // Función para mostrar modal de anulación
+        function mostrarAnularModal(id) {
+            currentAnularId = id;
+            document.getElementById('anular-id').textContent = id;
+            
+            const modal = new bootstrap.Modal(document.getElementById('anularModal'));
+            modal.show();
+        }
+        
+        // Función para confirmar anulación
+        function confirmarAnular() {
+            if (!currentAnularId) return;
+            
+            fetch('/anular_salida', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: currentAnularId})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Registro anulado correctamente');
+                    bootstrap.Modal.getInstance(document.getElementById('anularModal')).hide();
+                    buscarSalidas(); // Recargar datos
+                } else {
+                    alert('Error al anular: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al anular el registro');
+            });
+        }
+    </script>
+
+        <!-- Resumen -->
+        <div class="summary-card">
+            <div class="row">
+                <div class="col-md-3 summary-item">
+                    <div class="summary-value" id="total-registros">0</div>
+                    <div class="summary-label">Total Registros</div>
+                </div>
+                <div class="col-md-3 summary-item">
+                    <div class="summary-value" id="total-monto">S/.0.00</div>
+                    <div class="summary-label">Monto Total</div>
+                </div>
+                <div class="col-md-3 summary-item">
+                    <div class="summary-value" id="total-confirmados">0</div>
+                    <div class="summary-label">Confirmados</div>
+                </div>
+                <div class="col-md-3 summary-item">
+                    <div class="summary-value" id="total-pendientes">0</div>
+                    <div class="summary-label">Pendientes</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filtros activos -->
+        <div id="filtros-activos" class="mb-3" style="display: none;">
+            <span class="filter-badge" id="filtro-fechas"></span>
+            <span class="filter-badge" id="filtro-tipo"></span>
+        </div>
+
+</div>
+{% endblock %}

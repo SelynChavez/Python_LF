@@ -8,6 +8,8 @@ from functools import wraps
 from config import Config
 import sqlconstants
 
+from werkzeug.utils import secure_filename
+
 from io import BytesIO
 import tempfile
 from fpdf import FPDF
@@ -24,8 +26,20 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 
+
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# Configuración
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+ALLOWED_EXTENSIONS = {'pdf'}
+
+# Asegurar que existe el directorio de uploads
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Decorador para requerir login
 def login_required(f):
@@ -160,6 +174,11 @@ def configuracion():
 @login_required
 def menurecibos():
     return render_template('menurecibos.html')
+
+@app.route('/menuiocash')
+@login_required
+def menuiocash():
+    return render_template('menuiocash.html')
 
 ## ========================== PLAN CONTABLE ====================================
 @app.route('/cuentas_contables', methods=['GET', 'POST'])
@@ -3197,6 +3216,313 @@ def generar_pdf_retiro(retiro_id):
     return response
 
 ### ???????????????????????????????????????????????????????????????????????????????????????
+@app.route('/reg_salidas', methods=['GET', 'POST'])
+def reg_salidas():
+    hoy = datetime.datetime.now().date()
+    hoy_str = hoy.strftime('%Y-%m-%d')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Obtener salidas de hoy
+        cursor.execute("""
+            SELECT * FROM a_salidas 
+            WHERE DATE(fecha_solicitud) = %s AND estado in ('PENDIENTE','CONFIRMADO')
+            ORDER BY id DESC
+        """, (hoy_str,))
+        salidas_hoy = cursor.fetchall()
+        
+        # Calcular total del día
 
+        total_dia = 0
+        for s0 in salidas_hoy:
+            total_dia += float(s0['monto'])
+        
+        # Obtener tipos de salida
+        cursor.execute("SELECT codigo,concat(descripcion,' [',codigo,']') descripcion FROM a_tipos WHERE tipo = 'SALIDA' ORDER BY 2")
+        tipos_salida = cursor.fetchall()
+        
+        # Obtener padrones
+        cursor.execute("SELECT id, nombPadronSocio(p.id) nombre, placa FROM a_padrones p ORDER BY nombre")
+        padrones = cursor.fetchall()
+        
+        # Obtener socios
+        cursor.execute("SELECT id, nombre, dni FROM a_socios ORDER BY nombre")
+        socios = cursor.fetchall()
+        
+        # Obtener empleados activos
+        cursor.execute("SELECT id, nombre, dni FROM a_empleados WHERE active = 'S' ORDER BY nombre")
+        empleados = cursor.fetchall()
+        
+        # Obtener proveedores
+        cursor.execute("SELECT id, nombre, ruc FROM a_proveedores ORDER BY nombre")
+        proveedores = cursor.fetchall()
+        
+        # Obtener terceros definidos
+        cursor.execute("SELECT descripcion FROM a_tipos WHERE tipo = 'TERCERO' ORDER BY 1")
+        terceros_def = cursor.fetchall()
+        
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return render_template(
+        "reg_salidas.html",
+        salidas_hoy=salidas_hoy,
+        tipos_salida=tipos_salida,
+        padrones=padrones,
+        socios=socios,
+        empleados=empleados,
+        proveedores=proveedores,
+        terceros_def=terceros_def,
+        hoy=hoy_str,
+        total_dia=total_dia
+    )
+
+@app.route('/guardar_salida', methods=['POST'])
+def guardar_salida():
+    conn = None
+    cursor = None
+    try:
+        data = request.json
+        app.logger.debug(f"Datos recibidos: {data}")
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        if data['id'] and int(data['id']) > 0:
+            # Actualizar salida existente
+            sql = """
+                UPDATE a_salidas 
+                SET fecha_solicitud = %s,
+                    tipo_salida = %s,
+                    tipo_beneficiario = %s,
+                    beneficiario = %s,
+                    beneficiario_nombre = %s,
+                    monto = %s,
+                    observaciones = %s,
+                    tipo_doc = %s,
+                    numero_doc = %s,
+                    periodo = %s,
+                    modified = CURRENT_TIMESTAMP,
+                    webuser = %s,
+                    estado = 'CONFIRMADO'
+                WHERE id = %s
+            """
+            params = (
+                data['fecha_solicitud'],
+                data['tipo_salida'],
+                data['tipo_beneficiario'],
+                data.get('beneficiario'),
+                data['beneficiario_nombre'],
+                data['monto'],
+                data.get('observaciones', ''),
+                data['tipo_doc'],
+                data['numero_doc'],
+                data['periodo'],
+                'webuser',
+                data['id']
+            )
+        else:
+            # Insertar nueva salida
+            sql = """
+                INSERT INTO a_salidas 
+                (fecha_solicitud, tipo_salida, tipo_beneficiario, beneficiario, 
+                 beneficiario_nombre, monto, estado, observaciones, tipo_doc, numero_doc, periodo, webuser)
+                VALUES (%s, %s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s)
+            """
+            params = (
+                data['fecha_solicitud'],
+                data['tipo_salida'],
+                data['tipo_beneficiario'],
+                data.get('beneficiario'),
+                data['beneficiario_nombre'],
+                data['monto'],
+                data.get('observaciones', ''),
+                data['tipo_doc'],
+                data['numero_doc'],
+                data['periodo'],
+                'webuser'
+            )
+        
+        app.logger.debug(f"SQL: {sql}")
+        app.logger.debug(f"Params: {params}")
+        
+        cursor.execute(sql, params)
+        conn.commit()
+        
+        return jsonify({'success': True, 'id': data['id'] if data['id'] else cursor.lastrowid})
+        
+    except Exception as e:
+        app.logger.error(f"Error al guardar: {str(e)}")
+        if conn:
+            conn.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/obtener_salida/<int:id>')
+def obtener_salida(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM a_salidas WHERE id = %s", (id,))
+        salida = cursor.fetchone()
+        if salida:
+            # Formatear fecha para el input date
+            if salida['fecha_solicitud']:
+                salida['fecha_solicitud'] = salida['fecha_solicitud'].strftime('%Y-%m-%d')
+            
+            return jsonify(salida)
+        else:
+            return jsonify({'error': 'Salida no encontrada'}), 404
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/buscar_beneficiarios/<tipo>')
+def buscar_beneficiarios(tipo):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        if tipo == 'PADRON':
+            cursor.execute("SELECT id, nombre, placa FROM a_padrones ORDER BY nombre")
+        elif tipo == 'SOCIO':
+            cursor.execute("SELECT id, nombre, dni FROM a_socios ORDER BY nombre")
+        elif tipo == 'EMPLEADO':
+            cursor.execute("SELECT id, nombre, dni FROM a_empleados WHERE estado = 'A' ORDER BY nombre")
+        elif tipo == 'PROVEEDOR':
+            cursor.execute("SELECT id, nombre, ruc FROM a_proveedores ORDER BY nombre")
+        elif tipo == 'TERCERO_DEF':
+            cursor.execute("SELECT nombre FROM a_tipos WHERE tipo = 'TERCERO' ORDER BY nombre")
+        else:
+            return jsonify([])
+        resultados = cursor.fetchall()
+        return jsonify(resultados)
+    finally:
+        cursor.close()
+        conn.close()
+#### ****************************************************************************************
+@app.route('/salidas', methods=['GET', 'POST'])
+def salidas():
+    # Fechas por defecto (mes actual)
+    hoy = datetime.datetime.now()
+    fecha_desde = hoy.replace(day=1).strftime('%Y-%m-%d')
+    fecha_hasta = hoy.strftime('%Y-%m-%d')
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)    
+    try:
+        # Obtener tipos de salida
+        cursor.execute("SELECT DISTINCT codigo,descripcion nombre FROM a_tipos WHERE tipo = 'SALIDA' ORDER BY descripcion")
+        tipos_salida = cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()    
+    return render_template("salidas.html", tipos_salida=tipos_salida, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
+
+@app.route('/buscar_salidas')
+def buscar_salidas():
+    fecha_desde = request.args.get('fecha_desde')
+    fecha_hasta = request.args.get('fecha_hasta')
+    tipo_salida = request.args.get('tipo_salida', '')
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = "SELECT s.*, DATE_FORMAT(fecha_solicitud, '%d/%m/%Y') fecha FROM a_salidas s WHERE fecha_solicitud BETWEEN %s AND %s "
+        params = [fecha_desde, fecha_hasta]        
+        if tipo_salida:
+            query += " AND tipo_salida = %s"
+            params.append(tipo_salida)        
+        query += " ORDER BY fecha_solicitud DESC, id DESC"
+        cursor.execute(query, params)
+        resultados = cursor.fetchall()
+        return jsonify({
+            'success': True,
+            'data': resultados
+        })
+    except Exception as e:
+        app.logger.error(f"Error en búsqueda: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/subir_archivo', methods=['POST'])
+def subir_archivo():
+    try:
+        if 'archivo' not in request.files:
+            return jsonify({'success': False, 'error': 'No se envió archivo'})
+        archivo = request.files['archivo']
+        id_registro = request.form.get('id')
+        if archivo.filename == '':
+            return jsonify({'success': False, 'error': 'Nombre de archivo vacío'})
+        if not allowed_file(archivo.filename):
+            return jsonify({'success': False, 'error': 'Tipo de archivo no permitido'})
+        # Generar nombre único para el archivo
+        extension = archivo.filename.rsplit('.', 1)[1].lower()
+        nombre_archivo = f"salida_{id_registro}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.{extension}"
+        ruta_archivo = os.path.join(app.config['UPLOAD_FOLDER'], nombre_archivo)
+        # Guardar archivo
+        archivo.save(ruta_archivo)
+        # Actualizar base de datos
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute( "UPDATE a_salidas SET archivo = %s, modified = CURRENT_TIMESTAMP WHERE id = %s",
+                (nombre_archivo, id_registro)
+            )
+            conn.commit()
+            return jsonify({'success': True})
+        finally:
+            cursor.close()
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error al subir archivo: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/ver_pdf/<int:id>')
+def ver_pdf(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT archivo FROM a_salidas WHERE id = %s", (id,))
+        resultado = cursor.fetchone()
+        if resultado and resultado['archivo']:
+            ruta_archivo = os.path.join(app.config['UPLOAD_FOLDER'], resultado['archivo'])
+            if os.path.exists(ruta_archivo):
+                return send_file(ruta_archivo, mimetype='application/pdf')
+        return "Archivo no encontrado", 404
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/anular_salida', methods=['POST'])
+def anular_salida():
+    try:
+        data = request.json
+        id_registro = data.get('id')
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("UPDATE a_salidas SET estado = 'ANULADO', modified = CURRENT_TIMESTAMP WHERE id = %s",
+                (id_registro,)
+            )
+            conn.commit()
+            return jsonify({'success': True})
+        finally:
+            cursor.close()
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error al anular: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+#### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

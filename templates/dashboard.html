@@ -60,7 +60,21 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <div class="dashboard-icon">
-                <i class="bi bi-gear"></i>
+                <i class="bi bi-arrow-left-right"></i>
+            </div>
+            <h3>Salidas / Ingresos</h3>
+            <p>Ingresos y Salidas de Dinero por multiples conceptos</p>
+            <a href="{{ url_for('menuiocash') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Opciones de I/S de dinero
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-activity"></i>
             </div>
             <h3>Reportes</h3>
             <p>Reportes y Listados de varios termas</p>
@@ -84,7 +98,7 @@
             </a>
         </div>
     </div>
-    
+
 </div>
 
 <div class="row mt-4">
