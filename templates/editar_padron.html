@@ -5,7 +5,7 @@
     <div class="col-md-8 mx-auto">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar placa : {{ padron.placa }}</h4>
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar placa : {{ padron.id }} : {{ padron.placa }}</h4>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('editar_padron', id=padron.id) }}">
@@ -17,32 +17,28 @@
                             <input type="text" class="form-control" id="placa" name="placa" max="6" value="{{ padron.placa }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="dni" class="form-label">Socio *</label>
-                            <input type="number" class="form-control" id="dni" name="dni" min="0" max="9999" maxlength="4" value="{{ padron.socio }}" required>
+                            <label for="socio" class="form-label">Socio *</label>
+                            <input type="number" class="form-control" id="socio" name="socio" min="0" max="9999" maxlength="4" value="{{ padron.socio }}" required>
                             <div class="form-text">{{ padron.nombresocio }}</div>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="monto1" class="form-label">Fnd.Papeleta (Monto#1)</label>
-                            <input type="number" class="form-control" id="monto1" name="monto1" min="0.00" max="999.99" maxlength="6" value="{{ padron.monto1 }}" >
-                        </div>
-                        <div class="col-md-6 mb-3">
                             <label for="monto2" class="form-label">Ap.Ahorro (Monto#2)</label>
                             <input type="number" class="form-control" id="monto2" name="monto2" min="0.00" max="999.99" maxlength="6" value="{{ padron.monto2 }}">
                         </div>
-                    </div>
-                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="monto3" class="form-label">Ap.Aporte (Monto#3)</label>
                             <input type="number" class="form-control" id="monto3" name="monto3" min="0.00" max="999.99" maxlength="6"  value="{{ padron.monto3 }}">
                         </div>
+                    </div>
+                    <!--div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="monto4" class="form-label">Ap.Seguro (Monto#4)</label>
                             <input type="number" class="form-control" id="monto4" name="monto4" min="0.00" max="999.99" maxlength="6"  value="{{ padron.monto4 }}">
                         </div>
-                    </div>
+                    </div-->
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">

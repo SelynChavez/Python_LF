@@ -1719,6 +1719,7 @@ def editar_padron(id):
         monto4 = request.form.get('monto4')
         monto5 = request.form.get('monto5')
         monto6 = request.form.get('monto6')
+        print(f"socio: {socio}")
         try:
             cursor = connection.cursor()
             cursor.execute(sqlconstants.UPDATE_PADRON, (placa, socio, active, monto1, monto2, monto3, monto4, id))

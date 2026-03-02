@@ -94,22 +94,23 @@ UPDATE_RECIBO_X = "UPDATE a_recibos SET active='S' WHERE id='$recibo$'"
 INSERT_DETREC_X = "INSERT INTO a_recibos_detalle (aporte, recibo, monto, prestamo, tipodeuda, modified, webuser) VALUES ('$apo$', '$rec$', '$mnt$', '$pre$', '$tip$', now(), '$usr$')"
 SELECT_RECIBO_X = "SELECT r.*,nombPadronSocio(r.padron) nombre, concat(fecha) fec, concat(giro) gir FROM a_recibos r WHERE r.id='$pX$'"
 SELECT_DETALLEX = "SELECT rd.*,tt.codigo,tt.descripcion FROM a_recibos_detalle rd, a_tipos tt WHERE recibo='$pX$' AND tt.tipo='APORTE' AND tt.codigo=rd.aporte ORDER BY rd.id"
-DETALLE_SERIE_1 = """ SELECT t.codigo,t.descripcion,
+DETALLE_SERIE_1 = """SELECT * FROM (SELECT t.codigo,t.descripcion,
   ROUND(COALESCE((CASE
-      WHEN t.codigo='FDO.PAPEL' THEN p.monto1
       WHEN t.codigo='APAHORRO'  THEN p.monto2
       WHEN t.codigo='APAPORTE'  THEN p.monto3
       ELSE t.monto1
-  END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0
+  END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0, 1 serie
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
 WHERE t.tipo='APORTE' and t.atributo1='1' and (t.codigo not in ('PRESTAMO'))
 UNION ALL
-SELECT t.codigo,t.descripcion,p.cuota monto,p.id prestamo,p.tipo_prestamo tipodeuda,t.id idx 
+SELECT t.codigo,t.descripcion,p.cuota monto,p.id prestamo,p.tipo_prestamo tipodeuda,t.id idx, 1 serie 
 FROM a_prestamos p,a_tipos t 
-WHERE p.padron='$pad$' and p.estado='aprobado' and t.tipo='APORTE' and t.codigo='PRESTAMO'  """
+WHERE p.padron='$pad$' and p.estado='aprobado' and t.tipo='APORTE' and t.codigo='PRESTAMO') as table1
+WHERE ( (codigo in ('APAHORRO','APAPORTE') and monto > 0) OR codigo not in ('APAHORRO','APAPORTE') )
+"""
 DETALLE_SERIE_2 = """ SELECT t.codigo,t.descripcion,
   ROUND(COALESCE((CASE
-      WHEN t.codigo='AP.ESPECIALX' THEN p.monto4
+      WHEN t.codigo='AP.SEGURO.X' THEN p.monto4
       ELSE t.monto1
   END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
