@@ -7,10 +7,6 @@
             <div class="card-header">
                 <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Reportes</h4>
             </div>
-            <div class="card-body">
-                <h3>Hola, {{ session.user_name }}! como <strong>{{ session.user_rol }},</strong> tienes estas opciones</h3> 
-                </p>
-            </div>
         </div>
     </div>
 </div>
@@ -19,11 +15,7 @@
 
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
-            <div class="dashboard-icon">
-                <i class="bi bi-people"></i>
-            </div>
-            <h3>Recibos</h3>
-            <p>Reporte de recibos por Fechas y Padron</p>
+            <p><b>Rep. Recibos Serie #1 por Fechas y Padron</b></p>
             <a href="{{ url_for('rep1recibos') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                 <i class="bi bi-eye"></i> Rep #1 Aportes
@@ -32,11 +24,7 @@
     </div>
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
-            <div class="dashboard-icon">
-                <i class="bi bi-people"></i>
-            </div>
-            <h3>Aportes</h3>
-            <p>Reporte de recibos por Fechas y Aportes</p>
+            <p><b>Rep. Recibos Serie #1 por Fechas y Aportes</b></p>
             <a href="{{ url_for('rep2recibos') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                 <i class="bi bi-eye"></i> Rep #2 Aportes
@@ -46,10 +34,6 @@
 
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
-            <div class="dashboard-icon">
-                <i class="bi bi-person-check"></i>
-            </div>
-            <h3>Rep.de Prestamos</h3>
             <p>Reporte multiple de los Prestamos</p>
             <button class="btn btn-secondary" disabled>
                 <i class="bi bi-tools"></i> Próximamente
