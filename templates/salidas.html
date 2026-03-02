@@ -3,28 +3,24 @@
 
 {% block specific_styles %}
 <style>
+    
     .modal-pdf {
-        max-width: 95% !important;
-        width: 1200px !important; /* Ancho fijo para pantallas grandes */
+        max-width: 90%;
+        width: 90%;
+    }
+    
+    .modal-pdf .modal-body {
+        padding: 0;
+        height: 80vh;
     }
     
     .pdf-frame {
         width: 100%;
-        height: 85vh;
-        min-height: 600px;
+        height: 100%;
+        border: none;
+        border-radius: 0 0 10px 10px;
     }
-    
-    /* Para pantallas más pequeñas */
-    @media (max-width: 768px) {
-        .modal-pdf {
-            max-width: 100% !important;
-            margin: 0;
-        }
-        
-        .pdf-frame {
-            height: 70vh;
-        }
-    }
+
 </style>
 {% endblock %}
 
