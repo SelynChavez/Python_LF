@@ -3221,6 +3221,24 @@ def generar_pdf_retiro(retiro_id):
 def reg_salidas():
     hoy = datetime.datetime.now().date()
     hoy_str = hoy.strftime('%Y-%m-%d')
+
+    # Obtener período de filtro
+    periodo = request.args.get('periodo', 'hoy')
+    
+    # Calcular fechas según período
+    fecha_fin = hoy
+    if periodo == 'hoy':
+        fecha_inicio = hoy
+    elif periodo == 'semana':
+        fecha_inicio = hoy - datetime.timedelta(days=7)
+    elif periodo == 'mes':
+        fecha_inicio = hoy - datetime.timedelta(days=30)
+    elif periodo == 'trimestre':
+        fecha_inicio = hoy - datetime.timedelta(days=90)
+    elif periodo == 'anio':
+        fecha_inicio = hoy - datetime.timedelta(days=365)
+    else:
+        fecha_inicio = hoy    
     
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -3229,9 +3247,10 @@ def reg_salidas():
         # Obtener salidas de hoy
         cursor.execute("""
             SELECT * FROM a_salidas 
-            WHERE DATE(fecha_solicitud) = %s AND estado in ('PENDIENTE','CONFIRMADO')
-            ORDER BY id DESC
-        """, (hoy_str,))
+            WHERE DATE(fecha_solicitud) BETWEEN %s AND %s 
+            AND estado in ('PENDIENTE','CONFIRMADO')
+            ORDER BY fecha_solicitud DESC, id DESC
+        """, (fecha_inicio,fecha_fin))
         salidas_hoy = cursor.fetchall()
         
         # Calcular total del día
@@ -3278,7 +3297,10 @@ def reg_salidas():
         proveedores=proveedores,
         terceros_def=terceros_def,
         hoy=hoy_str,
-        total_dia=total_dia
+        total_dia=total_dia,
+        periodo_seleccionado=periodo,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin        
     )
 
 @app.route('/guardar_salida', methods=['POST'])
@@ -3525,5 +3547,196 @@ def anular_salida():
         return jsonify({'success': False, 'error': str(e)})
 
 #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+@app.route('/reg_ingresos', methods=['GET'])
+def reg_ingresos():
+    hoy = datetime.datetime.now().date()
+    hoy_str = hoy.strftime('%Y-%m-%d')
+    
+    # Obtener período de filtro
+    periodo = request.args.get('periodo', 'hoy')
+    
+    # Calcular fechas según período
+    fecha_fin = hoy
+    if periodo == 'hoy':
+        fecha_inicio = hoy
+    elif periodo == 'semana':
+        fecha_inicio = hoy - datetime.timedelta(days=7)
+    elif periodo == 'mes':
+        fecha_inicio = hoy - datetime.timedelta(days=30)
+    elif periodo == 'trimestre':
+        fecha_inicio = hoy - datetime.timedelta(days=90)
+    elif periodo == 'anio':
+        fecha_inicio = hoy - datetime.timedelta(days=365)
+    else:
+        fecha_inicio = hoy
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Obtener ingresos del período
+        cursor.execute("""
+            SELECT * FROM a_ingresos 
+            WHERE DATE(fecha_solicitud) BETWEEN %s AND %s 
+            AND estado in ('PENDIENTE','CONFIRMADO')
+            ORDER BY fecha_solicitud DESC, id DESC
+        """, (fecha_inicio, fecha_fin))
+        ingresos = cursor.fetchall()
+        
+        # Calcular total del período
+        total_periodo = 0
+        for ingreso in ingresos:
+            total_periodo += float(ingreso['monto'])
+        
+        # Obtener tipos de ingreso
+        cursor.execute("""
+            SELECT codigo, CONCAT(descripcion, ' [', codigo, ']') as descripcion 
+            FROM a_tipos WHERE tipo = 'INGRESO' ORDER BY 2
+        """)
+        tipos_ingreso = cursor.fetchall()
+        
+        # Obtener padrones
+        cursor.execute("SELECT id, nombPadronSocio(id) nombre, placa FROM a_padrones ORDER BY 2")
+        padrones = cursor.fetchall()
+        
+        # Obtener socios
+        cursor.execute("SELECT id, concat(id,': ',nombre) nombre, dni FROM a_socios ORDER BY nombre")
+        socios = cursor.fetchall()
+        
+        # Obtener empleados activos
+        cursor.execute("SELECT id, concat(id,': ',nombre) nombre, dni FROM a_empleados WHERE active = 'S' ORDER BY nombre")
+        empleados = cursor.fetchall()
+        
+        # Obtener proveedores
+        cursor.execute("SELECT id, concat(id,': ',nombre) nombre, ruc FROM a_proveedores ORDER BY nombre")
+        proveedores = cursor.fetchall()
+        
+        # Obtener terceros definidos
+        cursor.execute("SELECT concat(codigo,': ',descripcion) descripcion FROM a_tipos WHERE tipo = 'TERCERO' ORDER BY 1")
+        terceros_def = cursor.fetchall()
+        
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return render_template(
+        "reg_ingresos.html",
+        ingresos=ingresos,
+        tipos_ingreso=tipos_ingreso,
+        padrones=padrones,
+        socios=socios,
+        empleados=empleados,
+        proveedores=proveedores,
+        terceros_def=terceros_def,
+        hoy=hoy_str,
+        total_periodo=total_periodo,
+        periodo_seleccionado=periodo,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin
+    )
+
+@app.route('/guardar_ingreso', methods=['POST'])
+def guardar_ingreso():
+    conn = None
+    cursor = None
+    try:
+        data = request.json
+        app.logger.debug(f"Datos recibidos: {data}")
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        if data['id'] and int(data['id']) > 0:
+            # Actualizar ingreso existente
+            sql = """
+                UPDATE a_ingresos 
+                SET fecha_solicitud = %s,
+                    tipo_ingreso = %s,
+                    tipo_tercero = %s,
+                    tercero = %s,
+                    monto = %s,
+                    observaciones = %s,
+                    tipo_doc = %s,
+                    numero_doc = %s,
+                    periodo = %s,
+                    estado = 'CONFIRMADO',
+                    modified = CURRENT_TIMESTAMP,
+                    webuser = %s
+                WHERE id = %s
+            """
+            params = (
+                data['fecha_solicitud'],
+                data['tipo_ingreso'],
+                data['tipo_tercero'],
+                data.get('tercero_nombre', data.get('tercero', '')),
+                data['monto'],
+                data.get('observaciones', ''),
+                data['tipo_doc'],
+                data['numero_doc'],
+                data['periodo'],
+                session.get('username', 'webuser'),
+                data['id']
+            )
+        else:
+            # Insertar nuevo ingreso
+            sql = """
+                INSERT INTO a_ingresos 
+                (fecha_solicitud, tipo_ingreso, tipo_tercero, tercero, 
+                 monto, estado, observaciones, tipo_doc, numero_doc, periodo, webuser)
+                VALUES (%s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s)
+            """
+            params = (
+                data['fecha_solicitud'],
+                data['tipo_ingreso'],
+                data['tipo_tercero'],
+                data.get('tercero_nombre', data.get('tercero', '')),
+                data['monto'],
+                data.get('observaciones', ''),
+                data['tipo_doc'],
+                data['numero_doc'],
+                data['periodo'],
+                session.get('username', 'webuser')
+            )
+        
+        app.logger.debug(f"SQL: {sql}")
+        app.logger.debug(f"Params: {params}")
+        
+        cursor.execute(sql, params)
+        conn.commit()
+        
+        return jsonify({'success': True, 'id': data['id'] if data.get('id') else cursor.lastrowid})
+        
+    except Exception as e:
+        app.logger.error(f"Error al guardar: {str(e)}")
+        if conn:
+            conn.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/obtener_ingreso/<int:id>')
+def obtener_ingreso(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM a_ingresos WHERE id = %s", (id,))
+        ingreso = cursor.fetchone()
+        if ingreso:
+            # Formatear fecha para el input date
+            if ingreso['fecha_solicitud']:
+                ingreso['fecha_solicitud'] = ingreso['fecha_solicitud'].strftime('%Y-%m-%d')
+            
+            return jsonify(ingreso)
+        else:
+            return jsonify({'error': 'Ingreso no encontrado'}), 404
+    finally:
+        cursor.close()
+        conn.close()
+
+
+#### $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

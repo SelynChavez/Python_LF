@@ -1,9 +1,8 @@
 {% extends "base.html" %}
-{% block title %}ETLF - Registro de Salidas / Gastos {% endblock %}
+{% block title %}ETLF - Registro de Ingresos{% endblock %}
 {% block content %}
 <div class="row">
     <div class="container-fluid">
-
         <!-- Filtros de período -->
         <div class="row mb-3">
             <div class="col-12">
@@ -45,17 +44,16 @@
         </div>
 
         <div class="row g-3">
-            <!-- Sección Izquierda - Lista de registros del día -->
+            <!-- Sección Izquierda - Lista de registros del período -->
             <div class="col-md-6">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <i class="bi bi-list-check"></i> &nbsp; Salidas de Dinero - Periodo ({{ salidas_hoy|length }})
-                        <span class="badge bg-primary ms-auto">&nbsp;</span>
+                    <div class="card-header d-flex">
+                        <i class="bi bi-list-check"></i> &nbsp; Ingresos de Dinero - Período ({{ ingresos|length }}) 
                     </div>
                     
                     <div class="info-message">
                         <i class="bi bi-info-circle me-2"></i>
-                        Total del día: <strong>S/.{{ "{:,.2f}".format(total_dia) }}</strong>
+                        Total del período: <strong>S/.{{ "{:,.2f}".format(total_periodo) }}</strong>
                     </div>
                     
                     <div class="table-container">
@@ -63,31 +61,33 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Beneficiario</th>
+                                    <th>Fecha</th>
+                                    <th>Tercero</th>
                                     <th>Monto</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabla-salidas">
-                                {% for salida in salidas_hoy %}
+                            <tbody id="tabla-ingresos">
+                                {% for ingreso in ingresos %}
                                 <tr>
-                                    <td><strong>#{{ salida.id }}</strong></td>
+                                    <td><strong>#{{ ingreso.id }}</strong></td>
+                                    <td>{{ ingreso.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
                                     <td>
-                                        {{ salida.beneficiario_nombre }}
-                                        <br><small class="beneficiario-info">{{ salida.tipo_beneficiario|upper }} - {{ salida.beneficiario }}</small>
+                                        {{ ingreso.tercero }}
+                                        <br><small class="beneficiario-info">{{ ingreso.tipo_tercero|upper }}</small>
                                     </td>
-                                    <td class="monto-cell" style="text-align:right">S/{{ "{:,.2f}".format(salida.monto) }} </td>
+                                    <td class="monto-cell" style="text-align:right">S/{{ "{:,.2f}".format(ingreso.monto) }} </td>
                                     <td>
                                         <span class="badge-estado 
-                                            {% if salida.estado == 'PENDIENTE' %}badge-pendiente
-                                            {% elif salida.estado == 'APROBADO' %}badge-aprobado
+                                            {% if ingreso.estado == 'PENDIENTE' %}badge-pendiente
+                                            {% elif ingreso.estado == 'APROBADO' %}badge-aprobado
                                             {% else %}badge-anulado{% endif %}">
-                                            {{ salida.estado }}
+                                            {{ ingreso.estado }}
                                         </span>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-primary" onclick="editarSalida({{ salida.id }})" title="Editar">
+                                        <button class="btn btn-sm btn-primary" onclick="editarIngreso({{ ingreso.id }})" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                     </td>
@@ -96,11 +96,11 @@
                             </tbody>
                         </table>
                         
-                        {% if salidas_hoy|length == 0 %}
+                        {% if ingresos|length == 0 %}
                         <div class="text-center py-5 text-muted">
                             <i class="bi bi-inbox fs-1"></i>
-                            <p class="mt-3">No hay salidas registradas hoy</p>
-                            <p class="small">Utilice el formulario de la derecha para registrar una nueva salida</p>
+                            <p class="mt-3">No hay ingresos registrados en este período</p>
+                            <p class="small">Utilice el formulario de la derecha para registrar un nuevo ingreso</p>
                         </div>
                         {% endif %}
                     </div>
@@ -112,12 +112,13 @@
                 <div class="card">
                     <div class="card-header">
                         <h6 class="section-title" id="form-title">
-                            <i class="bi bi-plus-circle"></i> <b>Registrar Nueva Salida</b>
+                            <i class="bi bi-plus-circle"></i>
+                            <b> Registrar Nuevo Ingreso </b>
                         </h6>
                     </div>
                     <div class="card-body">
-                        <form id="form-salida">
-                            <input type="hidden" id="salida_id" name="salida_id" value="0">
+                        <form id="form-ingreso">
+                            <input type="hidden" id="ingreso_id" name="ingreso_id" value="0">
                             
                             <div class="row">
                                 <div class="col-md-6">
@@ -152,18 +153,18 @@
                             </div>
                                                         
                             <div class="form-group">
-                                <label><i class="bi bi-diagram-3"></i>Tipo de Salida</label>
-                                <select class="form-select" id="tipo_salida" required>
+                                <label><i class="bi bi-diagram-3"></i>Tipo de Ingreso</label>
+                                <select class="form-select" id="tipo_ingreso" required>
                                     <option value="">Seleccione un tipo</option>
-                                    {% for tipo in tipos_salida %}
+                                    {% for tipo in tipos_ingreso %}
                                     <option value="{{ tipo.codigo }}">{{ tipo.descripcion }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                             
                             <div class="form-group">
-                                <label><i class="bi bi-people"></i>Tipo de Beneficiario</label>
-                                <select class="form-select" id="tipo_beneficiario" required>
+                                <label><i class="bi bi-people"></i>Tipo de Tercero</label>
+                                <select class="form-select" id="tipo_tercero" required>
                                     <option value="">Seleccione tipo</option>
                                     <option value="PADRON">1. Padrón</option>
                                     <option value="SOCIO">2. Socio</option>
@@ -174,10 +175,10 @@
                                 </select>
                             </div>
                             
-                            <div class="form-group" id="beneficiario_select_field">
-                                <label><i class="bi bi-person"></i>Beneficiario</label>
-                                <select class="form-select" id="beneficiario_select">
-                                    <option value="">Seleccione beneficiario</option>
+                            <div class="form-group" id="tercero_select_field">
+                                <label><i class="bi bi-person"></i>Tercero</label>
+                                <select class="form-select" id="tercero_select">
+                                    <option value="">Seleccione tercero</option>
                                 </select>
                             </div>
                             <div class="form-group" id="tercero_abierto_field">
@@ -193,11 +194,9 @@
                                             <option value="">Seleccione tipo</option>
                                             <option value="FACTURA">Factura</option>
                                             <option value="BOLETA">Boleta</option>
-                                            <option value="TICKET">Ticket</option>
-                                            <option value="RRHH">Recibo x Honorarios</option>
-                                            <option value="PLANILLA">Planilla de Movilidad</option>
-                                            <option value="DETRACCION">Detraccion</option>
-                                            <option value="COMPROBANTE">Comprobante En Linea</option>
+                                            <option value="EFECTIVO">Efectivo No bancarizado</option>
+                                            <option value="NOACUMULABLE">Ingreso No acumulable</option>
+                                            <option value="COMPROBANTE">Comprobante</option>
                                             <option value="OTRO">Otro Tipo de Documento</option>
                                         </select>
                                     </div>
@@ -206,8 +205,8 @@
                                     <div class="form-group">
                                         <label><i class="bi bi-receipt-cutoff"></i>Numero de Documento</label>
                                         <div class="input-group">
-                                            <span class="input-group-text">0-0#</span>
-                                            <input type="text" class="form-control" id="numero_doc" max-length="15" required>
+                                            <span class="input-group-text">#</span>
+                                            <input type="text" class="form-control" id="numero_doc" maxlength="20" required>
                                         </div>
                                     </div>
                                 </div>
@@ -237,8 +236,9 @@
                                     <i class="bi bi-eraser me-2"></i>Nuevo
                                 </button>
 
-                                <a href="{{ url_for('menuiocash') }}" class="btn btn-secondary"> <i class="bi bi-arrow-left me-2"></i> Regresar </a>
-
+                                <a href="{{ url_for('menuiocash') }}" class="btn btn-secondary"> 
+                                    <i class="bi bi-arrow-left me-2"></i> Regresar 
+                                </a>
                             </div>
                         </form>
                     </div>
@@ -258,39 +258,55 @@
             TERCERO_DEF: {{ terceros_def|tojson }}
         };
         
-        // Manejar cambio en tipo de beneficiario
-        document.getElementById('tipo_beneficiario').addEventListener('change', function() {
+        // Función para cargar opciones del select según tipo
+        function cargarOpcionesTercero(tipo, valorSeleccionado = null) {
+            const select = document.getElementById('tercero_select');
+            select.innerHTML = '<option value="">Seleccione tercero</option>';
+            
+            if (tipo && datos[tipo]) {
+                datos[tipo].forEach(item => {
+                    let texto = item.nombre || item.descripcion;
+                    // if (item.placa) texto += ' - Placa: ' + item.placa;
+                    // if (item.dni) texto += ' - DNI: ' + item.dni;
+                    // if (item.ruc) texto += ' - RUC: ' + item.ruc;
+                    
+                    const option = document.createElement('option');
+                    // Para TERCERO_DEF usamos el nombre/descripción como valor, para otros usamos el id
+                    option.value = tipo === 'TERCERO_DEF' ? (item.nombre || item.descripcion) : item.nombre;
+                    option.textContent = texto;
+                    
+                    // Si hay un valor seleccionado, marcamos la opción
+                    if (valorSeleccionado && option.value == valorSeleccionado) {
+                        option.selected = true;
+                    }
+                    
+                    select.appendChild(option);
+                });
+            }
+        }
+        
+        // Manejar cambio en tipo de tercero
+        document.getElementById('tipo_tercero').addEventListener('change', function() {
             const tipo = this.value;
-            const selectField = document.getElementById('beneficiario_select_field');
+            const selectField = document.getElementById('tercero_select_field');
             const terceroField = document.getElementById('tercero_abierto_field');
-            const select = document.getElementById('beneficiario_select');
+            const select = document.getElementById('tercero_select');
+            const terceroAbierto = document.getElementById('tercero_abierto_nombre');
             
             if (tipo === 'TERCERO_ABIERTO') {
                 selectField.style.display = 'none';
                 terceroField.style.display = 'block';
-                document.getElementById('tercero_abierto_nombre').required = true;
+                terceroAbierto.required = true;
                 select.required = false;
+                terceroAbierto.value = ''; // Limpiar campo
             } else {
                 selectField.style.display = 'block';
                 terceroField.style.display = 'none';
-                document.getElementById('tercero_abierto_nombre').required = false;
+                terceroAbierto.required = false;
                 select.required = true;
                 
                 // Cargar opciones según el tipo
-                select.innerHTML = '<option value="">Seleccione beneficiario</option>';
-                if (tipo && datos[tipo]) {
-                    datos[tipo].forEach(item => {
-                        let texto = item.nombre;
-                        if (item.placa) texto += ' - Placa: ' + item.placa;
-                        if (item.dni) texto += ' - DNI: ' + item.dni;
-                        if (item.ruc) texto += ' - RUC: ' + item.ruc;
-                        
-                        const option = document.createElement('option');
-                        option.value = tipo === 'TERCERO_DEF' ? item.nombre : item.id;
-                        option.textContent = texto;
-                        select.appendChild(option);
-                    });
-                }
+                cargarOpcionesTercero(tipo);
             }
         });
         
@@ -298,19 +314,19 @@
         document.querySelectorAll('.periodo-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const periodo = this.dataset.periodo;
-                window.location.href = "{{ url_for('reg_salidas') }}?periodo=" + periodo;
+                window.location.href = "{{ url_for('reg_ingresos') }}?periodo=" + periodo;
             });
         });
-
+        
         // Manejar envío del formulario
-        document.getElementById('form-salida').addEventListener('submit', function(e) {
+        document.getElementById('form-ingreso').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const formData = {
-                id: document.getElementById('salida_id').value,
+                id: document.getElementById('ingreso_id').value,
                 fecha_solicitud: document.getElementById('fecha_solicitud').value,
-                tipo_salida: document.getElementById('tipo_salida').value,
-                tipo_beneficiario: document.getElementById('tipo_beneficiario').value,
+                tipo_ingreso: document.getElementById('tipo_ingreso').value,
+                tipo_tercero: document.getElementById('tipo_tercero').value,
                 monto: document.getElementById('monto').value,
                 periodo: document.getElementById('periodo').value,
                 tipo_doc: document.getElementById('tipo_doc').value,
@@ -319,13 +335,13 @@
             };
             
             // Validaciones
-            if (!formData.tipo_salida) {
-                alert('Por favor seleccione un tipo de salida');
+            if (!formData.tipo_ingreso) {
+                alert('Por favor seleccione un tipo de ingreso');
                 return;
             }
             
-            if (!formData.tipo_beneficiario) {
-                alert('Por favor seleccione un tipo de beneficiario');
+            if (!formData.tipo_tercero) {
+                alert('Por favor seleccione un tipo de tercero');
                 return;
             }
             
@@ -339,39 +355,30 @@
                 return;
             }
 
-            if (!formData.numero_doc || formData.numero_doc <= 0) {
-                alert('Por favor ingrese un numero de documento válido');
+            if (!formData.numero_doc || formData.numero_doc.trim() === '') {
+                alert('Por favor ingrese un número de documento válido');
                 return;
             }
 
             if (!formData.periodo || formData.periodo <= 0) {
-                alert('Por favor ingrese un periodo contable válido');
+                alert('Por favor ingrese un período contable válido');
                 return;
             }
             
-            if (formData.tipo_beneficiario === 'TERCERO_ABIERTO') {
-                formData.beneficiario = null;
-                formData.beneficiario_nombre = document.getElementById('tercero_abierto_nombre').value;
+            if (formData.tipo_tercero === 'TERCERO_ABIERTO') {
+                formData.tercero = document.getElementById('tercero_abierto_nombre').value;
                 
-                if (!formData.beneficiario_nombre) {
+                if (!formData.tercero) {
                     alert('Por favor ingrese el nombre del tercero');
                     return;
                 }
             } else {
-                const select = document.getElementById('beneficiario_select');
-                formData.beneficiario = select.value;
+                const select = document.getElementById('tercero_select');
+                formData.tercero = select.value;
                 
-                if (!formData.beneficiario) {
-                    alert('Por favor seleccione un beneficiario');
+                if (!formData.tercero) {
+                    alert('Por favor seleccione un tercero');
                     return;
-                }
-                
-                // Buscar el nombre del beneficiario
-                if (formData.tipo_beneficiario && datos[formData.tipo_beneficiario]) {
-                    const selectedItem = datos[formData.tipo_beneficiario].find(
-                        item => (formData.tipo_beneficiario === 'TERCERO_DEF' ? item.nombre : item.id) == formData.beneficiario
-                    );
-                    formData.beneficiario_nombre = selectedItem ? selectedItem.nombre : '';
                 }
             }
             
@@ -381,7 +388,7 @@
             btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
             
             // Enviar datos
-            fetch('/guardar_salida', {
+            fetch('/guardar_ingreso', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData)
@@ -403,66 +410,95 @@
             });
         });
         
-        // Función para editar salida
-        function editarSalida(id) {
-            fetch('/obtener_salida/' + id)
+        // Función para editar ingreso
+        function editarIngreso(id) {
+            fetch('/obtener_ingreso/' + id)
             .then(response => response.json())
             .then(data => {
-                document.getElementById('form-title').innerHTML = '<i class="bi bi-pencil-square"></i>Editar Salida #' + data.id;
-                document.getElementById('salida_id').value = data.id;
+                document.getElementById('form-title').innerHTML = '<i class="bi bi-pencil-square"></i>Editar Ingreso #' + data.id;
+                document.getElementById('ingreso_id').value = data.id;
                 document.getElementById('display_id').value = '#' + data.id;
                 document.getElementById('estado').value = data.estado;
                 document.getElementById('fecha_solicitud').value = data.fecha_solicitud.split('T')[0];
-                document.getElementById('tipo_salida').value = data.tipo_salida;
-                document.getElementById('tipo_beneficiario').value = data.tipo_beneficiario;
+                document.getElementById('tipo_ingreso').value = data.tipo_ingreso;
+                document.getElementById('tipo_tercero').value = data.tipo_tercero;
                 document.getElementById('tipo_doc').value = data.tipo_doc;
                 document.getElementById('numero_doc').value = data.numero_doc;
                 document.getElementById('periodo').value = data.periodo;
                 document.getElementById('monto').value = data.monto;
                 document.getElementById('observaciones').value = data.observaciones || '';
                 
-                // Disparar cambio en tipo_beneficiario
+                // Disparar cambio en tipo_tercero para mostrar el campo correcto
                 const event = new Event('change');
-                document.getElementById('tipo_beneficiario').dispatchEvent(event);
+                const tipoTerceroSelect = document.getElementById('tipo_tercero');
+                tipoTerceroSelect.dispatchEvent(event);
                 
-                // Seleccionar el beneficiario correspondiente
+                // Después de cargar las opciones, seleccionar el valor correspondiente
                 setTimeout(() => {
-                    if (data.tipo_beneficiario === 'TERCERO_ABIERTO') {
-                        document.getElementById('tercero_abierto_nombre').value = data.beneficiario_nombre || '';
+                    if (data.tipo_tercero === 'TERCERO_ABIERTO') {
+                        document.getElementById('tercero_abierto_nombre').value = data.tercero || '';
                     } else {
-                        document.getElementById('beneficiario_select').value = data.beneficiario || '';
+                        // Para otros tipos, buscar en el select
+                        const select = document.getElementById('tercero_select');
+                                                
+                        // Función para intentar seleccionar el valor
+                        const intentarSeleccionar = () => {
+                            let encontrado = false; 
+                            for (let option of select.options) {
+                                // Comparar como string para evitar problemas de tipo
+                                if (option.value == data.tercero) {
+                                    option.selected = true;
+                                    encontrado = true;
+                                    break;
+                                }
+                            }
+                            //alert(i);
+
+                            // Si no se encuentra, recargar opciones y reintentar
+                            if (!encontrado && data.tipo_tercero) {
+                                console.log('No se encontró el valor, recargando opciones...');
+                                cargarOpcionesTercero(data.tipo_tercero, data.tercero);
+                            }
+                        };
+                        
+                        // Intentar inmediatamente y después de un pequeño retraso
+                        intentarSeleccionar();
+                        setTimeout(intentarSeleccionar, 300);
                     }
                 }, 200);
+            })
+            .catch(error => {
+                alert('Error al cargar el ingreso: ' + error);
             });
         }
         
         // Función para limpiar formulario
         function limpiarFormulario() {
-            document.getElementById('form-title').innerHTML = '<i class="bi bi-plus-circle"></i>Registrar Nueva Salida';
-            document.getElementById('salida_id').value = '0';
+            document.getElementById('form-title').innerHTML = '<i class="bi bi-plus-circle"></i>Registrar Nuevo Ingreso';
+            document.getElementById('ingreso_id').value = '0';
             document.getElementById('display_id').value = '';
             document.getElementById('estado').value = 'PENDIENTE';
             document.getElementById('fecha_solicitud').value = '{{ hoy }}';
-            document.getElementById('tipo_salida').value = '';
-            document.getElementById('tipo_beneficiario').value = '';
+            document.getElementById('tipo_ingreso').value = '';
+            document.getElementById('tipo_tercero').value = '';
             document.getElementById('monto').value = '';
-            document.getElementById('tipo_doc').value = 'BOLETA';
+            document.getElementById('tipo_doc').value = 'FACTURA';
             document.getElementById('numero_doc').value = '';
             document.getElementById('periodo').value = '202601';
             document.getElementById('observaciones').value = '';
             
             // Limpiar y ocultar campos dinámicos
-            document.getElementById('beneficiario_select').innerHTML = '<option value="">Seleccione beneficiario</option>';
+            document.getElementById('tercero_select').innerHTML = '<option value="">Seleccione tercero</option>';
             document.getElementById('tercero_abierto_nombre').value = '';
             
-            document.getElementById('beneficiario_select_field').style.display = 'none';
+            document.getElementById('tercero_select_field').style.display = 'none';
             document.getElementById('tercero_abierto_field').style.display = 'none';
         }
         
         // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
-            // Ocultar campos de beneficiario inicialmente
-            document.getElementById('beneficiario_select_field').style.display = 'none';
+            // Ocultar campos de tercero inicialmente
+            document.getElementById('tercero_select_field').style.display = 'none';
             document.getElementById('tercero_abierto_field').style.display = 'none';
         });
     </script>
