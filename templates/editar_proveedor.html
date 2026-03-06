@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Editar Proveedor {% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Proveedor: {{ proveedor.nombre }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('editar_proveedor', id=proveedor.id) }}">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ proveedor.nombre }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="ruc" class="form-label">RUC *</label>
+                            <input type="number" class="form-control" id="ruc" name="ruc" min="0" max="99999999999" value="{{ proveedor.ruc }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="contacto" class="form-label">Persona de Contacto *</label>
+                            <input type="text" class="form-control" id="contacto" name="contacto" value="{{ proveedor.contacto }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cargo" class="form-label">Cargo *</label>
+                            <input type="text" class="form-control" id="cargo" name="cargo" value="{{ proveedor.cargo }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fono" class="form-label">Fono *</label>
+                            <input type="text" class="form-control" id="fono" name="fono" value="{{ proveedor.fono }}"  required>
+                            <div class="form-text"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label">Tipo de Proveedor *</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                <option value="">Seleccionar Tipo...</option>
+                                <option value="COMBUSTIBLE" {{ 'selected' if proveedor.tipo == 'COMBUSTIBLE' }}>Combustible</option>
+                                <option value="REPUESTOS" {{ 'selected' if proveedor.tipo == 'REPUESTOS' }}>Repuestos</option>
+                                <option value="LLANTAS" {{ 'selected' if proveedor.tipo == 'LLANTAS' }}>Llantas</option>
+                                <option value="OTRO" {{ 'selected' if proveedor.tipo == 'OTRO' }}>Otro Tipo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">E.Mail *</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ proveedor.email }}"  required>
+                            <div class="form-text">Maximo 100 caracteres</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="observaciones" class="form-label">Observaciones</label>
+                            <input type="text" class="form-control" id="observaciones" name="observaciones" value="{{ proveedor.observaciones }}" >
+                            <div class="form-text">Maximo 100 caracteres</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="direccion" class="form-label">Direccion *</label>
+                            <input type="text" class="form-control" id="direccion" name="direccion" value="{{ proveedor.direccion }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Activo? *</label>
+                            <select class="form-select" id="active" name="active" required>
+                                <option value="S" {{ 'selected' if proveedor.active == 'S' }}>Si</option>
+                                <option value="N" {{ 'selected' if proveedor.active == 'N' }}>No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        Los campos marcados con * son obligatorios
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                        <a href="{{ url_for('listar_empleados') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

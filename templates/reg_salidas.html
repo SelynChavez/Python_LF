@@ -284,9 +284,12 @@
                         if (item.placa) texto += ' - Placa: ' + item.placa;
                         if (item.dni) texto += ' - DNI: ' + item.dni;
                         if (item.ruc) texto += ' - RUC: ' + item.ruc;
+                        if (item.atributo1) texto += ' - Codigo: ' + item.atributo1;
                         
                         const option = document.createElement('option');
-                        option.value = tipo === 'TERCERO_DEF' ? item.nombre : item.id;
+                        // option.value = tipo === 'TERCERO_DEF' ? item.descripcion : item.id;
+                        option.value = item.id;
+                        /// option.value = tipo === 'TERCERO_DEF' ? (item.nombre || item.descripcion) : item.nombre;
                         option.textContent = texto;
                         select.appendChild(option);
                     });

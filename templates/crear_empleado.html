@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Crear Empleado {% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Nuevo Empleado</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('crear_empleado') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="dni" class="form-label">DNI *</label>
+                            <input type="number" class="form-control" id="dni" name="dni" min="0" max="99999999" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fono" class="form-label">Fono *</label>
+                            <input type="text" class="form-control" id="fono" name="fono" required>
+                            <div class="form-text"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">E.Mail</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="form-text">Maximo 100 caracteres</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="direccion" class="form-label">Direccion *</label>
+                            <input type="text" class="form-control" id="direccion" name="direccion" required>
+                            <div class="form-text">Maximo 100 caracteres; Incluir Distrito</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cargo" class="form-label">Cargo *</label>
+                            <select class="form-select" id="cargo" name="cargo" required>
+                                <option value="">Seleccionar Cargo...</option>
+                                <option value="GERENTE">Gerente</option>
+                                <option value="ADMINISTRADOR">Administrador</option>
+                                <option value="CONTADOR">Contador</option>
+                                <option value="GRIFERO">Grifero</option>
+                                <option value="ASISTENTE">Asistente</option>
+                                <option value="DIRECTOR">Director</option>
+                                <option value="EMPLEADO">Empleado Gnal</option>
+                                <option value="SUPERVISOR">Supervisor</option>
+                                <option value="OPERARIO">Operario</option>
+                                <option value="AYUDANTE">Ayudante</option>
+                                <option value="PRACTICANTE">Practicante</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="afp" class="form-label">AFP *</label>
+                            <select class="form-select" id="afp" name="afp" required>
+                                <option value="ONP">ONP</option>
+                                <option value="PRIMA">AFP Prima</option>
+                                <option value="PROFUTURO">AFP Profuturo</option>
+                                <option value="INTEGRA">AFP Integra</option>
+                                <option value="HABITAT">AFP Habitat</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sueldo" class="form-label">Sueldo Basico S/.</label>
+                            <input type="number" class="form-control" id="sueldo" name="sueldo" min="0.00" max="999999.99" step="0.01" required>
+                            <div class="form-text">Soles - Sueldo Bruto - Antes de Descuentos</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Crear Empleado
+                        </button>
+                        <a href="{{ url_for('listar_empleados') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,23 +1,23 @@
 {% extends "base.html" %}
-{% block title %}ETLF - Padrones{% endblock %}
+{% block title %}ETLF - Proveedores{% endblock %}
 {% block extra_js %}
 <script>
 $(document).ready(function() {
     // Búsqueda en tiempo real
-    $('#buscarPadron').on('keyup', function() {
+    $('#buscarProveedor').on('keyup', function() {
         const valor = $(this).val().toLowerCase();
-        $('.fila-padron').filter(function() {
+        $('.fila-proveedor').filter(function() {
             $(this).toggle(
                 $(this).text().toLowerCase().indexOf(valor) > -1
             );
         });
     });
-    // Confirmación para eliminar
+
     $('.btn-eliminar').on('click', function(e) {
         e.preventDefault();
         const url = $(this).attr('href');
-        const placa = $(this).data('placa');
-        if (confirm(`¿Está seguro de eliminar al padron "${placa}"? Esta acción no se puede deshacer.`)) {
+        const nombre = $(this).data('nombre');
+        if (confirm(`¿Está seguro de eliminar al proveedor "${nombre}"? Esta acción no se puede deshacer.`)) {
             window.location.href = url;
         }
     });
@@ -30,18 +30,15 @@ $(document).ready(function() {
     <div class="col-12 mb-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0"><i class="bi bi-people"></i> Gestión de Padrones</h4>
-                <a href="{{ url_for('crear_padron') }}" class="btn btn-success">
-                    <i class="bi bi-person-plus"></i> Nuevo Padron
-                </a>
+                <h4 class="mb-0"><i class="bi bi-people"></i> Administracion de Proveedores</h4>
+                <a href="{{ url_for('crear_proveedor') }}" class="btn btn-success"> <i class="bi bi-person-plus"></i> Nuevo Proveedor </a>
             </div>
             <div class="card-body">
-                <!-- Barra de búsqueda -->
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" id="buscarPadron" class="form-control" placeholder="Buscar padron por placa...">
+                            <input type="text" id="buscarProveedor" class="form-control" placeholder="Buscar proveedores...">
                         </div>
                     </div>
                     <div class="col-md-6 text-end">
@@ -56,45 +53,38 @@ $(document).ready(function() {
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Placa</th>
-                                <th>Socio</th>
+                                <th>Nombre</th>
+                                <th>RUC</th>
+                                <th>Contacto</th>
+                                <th>Cargo</th>
+                                <th>Fono</th>
                                 <th>Act</th>
-                                <th>Ap.Ahorro</th>
-                                <th>Ap.Aporte</th>
-                                <th>Actualizado</th>
+                                <th>Creado</th>
                                 <th>Por</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for p0 in padrones %}
-                            <tr class="fila-padron">
+                            {% for p0 in proveedores %}
+                            <tr class="fila-proveedor">
                                 <td>{{ p0.id }}</td>
-                                <td>
-                                    <strong>{{ p0.placa }}</strong>
-                                </td>
-                                <td>{{ p0.nombresocio }}</td>
-                                <td>
-                                    <span class="badge {{ 'badge-activo' if p0.active == 'S' else 'badge-inactivo' }}">
-                                        {{ 'S' if p0.active == 'S' else 'N' }}
-                                    </span>
-                                </td>
-                                <td>{{ p0.monto2 }}</td>
-                                <td>{{ p0.monto3 }}</td>
-                                <td>{{ p0.modified.strftime('%d/%m/%Y %H:%M') if p0.modified }}</td>
+                                <td><strong>{{ p0.nombre }}</strong></td>
+                                <td>{{ p0.ruc }}</td>
+                                <td>{{ p0.contacto }}</td>
+                                <td>{{ p0.cargo }}</td>
+                                <td>{{ p0.fono }}</td>
+                                <td><span class="badge {{ 'badge-activo' if p0.active == 'S' else 'badge-inactivo' }}">{{ 'S' if p0.active == 'S' else 'N' }}</span></td>
+                                <td>{{ p0.modified.strftime('%d/%m/%Y') if p0.modified }}</td>
                                 <td>{{ p0.webuser }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="{{ url_for('editar_padron', id=p0.id) }}" 
+                                        <a href="{{ url_for('editar_proveedor', id=p0.id) }}" 
                                            class="btn btn-sm btn-warning" title="Editar">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <a href="{{ url_for('eliminar_padron', id=p0.id) }}" 
+                                            <i class="bi bi-pencil"></i></a>
+                                        <a href="{{ url_for('eliminar_proveedor', id=p0.id) }}" 
                                            class="btn btn-sm btn-danger btn-eliminar" 
-                                           data-nombre="{{ p0.placa }}"
-                                           title="Eliminar">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                           data-nombre="{{ p0.nombre }}"  title="Eliminar">
+                                            <i class="bi bi-trash"></i></a>
                                     </div>
                                 </td>
                             </tr>
@@ -102,7 +92,6 @@ $(document).ready(function() {
                         </tbody>
                     </table>
                 </div>
-
             </div>
         </div>
     </div>

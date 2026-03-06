@@ -18,11 +18,11 @@
             <div class="dashboard-icon">
                 <i class="bi bi-people"></i>
             </div>
-            <h3>Usuarios</h3>
-            <p>Gestión completa de usuarios del sistema</p>
-            <a href="{{ url_for('listar_usuarios') if session.user_rol == 'ADMIN' else '#' }}" 
+            <h3>Empleado</h3>
+            <p>Lista completa de empleados de la empresa</p>
+            <a href="{{ url_for('listar_empleados') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
-                <i class="bi bi-eye"></i> Ver Usuarios
+                <i class="bi bi-eye"></i> Ver Empleados
             </a>
         </div>
     </div>
@@ -114,6 +114,49 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <div class="dashboard-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Terceros</h3>
+            <p>Relacion de terceros varios</p>
+            <a href="{{ url_for('listar_tipos_terceros') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Terceros
+            </a>
+        </div>
+    </div>
+
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-cash-coin"></i>
+            </div>
+            <h3>Cuentas Contables</h3>
+            <p>Plan Contable General Configuracion</p>
+            <a href="{{ url_for('cuentas_contables') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Plan Contable
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>Proveedores</h3>
+            <p>Relacion de proveedores varios</p>
+            <a href="{{ url_for('listar_proveedores') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Proveedores
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
                 <i class="bi bi-music-player"></i>
             </div>
             <h3>Productos</h3>
@@ -127,13 +170,13 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <div class="dashboard-icon">
-                <i class="bi bi-cash-coin"></i>
+                <i class="bi bi-people"></i>
             </div>
-            <h3>Cuentas Contables</h3>
-            <p>Plan Contable General Configuracion</p>
-            <a href="{{ url_for('cuentas_contables') if session.user_rol == 'ADMIN' else '#' }}" 
+            <h3>Usuarios</h3>
+            <p>Gestión completa de usuarios del sistema</p>
+            <a href="{{ url_for('listar_usuarios') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
-                <i class="bi bi-eye"></i> Ver Plan Contable
+                <i class="bi bi-eye"></i> Ver Usuarios
             </a>
         </div>
     </div>

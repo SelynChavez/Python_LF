@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Editar Empleado {% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Empleado: {{ empleado.nombre }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('editar_empleado', id=empleado.id) }}">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ empleado.nombre }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="dni" class="form-label">DNI *</label>
+                            <input type="number" class="form-control" id="dni" name="dni" min="0" max="99999999" value="{{ empleado.dni }}"  required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fono" class="form-label">Fono *</label>
+                            <input type="text" class="form-control" id="fono" name="fono" value="{{ empleado.fono }}"  required>
+                            <div class="form-text"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">E.Mail *</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ empleado.email }}"  required>
+                            <div class="form-text">Maximo 100 caracteres</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="direccion" class="form-label">Direccion *</label>
+                            <input type="text" class="form-control" id="direccion" name="direccion" value="{{ empleado.direccion }}"  required>
+                            <div class="form-text">Maximo 100 caracteres; Incluir Distrito</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cargo" class="form-label">Cargo *</label>
+                            <select class="form-select" id="cargo" name="cargo" required>
+                                <option value="">Seleccionar Cargo...</option>
+                                <option value="GERENTE" {{ 'selected' if empleado.cargo == 'GERENTE' }}>Gerente</option>
+                                <option value="ADMINISTRADOR" {{ 'selected' if empleado.cargo == 'ADMINISTRADOR' }}>Administrador</option>
+                                <option value="CONTADOR" {{ 'selected' if empleado.cargo == 'CONTADOR' }}>Contador</option>
+                                <option value="GRIFERO" {{ 'selected' if empleado.cargo == 'GRIFERO' }}>Grifero</option>
+                                <option value="ASISTENTE" {{ 'selected' if empleado.cargo == 'ASISTENTE' }}>Asistente</option>
+                                <option value="DIRECTOR" {{ 'selected' if empleado.cargo == 'DIRECTOR' }}>Director</option>
+                                <option value="EMPLEADO" {{ 'selected' if empleado.cargo == 'EMPLEADO' }}>Empleado Gnal</option>
+                                <option value="SUPERVISOR" {{ 'selected' if empleado.cargo == 'SUPERVISOR' }}>Supervisor</option>
+                                <option value="OPERARIO" {{ 'selected' if empleado.cargo == 'OPERARIO' }}>Operario</option>
+                                <option value="AYUDANTE" {{ 'selected' if empleado.cargo == 'AYUDAMTE' }}>Ayudante</option>
+                                <option value="PRACTICANTE" {{ 'selected' if empleado.cargo == 'PRACTICANTE' }}>Practicante</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="afp" class="form-label">AFP *</label>
+                            <select class="form-select" id="afp" name="afp" required>
+                                <option value="ONP" {{ 'selected' if empleado.afp == 'ONP' }}>ONP</option>
+                                <option value="PRIMA" {{ 'selected' if empleado.afp == 'PRIMA' }}>AFP Prima</option>
+                                <option value="PROFUTURO" {{ 'selected' if empleado.afp == 'PROFUTURO' }}>AFP Profuturo</option>
+                                <option value="INTEGRA" {{ 'selected' if empleado.afp == 'INTEGRA' }}>AFP Integra</option>
+                                <option value="HABITAT" {{ 'selected' if empleado.afp == 'HABITAT' }}>AFP Habitat</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sueldo" class="form-label">Sueldo Basico S/. *</label>
+                            <input type="number" class="form-control" id="sueldo" name="sueldo" min="0.00" max="999999.99" step="0.01" value="{{ empleado.sueldo }}" required>
+                            <div class="form-text">Soles - Sueldo Bruto - Antes de Descuentos</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Activo? *</label>
+                            <select class="form-select" id="active" name="active" required>
+                                <option value="S" {{ 'selected' if empleado.active == 'S' }}>Si</option>
+                                <option value="N" {{ 'selected' if empleado.active == 'N' }}>No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        Los campos marcados con * son obligatorios
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                        <a href="{{ url_for('listar_empleados') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
