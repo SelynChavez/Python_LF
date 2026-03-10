@@ -1944,9 +1944,10 @@ def editar_socio(id):
         tipo = request.form.get('tipo')
         email = request.form.get('email')
         active = request.form.get('active')
+        usuario = request.form.get('usuario')
         try:
             cursor = connection.cursor()
-            cursor.execute(sqlconstants.UPDATE_SOCIO, (nombre, fono, dni, comentarios, tipo, active, email, id))            
+            cursor.execute(sqlconstants.UPDATE_SOCIO, (nombre, fono, dni, comentarios, tipo, active, email, usuario, id))            
             connection.commit()
             # Logs
             cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_socio', f'Editó el socio: {nombre}'))
@@ -2975,6 +2976,7 @@ def get_shift_name(current_time=None): ### Determinar el turno actual basado en 
 def prestamos():
     total = 0
     totsp = 0
+    usr = session['user_username']
     if request.method == 'POST':
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
         p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
@@ -2989,11 +2991,16 @@ def prestamos():
         query = query.replace("$p4$", str(p4))
         cursor.execute(query)
         prestamos = cursor.fetchall()
-        conn.close()
         for r0 in prestamos:
             total += float(r0['mnt_aprobado'])
             totsp += float(r0['sld_pendiente'])
-        return render_template('prestamos.html', prestamos=prestamos, total=total, totsp=totsp, p1=p1, p2=p2, p3=p3, p4=p4)
+        if (session['user_rol'] == "SOCIO"):
+            quer1 = sqlconstants.SELECT_LISTA_PADRONES
+            quer1 = quer1.replace("$usuario$", usr)
+            cursor.execute(quer1)
+            padrones = cursor.fetchall()
+        conn.close()
+        return render_template('prestamos.html', prestamos=prestamos, total=total, totsp=totsp, p1=p1, p2=p2, p3=p3, p4=p4,padrones=padrones)
     else:
         px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
         flash('Listo para consultar.', 'success')
@@ -3120,6 +3127,13 @@ def retiros():
     querA = sqlconstants.DROPLIST_APORTES
     cursor.execute(querA)
     tipos = cursor.fetchall()
+    padrones = []
+    usr = session['user_username']
+    if (session['user_rol'] == "SOCIO"):
+        quer1 = sqlconstants.SELECT_LISTA_PADRONES
+        quer1 = quer1.replace("$usuario$", usr)
+        cursor.execute(quer1)
+        padrones = cursor.fetchall()
     if request.method == 'POST':
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
         p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
@@ -3138,12 +3152,12 @@ def retiros():
         conn.close()
         for r0 in retiros:
             total += float(r0['mnt_retirado'])
-        return render_template('retiros.html', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4)
+        return render_template('retiros.html', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4, padrones=padrones)
     else:
         conn.close()           
         px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
         flash('Listo para consultar.', 'success')
-        return render_template('retiros.html', retiros=[], tipos=tipos, p1=px, p2=px, p3=0, p4='', total=total)
+        return render_template('retiros.html', retiros=[], tipos=tipos, p1=px, p2=px, p3=0, p4='', total=total, padrones=padrones)
 
 @app.route('/retiros/nuevo', methods=['GET', 'POST'])
 def crear_retiro():

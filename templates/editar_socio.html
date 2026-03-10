@@ -52,13 +52,16 @@
                     </div>
                     
                     <div class="row">
-
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Activo?</label>
                             <select class="form-select" id="active" name="active" required>
                                 <option value="S" {{ 'selected' if socio.active == 'S' }}>Si</option>
                                 <option value="N" {{ 'selected' if socio.active == 'N' }}>No</option>
                             </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="usuario" class="form-label">Usuario Asociado *</label>
+                            <input type="text" class="form-control" id="usuario" name="usuario" value="{{ socio.usuario }}" required>
                         </div>
                     </div>
 

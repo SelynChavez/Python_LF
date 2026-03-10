@@ -64,7 +64,7 @@ DELETE_USUARIO = "DELETE FROM applicationuser WHERE id = %s"
 
 LISTA_SOCIOS = "SELECT * FROM a_socios ORDER BY modified DESC "
 INSERT_SOCIO = "INSERT INTO a_socios (nombre, fono, dni, comentarios, tipo, email, active, modified, webuser) VALUES (%s, %s, %s, %s, %s, %s, 'S', now(), %s)"
-UPDATE_SOCIO = "UPDATE a_socios SET nombre=%s, fono=%s, dni=%s, comentarios=%s, tipo=%s, active=%s, email=%s, modified=now() WHERE id=%s "
+UPDATE_SOCIO = "UPDATE a_socios SET nombre=%s, fono=%s, dni=%s, comentarios=%s, tipo=%s, active=%s, email=%s, usuario=%s, modified=now() WHERE id=%s "
 SELECT_SOCIO = "SELECT * FROM a_socios WHERE id = %s"
 SEL_NM_SOCIO = "SELECT nombre FROM a_socios WHERE id = %s"
 DELETE_SOCIO = "DELETE FROM a_socios WHERE id = %s"
