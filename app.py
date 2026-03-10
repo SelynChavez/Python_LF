@@ -553,6 +553,8 @@ def crear_recibo_s6():
                     for i0 in items:
                         lin += 1
                         mnt = request.form.get(i0['codigo'])
+                        if (not mnt):
+                            mnt = "0"
                         mnt0 = float(mnt)
                         if mnt and mnt0 > 0:
                             i0['monto'] = Decimal(mnt0)
@@ -634,7 +636,6 @@ def crear_recibo_s5():
                     curs0r.execute(quer0)
                     num = curs0r.lastrowid
                     curs0r.close()
-
                     cursor = connection.cursor()
                     query = sqlconstants.INSERT_RECIBO_X
                     cursor.execute(query, (ser, num, fec, pad, com, act, session['user_username'], 'N')) 
@@ -663,6 +664,8 @@ def crear_recibo_s5():
                     for i0 in items:
                         lin += 1
                         mnt = request.form.get(i0['codigo'])
+                        if (not mnt):
+                            mnt = "0"
                         mnt0 = float(mnt)
                         if mnt and mnt0 > 0:
                             i0['monto'] = Decimal(mnt0)
@@ -773,6 +776,8 @@ def crear_recibo_s4():
                     for i0 in items:
                         lin += 1
                         mnt = request.form.get(i0['codigo'])
+                        if (not mnt):
+                            mnt = "0"
                         mnt0 = float(mnt)
                         if mnt and mnt0 > 0:
                             i0['monto'] = Decimal(mnt0)
@@ -883,6 +888,8 @@ def crear_recibo_s3():
                     for i0 in items:
                         lin += 1
                         mnt = request.form.get(i0['codigo'])
+                        if (not mnt):
+                            mnt = "0"
                         mnt0 = float(mnt)
                         if mnt and mnt0 > 0:
                             i0['monto'] = Decimal(mnt0)
@@ -991,6 +998,8 @@ def crear_recibo_s2():
                     for i0 in items:
                         lin += 1
                         mnt = request.form.get(i0['codigo'])
+                        if (not mnt):
+                            mnt = "0"
                         mnt0 = float(mnt)
                         if mnt and mnt0 > 0:
                             i0['monto'] = Decimal(mnt0)
@@ -1109,6 +1118,8 @@ def crear_recibo():
                     for i0 in items:
                         lin += 1
                         mnt = request.form.get(i0['codigo'])
+                        if (not mnt):
+                            mnt = "0"
                         mnt0 = float(mnt)
                         if mnt and mnt0 > 0:
                             i0['monto'] = Decimal(mnt0)
