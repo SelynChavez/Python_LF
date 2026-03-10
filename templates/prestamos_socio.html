@@ -47,10 +47,10 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>ID</th>
-                                    <th>Padrón</th>
+                                    <th>Pad</th>
                                     <th>Tipo</th>
-                                    <th>Monto Aprobado</th>
-                                    <th>Saldo Pendiente</th>
+                                    <th>Aprobado</th>
+                                    <th>Pendiente</th>
                                     <th>Fecha</th>
                                     <th>Estado</th>
                                 </tr>
@@ -65,7 +65,7 @@
                                     <td style="text-align:right"; color:>
                                          <span class="text-danger">S/{{ "{:,.2f}".format(prestamo.sld_pendiente)}} </span>
                                     </td>
-                                    <td>{{ prestamo.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ prestamo.fecha_solicitud.strftime('%d/%m/%y') }}</td>
                                     <td>
                                         {% if prestamo.estado == 'pendiente' %}
                                             <span class="badge bg-warning text-dark">Pend</span>
