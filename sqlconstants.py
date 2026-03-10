@@ -36,12 +36,13 @@ REP2APORTES = """
     IF(v.padron IS NULL,LPAD(v.socio,4,'0'),LPAD(v.padron,4,'0')) d3,
     (SELECT CONCAT(p.id,':',p.placa,':',s.nombre) FROM a_padrones p, a_socios s WHERE p.socio=s.id AND v.padron=p.id) d4,
     IF(fecha>giro,'ATRAZADO',IF(fecha<giro,'ADELANTADO','NORMAL')) d5,
-    IFNULL(IF(v.serie='7',CONCAT(v.moneda,' T.C=',v.tc),v.comentarios),'') d6,
-    concat(round(IF(serie='7',IF(moneda='DOLARES',vd.monto*IFNULL(v.tc,1),vd.monto),IFNULL(vd.monto,0)),2),'') d7
+    IFNULL(IF(v.serie='7',CONCAT(v.moneda,' T.C=',v.tc),'S/.'),'') d6,
+    concat(round(IF(serie='7',IF(moneda='DOLARES',vd.monto*IFNULL(v.tc,1),vd.monto),IFNULL(vd.monto,0)),2),'') d7,
+    vd.aporte d8
   FROM a_recibos_detalle vd, a_recibos v 
   WHERE v.serie in ('1') AND v.id=vd.recibo AND (v.fecha>='$p1$' AND v.fecha<='$p2$') AND 
     ((socio IS NOT NULL AND ('$p3$'='0' OR socio='$p3$')) OR (padron IS NOT NULL AND ('$p3$'='0' OR padron='$p3$'))) AND 
-    (vd.aporte = '$p4$') AND 
+    ((vd.aporte = '$p4$') or 'TODOS'='$p4$') AND 
     (v.active='S') 
    ORDER BY 2, 1 DESC
 """
@@ -99,9 +100,10 @@ SELECT_TIPO = "SELECT t.* FROM a_tipos t WHERE t.id = %s"
 SEL_NM_TIPO = "SELECT tipo,codigo FROM a_tipos WHERE id = %s"
 DELETE_TIPO = "DELETE FROM a_tipos WHERE id = %s"
 
-DROPLIST_APORTES = "SELECT codigo d1,concat(codigo,':',descripcion) d2 FROM nlf_tipos WHERE tipo='APORTE' "
+DROPLIST_APORTES = "SELECT codigo d1,concat(codigo,':',descripcion) d2 FROM a_tipos WHERE tipo='APORTE' "
 INSERT_LOGUSUARIO = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion) VALUES (%s, %s, %s)"
 
+DELETE_RECIBO_U = "DELETE FROM a_recibos WHERE serie=%s AND giro=%s AND padron=%s AND active != 'S' "
 INSERT_CORREL_X = "INSERT INTO a_corrrec_$serie$ VALUES (null,'X',now())"
 INSERT_RECIBO_X = "INSERT INTO a_recibos (serie, numero, fecha, giro, padron, comentarios, active, modified, webuser, igv) VALUES (%s, %s, now(), %s, %s, %s, %s, now(), %s, %s)"
 UPDATE_RECIBO_X = "UPDATE a_recibos SET active='S' WHERE id='$recibo$'"
@@ -247,3 +249,5 @@ UPDATE_CUENTA_CONTABLE = "UPDATE a_pcge SET elemento=%s, cuenta=%s, nombre=%s, d
 SELECT_CUENTA_CONTABLE = "SELECT t.* FROM a_pcge t WHERE t.id = %s"
 SEL_NM_CUENTA_CONTABLE = "SELECT nombre FROM a_pcge WHERE id = %s"
 DELETE_CUENTA_CONTABLE = "DELETE FROM a_pcge WHERE id = %s"
+
+SELECT_LISTA_PADRONES = "SELECT p.id, p.placa, p.socio FROM a_padrones p, a_socios s WHERE p.socio = s.id and s.usuario = '$usr$'"

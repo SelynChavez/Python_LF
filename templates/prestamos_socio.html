@@ -10,7 +10,7 @@
                 <a href="{{ url_for('crear_prestamo') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nuevo Prestamo </a>
             </div>
             <div class="card-body">
-                    <form method="POST" action="{{ url_for('prestamos') }}">
+                    <form method="POST" action="{{ url_for('prestamos_socio') }}">
                         <!-- Barra de búsqueda -->
                         <div class="row mb-4">
                             <div class="col-md-2 mb-3">
@@ -23,7 +23,12 @@
                             </div>
                             <div class="col-md-2 mb-3">
                                 <label for="p3" class="form-label">Padron</label>
-                                <input type="number" class="form-control" id="p3" name="p3" value="{{p3}}" required>
+                                <select class="form-select" id="p3" name="p3" required>
+                                    {% for pp in padrones %}
+                                    <option value="{{ pp.id }}" 
+                                        {% if pp.id == p3 %} selected {% endif %} >{{ pp.id }} - PLACA: {{ pp.placa }} </option>
+                                    {% endfor %}
+                                </select>                                    
                             </div>
                             <div class="col-md-2 mb-3">
                                 <input class="form-check-input" type="checkbox" id="p4" name="p4" {% if p4 %} checked {% endif %}>
@@ -42,25 +47,20 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>ID</th>
-                                    <th>Socio</th>
                                     <th>Padrón</th>
                                     <th>Tipo</th>
-                                    <th>Monto Solicitado</th>
                                     <th>Monto Aprobado</th>
                                     <th>Saldo Pendiente</th>
                                     <th>Fecha</th>
                                     <th>Estado</th>
-                                    <th width="15%">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for prestamo in prestamos %}
                                 <tr class="fila-prestamo">
                                     <td><span class="badge bg-secondary">#{{ prestamo.id }}</span></td>
-                                    <td><strong>{{ prestamo.nombre }}</strong></td>
-                                    <td>{{ prestamo.padron }}:{{ prestamo.placa }}</td>
+                                    <td>{{ prestamo.padron }}</td>
                                     <td>{{ prestamo.tipo_nombre }}</td>
-                                    <td style="text-align:right; color:navy">S/{{ prestamo.monto_solicitado }}</td>
                                     <td style="text-align:right">S/{{ "{:,.2f}".format(prestamo.mnt_aprobado)}}</td>
                                     <td style="text-align:right"; color:>
                                          <span class="text-danger">S/{{ "{:,.2f}".format(prestamo.sld_pendiente)}} </span>
@@ -68,56 +68,22 @@
                                     <td>{{ prestamo.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
                                     <td>
                                         {% if prestamo.estado == 'pendiente' %}
-                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                            <span class="badge bg-warning text-dark">Pend</span>
                                         {% elif prestamo.estado == 'aprobado' %}
-                                            <span class="badge bg-success">Aprobado</span>
+                                            <span class="badge bg-success">Apro</span>
                                         {% elif prestamo.estado == 'rechazado' %}
-                                            <span class="badge bg-danger">Rechazado</span>
+                                            <span class="badge bg-danger">Rech</span>
                                         {% elif prestamo.estado == 'evaluacion' %}
-                                            <span class="badge bg-danger">En evaluacion</span>
+                                            <span class="badge bg-danger">Eval</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">Pagado</span>
+                                            <span class="badge bg-secondary">Pagd</span>
                                         {% endif %}
                                     </td>
-                                    <td>
-                                        {% if prestamo.estado == 'pendiente' or prestamo.estado == 'evaluacion' %}
-                                        <form action="{{ url_for('aprobar_prestamo', prestamo_id=prestamo.id) }}" 
-                                              method="post" style="display: inline;">
-                                            <input type="hidden" id="p1" name="p1" value="{{p1}}">
-                                            <input type="hidden" id="p2" name="p2" value="{{p2}}">
-                                            <input type="hidden" id="p3" name="p3" value="{{p3}}">
-                                            <input type="hidden" id="p4" name="p4" value="{{p4}}">
-                                            <button type="submit" class="btn btn-success"
-                                                    onclick="return confirm('¿Está seguro de APROBAR este préstamo?')"
-                                                    title="Aprobar Prestamo">
-                                                <i class="bi bi-check-circle"></i>
-                                            </button>
-                                        </form>
-                                        <form action="{{ url_for('rechazar_prestamo', prestamo_id=prestamo.id) }}" 
-                                              method="post" style="display: inline;">
-                                              <input type="hidden" id="p1" name="p1" value="{{p1}}">
-                                              <input type="hidden" id="p2" name="p2" value="{{p2}}">
-                                              <input type="hidden" id="p3" name="p3" value="{{p3}}">
-                                              <input type="hidden" id="p4" name="p4" value="{{p4}}">
-                                              <button type="submit" class="btn btn-sm btn-danger"
-                                                    onclick="return confirm('¿Está seguro de RECHAZAR este préstamo?')"
-                                                    title="Rechazar Prestamo">
-                                                <i class="bi bi-x-circle"></i>
-                                            </button>
-                                        </form>
-                                        {% endif %}
-                                        <!-- Botón para descargar PDF -->
-                                        {% if prestamo.estado != 'rechazado' %}
-                                            <a href="{{ url_for('generar_pdf_prestamo', prestamo_id=prestamo.id) }}" 
-                                            class="btn btn-secondary" target="_blank" title="Ver PDF">
-                                                <i class="bi bi-file-pdf"></i>
-                                            </a>
-                                        {% endif %}
                                     </td>
                                 </tr>        
                     {% endfor %}
                 <tr>  
-                    <td colspan="5"></td><td style="text-align:right">S/{{ "{:,.2f}".format(total)}}</td><td style="text-align:right;color:red">S/{{ "{:,.2f}".format(totsp)}}</td><td colspan="3"></td>
+                    <td colspan="3"></td><td style="text-align:right">S/{{ "{:,.2f}".format(total)}}</td><td style="text-align:right;color:red">S/{{ "{:,.2f}".format(totsp)}}</td><td colspan="2"></td>
                 </tr>
                 </tbody>
             </table>

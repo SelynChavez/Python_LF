@@ -22,11 +22,11 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="monto1" class="form-label">Monto Fijo Aporte</label>
+                            <label for="monto1" class="form-label">Monto Fijo Aporte (Mt#1)</label>
                             <input type="number" class="form-control" id="monto1" name="monto1" min="0.00" max="999.99" value="{{ tipo.monto1 }}" maxlength="6">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Serie</label>
+                            <label class="form-label">Serie (At#1)</label>
                             <select class="form-select" id="atributo1" name="atributo1" required>
                                 <option value="1" {{ 'selected' if tipo.atributo1 == '1' }}>001</option>
                                 <option value="2" {{ 'selected' if tipo.atributo1 == '2' }}>002</option>
@@ -42,11 +42,11 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="atributo3" class="form-label">Cod.Plan Contable GE</label>
+                            <label for="atributo3" class="form-label">Cod.Plan Contable GE (At#3)</label>
                             <input type="number" class="form-control" id="atributo3" name="atributo3" min="0" max="999" value="{{ tipo.atributo3 }}" maxlength="4">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Permite Retiro</label>
+                            <label class="form-label">Permite Retiro (At#4)</label>
                             <select class="form-select" id="atributo4" name="atributo4" required>
                                 <option value="S" {{ 'selected' if tipo.atributo4 == 'S' }}>Si</option>
                                 <option value="N" {{ 'selected' if tipo.atributo4 == 'N' }}>No</option>

@@ -538,9 +538,9 @@ def crear_recibo_s6():
                     return render_template('crear_recibo_s6.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('1.key record ya existe.', 'danger')
+                        flash('1.El recibo serie/fecha/padron ya existe.', 'danger')
                     else:
-                        flash(f'2.Error al crear: {str(e)}', 'danger')
+                        flash(f'2.Error al crear recibo: {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -594,9 +594,9 @@ def crear_recibo_s6():
                     return render_template('crear_recibo_s6.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('El nombre/dni de socio o email ya existe.', 'danger')
+                        flash('El recibo serie/fecha/padron ya existe.', 'danger')
                     else:
-                        flash(f'Error al crear socio: {str(e)}', 'danger')
+                        flash(f'Error al crear recibo: {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -649,9 +649,9 @@ def crear_recibo_s5():
                     return render_template('crear_recibo_s5.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('1.key record ya existe.', 'danger')
+                        flash('1.El recibo serie/fecha/padron ya existe.', 'danger')
                     else:
-                        flash(f'2.Error al crear: {str(e)}', 'danger')
+                        flash(f'2.Error al crear recibo: {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -705,9 +705,9 @@ def crear_recibo_s5():
                     return render_template('crear_recibo_s5.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('El nombre/dni de socio o email ya existe.', 'danger')
+                        flash('El recibo serie/fecha/padron ya existe.', 'danger')
                     else:
-                        flash(f'Error al crear socio: {str(e)}', 'danger')
+                        flash(f'Error al crear recibo: {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -761,9 +761,9 @@ def crear_recibo_s4():
                     return render_template('crear_recibo_s4.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('1.key record ya existe.', 'danger')
+                        flash('1.El recibo serie/fecha/padron ya existe', 'danger')
                     else:
-                        flash(f'2.Error al crear: {str(e)}', 'danger')
+                        flash(f'2.Error al crear recibo: {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -817,9 +817,9 @@ def crear_recibo_s4():
                     return render_template('crear_recibo_s4.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('El nombre/dni de socio o email ya existe.', 'danger')
+                        flash('El recibo serie/fecha/padron ya existe.', 'danger')
                     else:
-                        flash(f'Error al crear socio: {str(e)}', 'danger')
+                        flash(f'Error al crear recibo(2): {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -873,9 +873,9 @@ def crear_recibo_s3():
                     return render_template('crear_recibo_s3.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('1.key record ya existe.', 'danger')
+                        flash('1.El recibo serie/fecha/padron ya existe', 'danger')
                     else:
-                        flash(f'2.Error al crear: {str(e)}', 'danger')
+                        flash(f'2.Error al crear recibo: {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -929,9 +929,9 @@ def crear_recibo_s3():
                     return render_template('crear_recibo_s3.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('El nombre/dni de socio o email ya existe.', 'danger')
+                        flash('El recibo serie/fecha/padron ya existe.', 'danger')
                     else:
-                        flash(f'Error al crear socio: {str(e)}', 'danger')
+                        flash(f'Error al crear recibo: {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -983,9 +983,9 @@ def crear_recibo_s2():
                     return render_template('crear_recibo_s2.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('1.key record ya existe.', 'danger')
+                        flash('1.kEl recibo serie/fecha/padron ya existe..', 'danger')
                     else:
-                        flash(f'2.Error al crear: {str(e)}', 'danger')
+                        flash(f'2.Error al crear recibo(29): {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -1039,7 +1039,7 @@ def crear_recibo_s2():
                     return render_template('crear_recibo_s2.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('El nombre/dni de socio o email ya existe.', 'danger')
+                        flash('El recibo serie/fecha/padron ya existe', 'danger')
                     else:
                         flash(f'Error al crear socio: {str(e)}', 'danger')
                     connection.rollback()
@@ -1077,6 +1077,8 @@ def crear_recibo():
                     num = curs0r.lastrowid
                     curs0r.close()
                     cursor = connection.cursor()
+                    querd = sqlconstants.DELETE_RECIBO_U
+                    cursor.execute(querd, (ser, fec, pad ))
                     query = sqlconstants.INSERT_RECIBO_X
                     cursor.execute(query, (ser, num, fec, pad, com, act, session['user_username'], 'N')) 
                     lid = cursor.lastrowid
@@ -1095,9 +1097,9 @@ def crear_recibo():
                     return render_template('crear_recibo.html', ser=ser, act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('El nombre/dni de socio o email ya existe.', 'danger')
+                        flash('El recibo serie/fecha/padron ya existe.', 'danger')
                     else:
-                        flash(f'Error al crear socio: {str(e)}', 'danger')
+                        flash(f'Error al crear recibo(1): {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -1164,9 +1166,9 @@ def crear_recibo():
                     return render_template('crear_recibo.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
-                        flash('El nombre/dni de socio o email ya existe.', 'danger')
+                        flash('El recibo serie/fecha/padron ya existe.', 'danger')
                     else:
-                        flash(f'Error al crear socio: {str(e)}', 'danger')
+                        flash(f'Error al crear recibo(14): {str(e)}', 'danger')
                     connection.rollback()
                     cursor.close()
                     connection.close()
@@ -2470,6 +2472,13 @@ def rep1recibos():
 
 @app.route('/rep2recibos')
 def rep2recibos():
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "0"
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+        p3 = request.form.get('p3')  # Padron
     tipos = []
     query = sqlconstants.DROPLIST_APORTES
     # Filtrar datos
@@ -2482,7 +2491,7 @@ def rep2recibos():
         connection.close()
     else:
         return jsonify({'error': 'Error de conexión'}), 500
-    return render_template('rep2recibos.html', tipos=tipos)
+    return render_template('rep2recibos.html', tipos=tipos, p1=p1, p2=p2, p3=p3)
 
 ## REPORT PDF CREATION ----------------------------------------------------------------------------------------------------------
 def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, p6):    
@@ -2525,6 +2534,7 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
         pdf.cell(18, 5, "TipRec", 1)
         pdf.cell(15, 5, "Mon", 1)
         pdf.cell(20, 5, "Aportado", 1, 0, 'R')
+        pdf.cell(20, 5, "Tp.Aporte", 1,)
     elif(cod=="REP-PCGE"):
         pdf.cell(15, 5, "Elmnto", 1)
         pdf.cell(20, 5, "Cuenta", 1)
@@ -2578,7 +2588,8 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
             pdf.cell(18, 5, dato["d2"], 1)
             pdf.cell(18, 5, dato["d3"], 1)
             pdf.cell(18, 5, dato["d4"], 1)
-            pdf.cell(60, 5, dato["d6"], 1)
+            d6 = dato["d6"]
+            pdf.cell(60, 5, d6[:33], 1)
             pdf.cell(20, 5, dato["d7"], 1, 0, 'R')
             pdf.cell(15, 5, dato["d8"], 1)
             pdf.cell(18, 5, dato["d9"], 1)
@@ -2588,10 +2599,12 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
             pdf.cell(18, 5, dato["d1"], 1)
             pdf.cell(18, 5, dato["d2"], 1)
             pdf.cell(18, 5, dato["d3"], 1)
-            pdf.cell(60, 5, dato["d4"], 1)
+            d4 = dato["d4"]
+            pdf.cell(60, 5, d4[:33], 1)
             pdf.cell(18, 5, dato["d5"], 1)
             pdf.cell(15, 5, dato["d6"], 1)
             pdf.cell(20, 5, dato["d7"], 1, 0, 'R')
+            pdf.cell(20, 5, dato["d8"], 1)
             to1 += float(dato["d7"])
         elif(cod=="REP-PCGE"):
             pdf.cell(15, 5, str(dato["d1"]), 1)
@@ -2984,12 +2997,11 @@ def get_shift_name(current_time=None): ### Determinar el turno actual basado en 
     else:
         return 'TURNO_3', '2AM - 11AM'
 ### ???????????????????????????????????????????????????????????????????????????????????????
-# Rutas para préstamos y retiros
+# Rutas para préstamos 
 @app.route('/prestamos', methods=['GET', 'POST'])
 def prestamos():
     total = 0
     totsp = 0
-    usr = session['user_username']
     if request.method == 'POST':
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
         p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
@@ -3007,17 +3019,48 @@ def prestamos():
         for r0 in prestamos:
             total += float(r0['mnt_aprobado'])
             totsp += float(r0['sld_pendiente'])
-        if (session['user_rol'] == "SOCIO"):
-            quer1 = sqlconstants.SELECT_LISTA_PADRONES
-            quer1 = quer1.replace("$usuario$", usr)
-            cursor.execute(quer1)
-            padrones = cursor.fetchall()
         conn.close()
-        return render_template('prestamos.html', prestamos=prestamos, total=total, totsp=totsp, p1=p1, p2=p2, p3=p3, p4=p4,padrones=padrones)
+        return render_template('prestamos.html', prestamos=prestamos, total=total, totsp=totsp, p1=p1, p2=p2, p3=p3, p4=p4)
     else:
         px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
         flash('Listo para consultar.', 'success')
         return render_template('prestamos.html', prestamos=[],p1=px, p2=px, p3=0, p4='off', total=0, totsp=0)
+
+@app.route('/prestamos_socio', methods=['GET', 'POST'])
+def prestamos_socio():
+    total = 0
+    totsp = 0
+    usr = session['user_username']
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    padrones = []
+    if (session['user_rol'] == "SOCIO"):
+        quer1 = sqlconstants.SELECT_LISTA_PADRONES
+        quer1 = quer1.replace("$usr$", usr)
+        cursor.execute(quer1)
+        padrones = cursor.fetchall()
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+        p3 = request.form.get('p3')  # Padron
+        p4 = request.form.get('p4')  # Aprobados?
+        query = sqlconstants.SELECT_PRESTAMOS_1
+        query = query.replace("$p1$", str(p1))
+        query = query.replace("$p2$", str(p2))
+        query = query.replace("$p3$", str(p3))
+        query = query.replace("$p4$", str(p4))
+        cursor.execute(query)
+        prestamos = cursor.fetchall()
+        for r0 in prestamos:
+            total += float(r0['mnt_aprobado'])
+            totsp += float(r0['sld_pendiente'])
+        conn.close()
+        return render_template('prestamos_socio.html', prestamos=prestamos, total=total, totsp=totsp, p1=p1, p2=p2, p3=p3, p4=p4,padrones=padrones)
+    else:
+        conn.close()
+        px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
+        flash('Listo para consultar.', 'success')
+        return render_template('prestamos_socio.html', prestamos=[],p1=px, p2=px, p3=0, p4='off', total=0, totsp=0, padrones=padrones)
 
 @app.route('/prestamos/nuevo', methods=['GET', 'POST'])
 def crear_prestamo():
@@ -3025,6 +3068,13 @@ def crear_prestamo():
     cursor = conn.cursor(dictionary=True)
     cursor.execute(sqlconstants.DROPLIST_DEUDAS)
     tipos = cursor.fetchall()
+    usr = session['user_username']
+    padrones = []
+    if (session['user_rol'] == "SOCIO"):
+        quer1 = sqlconstants.SELECT_LISTA_PADRONES
+        quer1 = quer1.replace("$usr$", usr)
+        cursor.execute(quer1)
+        padrones = cursor.fetchall()
     if request.method == 'POST':
         act = request.form['act']
         pad = request.form['pad']
@@ -3042,24 +3092,24 @@ def crear_prestamo():
         if act == '-':
             try:
                 cursor = conn.cursor()
-                cursor.execute(sqlconstants.INS_PRESTAMO, (pad, fec, tip, mnt, des, cuo, gar, act))
+                cursor.execute(sqlconstants.INS_PRESTAMO, (pad, fec, tip, mnt, des, cuo, gar, 'pendiente'))
                 lid = cursor.lastrowid
                 conn.commit()
-                act = "pendiente"
+                act = "evaluacion"
                 conn.close()
                 nom = get_nombre_padron(pad)
                 flash('Préstamo solicitado exitosamente', 'success')
                 return render_template('crear_prestamo.html',
                                 act=act, fec=fec, pad=pad, des=des, mnt=mnt, cuo=cuo, 
-                                tip=tip, gar=gar, but='Confirmar', lid=lid, nom = nom,
-                                tipos=tipos)
+                                tip=tip, gar=gar, but='.', lid=lid, nom = nom,
+                                tipos=tipos, padrones=padrones)
             except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('Prestamo existe.', 'danger')
                     else:
                         flash(f'Error al crear prestamo: {str(e)}', 'danger')
                     conn.rollback()
-        if act == 'pendiente':
+        if act == 'evaluacion':
             try:
                 nom = request.form.get('nom')
                 usr = session['user_username']
@@ -3070,8 +3120,8 @@ def crear_prestamo():
                 cursor.execute(query9)
                 ## px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
                 conn.commit()
-                flash('Confirmacion de solicitud del Préstamo fue exitosa.', 'success')
-                return render_template('prestamos.html', prestamos=[], total=0, totsp=0, p1=fec, p2=fec, p3=pad, p4="off")
+                flash('Solicitud del Préstamo fue puesto en evalucacion por el solicitante.', 'success')
+                return render_template('prestamos.html', prestamos=[], total=0, totsp=0, p1=fec, p2=fec, p3=pad, p4="off", padrones=padrones)
             except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('Prestamo existe.', 'danger')
@@ -3080,7 +3130,7 @@ def crear_prestamo():
                     conn.rollback()
     cursor.close()
     conn.close()
-    return render_template('crear_prestamo.html', act='-',but='Registrar', tipos=tipos)
+    return render_template('crear_prestamo.html', act='-',but='Registrar', tipos=tipos, padrones=padrones)
 
 @app.route('/prestamos/aprobar/<int:prestamo_id>', methods=['POST'])
 def aprobar_prestamo(prestamo_id):

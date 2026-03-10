@@ -227,7 +227,7 @@
                     <i class="bi bi-box-arrow-up-right"></i>
                 </div>
                 <h3>Solicitud de Prestamo</h3>
-                <a href="{{ url_for('prestamos') if session.user_rol == 'SOCIO' else '#' }}" 
+                <a href="{{ url_for('prestamos_socio') if session.user_rol == 'SOCIO' else '#' }}" 
                 class="btn btn-primary {{ 'disabled' if session.user_rol != 'SOCIO' }}">
                     <i class="bi bi-eye"></i> Prestamos
                 </a>
