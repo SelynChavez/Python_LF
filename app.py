@@ -1199,6 +1199,8 @@ def imprimir_recibo(l_id):
             titulo = 'RECIBO DE PAGO'
             if (recibo['serie']=='1'):
                 titulo = 'RECIBO DE INGRESO'
+            if (recibo['serie']=='2'):
+                titulo = 'BOLETA ELECTRONICA'
             archivo = generar_recibo(titulo, recibo['serie'], recibo['numero'], recibo['padron'], recibo['nombre'], fec, gir, items)
             ##try:     ### Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
             ##    if os.name == 'nt':  # Windows
