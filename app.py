@@ -491,6 +491,49 @@ def aportes():
         flash('Listo para consultar.', 'success')
         return render_template('aportes.html', p1=px, p2=px, p3=0, recibos=recs, total=total)
 
+@app.route('/aportes_socio', methods=['GET', 'POST'])
+@login_required
+def aportes_socio():
+    total = 0
+    line0 = 0
+    recs = []
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    usr = session['user_username']
+    padrones = []
+    if (session['user_rol'] == "SOCIO"):
+        quer1 = sqlconstants.SELECT_LISTA_PADRONES
+        quer1 = quer1.replace("$usr$", usr)
+        cursor.execute(quer1)
+        padrones = cursor.fetchall()
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+        p3 = request.form.get('p3')  # Padron
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            query = sqlconstants.REP_SS_APORTES
+            query = query.replace("$serie$", '0')
+            query = query.replace("$p1$", str(p1))
+            query = query.replace("$p2$", str(p2))
+            query = query.replace("$p3$", str(p3))
+            cursor.execute(query)
+            recibos = cursor.fetchall()
+            cursor.close()
+            connection.close() 
+            for reg in recibos:
+                line0 += 1
+                reg['d0'] = str(line0)
+                total += round(float(reg['d7']),2)
+            return render_template('aportes_socio.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3, padrones=padrones)
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')
+            return redirect(url_for('dashboard'))
+    else:
+        connection.close()
+        px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Ini
+        flash('Listo para consultar.', 'success')
+        return render_template('aportes_socio.html', p1=px, p2=px, p3=0, recibos=recs, total=total, padrones=padrones)
 
 @app.route('/recibos/crear_s6', methods=['GET', 'POST'])
 @login_required
@@ -3181,20 +3224,20 @@ def rechazar_prestamo(prestamo_id):
     return redirect(url_for('prestamos', prestamos=prestamos, total=total, p1=p1, p2=p2, p3=p3, p4=p4))
 
 # Rutas para retiros -------------------------------------------------------------------------------|||
-@app.route('/retiros', methods=['GET', 'POST'])
-def retiros():
+@app.route('/retiros_socio', methods=['GET', 'POST'])
+def retiros_socio():
     total = 0
     tipos = []
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    querA = sqlconstants.DROPLIST_APORTES
+    querA = sqlconstants.DROPLIST_APORTES_RET
     cursor.execute(querA)
     tipos = cursor.fetchall()
     padrones = []
     usr = session['user_username']
     if (session['user_rol'] == "SOCIO"):
         quer1 = sqlconstants.SELECT_LISTA_PADRONES
-        quer1 = quer1.replace("$usuario$", usr)
+        quer1 = quer1.replace("$usr$", usr)
         cursor.execute(quer1)
         padrones = cursor.fetchall()
     if request.method == 'POST':
@@ -3209,22 +3252,58 @@ def retiros():
         query = query.replace("$p4$", str(p4))
         cursor.execute(query)
         retiros = cursor.fetchall()
-        querA = sqlconstants.DROPLIST_APORTES
-        cursor.execute(querA)
-        tipos = cursor.fetchall()
         conn.close()
         for r0 in retiros:
             total += float(r0['mnt_retirado'])
-        return render_template('retiros.html', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4, padrones=padrones)
+        return render_template('retiros_socio.html', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4, padrones=padrones)
     else:
         conn.close()           
         px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
         flash('Listo para consultar.', 'success')
-        return render_template('retiros.html', retiros=[], tipos=tipos, p1=px, p2=px, p3=0, p4='', total=total, padrones=padrones)
+        return render_template('retiros_socio.html', retiros=[], tipos=tipos, p1=px, p2=px, p3=0, p4='', total=total, padrones=padrones)
+
+@app.route('/retiros', methods=['GET', 'POST'])
+def retiros():
+    total = 0
+    tipos = []
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    querA = sqlconstants.DROPLIST_APORTES_RET
+    cursor.execute(querA)
+    tipos = cursor.fetchall()    
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Ini
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))  # Fecha Fin
+        p3 = request.form.get('p3')  # Padron
+        p4 = request.form.get('p4')  # Aprobados?
+        query = sqlconstants.SELECT_RETIROS_1
+        query = query.replace("$p1$", str(p1))
+        query = query.replace("$p2$", str(p2))
+        query = query.replace("$p3$", str(p3))
+        query = query.replace("$p4$", str(p4))
+        cursor.execute(query)
+        retiros = cursor.fetchall()
+        conn.close()
+        for r0 in retiros:
+            total += float(r0['mnt_retirado'])
+        return render_template('retiros.html', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4)
+    else:
+        conn.close()           
+        px = datetime.datetime.now().strftime('%Y-%m-%d')  # Fecha Hoy
+        flash('Listo para consultar.', 'success')
+        return render_template('retiros.html', retiros=[], tipos=tipos, p1=px, p2=px, p3=0, p4='', total=total)
 
 @app.route('/retiros/nuevo', methods=['GET', 'POST'])
 def crear_retiro():
-    conn = get_db_connection()    
+    conn = get_db_connection()   
+    cursor = conn.cursor(dictionary=True)
+    padrones = []
+    usr = session['user_username']
+    if (session['user_rol'] == "SOCIO"):
+        quer1 = sqlconstants.SELECT_LISTA_PADRONES
+        quer1 = quer1.replace("$usr$", usr)
+        cursor.execute(quer1)
+        padrones = cursor.fetchall()
     if request.method == 'POST':
         act = request.form['act']
         pad = request.form['pad']
@@ -3234,10 +3313,9 @@ def crear_retiro():
         lid = request.form.get('lid')
         if not all([fec, pad]):
             flash('Por favor, complete todos los campos con (*).', 'danger')
-            return render_template('crear_retiro.html')
+            return render_template('crear_retiro.html', padrones=padrones)
         if act == '-':
             try:
-                cursor = conn.cursor(dictionary=True)
                 query = sqlconstants.DROPLIST_APORTES_SALDO_X_PADRON
                 query = query.replace("$pad$", str(pad))
                 cursor.execute(query)
@@ -3250,7 +3328,7 @@ def crear_retiro():
                 return render_template('crear_retiro.html',
                                 act=act, fec=fec, pad=pad, des=des, mnt=0, 
                                 tip='', but='Confirmar', lid=lid, nom = nom,
-                                tipos=tipos)
+                                tipos=tipos, padrones=padrones)
             except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('Retiro existe.', 'danger')
@@ -3275,7 +3353,7 @@ def crear_retiro():
                         sld = s0['saldo']
                         if (mnt > sld):
                             flash('Debes colocar un monto menor al saldo actual, trata de nuevo, por favor.', 'danger')
-                            return render_template('crear_retiro.html')
+                            return render_template('crear_retiro.html', padrones=padrones)
                 query9 = sqlconstants.INS_RETIRO
                 cursor.execute(query9, (pad, fec, tip, mnt, sld, des, act, usr))
                 lid = cursor.lastrowid
@@ -3288,13 +3366,18 @@ def crear_retiro():
                 query = query.replace("$p4$", tip)
                 cursor.execute(query)
                 retiros = cursor.fetchall()
-                querA = sqlconstants.DROPLIST_APORTES
+                querA = sqlconstants.DROPLIST_APORTES_RET
                 cursor.execute(querA)
                 tipos = cursor.fetchall()
                 cursor.close()
                 conn.commit()
                 flash('Confirmacion de Solicitud del Retiro fue exitosa.', 'success')
-                return render_template('retiros.html', retiros=retiros, tipos=tipos, total=0, p1=fec, p2=fec, p3=pad, p4=tip)
+                if (session['user_rol'] == "SOCIO"):
+                    return render_template('retiros_socio.html', 
+                        retiros=retiros, tipos=tipos, total=0, p1=fec, p2=fec, p3=pad, p4=tip, padrones=padrones)
+                else:
+                    return render_template('retiros.html', 
+                        retiros=retiros, tipos=tipos, total=0, p1=fec, p2=fec, p3=pad, p4=tip)
             except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('Retiro existe.', 'danger')
@@ -3302,7 +3385,7 @@ def crear_retiro():
                         flash(f'Error al crear retiro: {str(e)}', 'danger')
                     conn.rollback()
     conn.close()
-    return render_template('crear_retiro.html', act='-',but='Consultar', lid=0)
+    return render_template('crear_retiro.html', act='-',but='Consultar', lid=0, padrones=padrones)
 
 @app.route('/retiros/aprobar/<int:retiro_id>', methods=['POST'])
 def aprobar_retiro(retiro_id):

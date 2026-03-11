@@ -15,12 +15,23 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="fec" class="form-label">Fecha *</label>
-                            <input type="date" class="form-control" id="fec" name="fec" value="{{fec}}" required>
+                            <input type="date" class="form-control" id="fec" name="fec" value="{{fec}}" {{ 'readonly' if act != '-' }} required>
                             <div class="form-text">{{act}}</div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="pad" class="form-label">Padron *</label>
-                            <input type="number" class="form-control" id="pad" name="pad" value="{{pad}}" min="0" max="9999" maxlength="4" required>
+                            {% if session.user_rol == 'ADMIN' %}
+                                <input type="number" class="form-control" id="pad" name="pad" value="{{pad}}" min="0" max="9999" maxlength="4" {{ 'readonly' if act != '-' }} required>
+                            {% endif %}
+                            {% if session.user_rol == 'SOCIO' %}
+                                <select class="form-select" id="pad" name="pad" {{ 'disabled' if act != '-' }} required>
+                                    {% for pp in padrones %}
+                                    <option value="{{ pp.id }}" 
+                                        {% if pp.id == pad %} selected {% endif %} >{{ pp.id }} - PLACA: {{ pp.placa }} </option>
+                                    {% endfor %}                                    
+                                </select>
+                                <input type="hidden" id="pad" name="pad" value="{{pad}}">
+                            {% endif %}
                             <div class="form-text">{{nom}}</div>
                         </div>
                     </div>

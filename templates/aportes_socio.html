@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Aportes de Socios{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Gestión de Recibos de Aportes por Padron.</h4> &nbsp;&nbsp;
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('aportes_socio') }}">
+                    <!-- Barra de búsqueda -->
+                    <div class="row mb-4">
+                        <div class="col-md-2 mb-3">
+                            <label for="p1" class="form-label">Fecha Inicial</label>
+                            <input type="date" class="form-control" id="p1" name="p1" value="{{p1}}" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="p2" class="form-label">Fecha Final</label>
+                            <input type="date" class="form-control" id="p2" name="p2" value="{{p2}}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="p3" class="form-label">Padron</label>
+                            <select class="form-select" id="p3" name="p3" required>
+                                {% for px in padrones %}
+                                    <option value="{{px.id}}" {% if p3==px.id %} selected {% endif %}>{{px.id}}.- PLACA:{{px.placa}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Consultar
+                            </button>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver al Menu
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Tabla de datos -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>No.</th>
+                                    <th>Registro</th>
+                                    <th>Girado</th>
+                                    <th>Tipo</th>
+                                    <th>Pad.</th>
+                                    <th>Pagó</th>
+                                    <th>Act?</th>
+                                    <th>Caja</th>
+                                    <th>IdCtrl</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {%  for r3 in recibos %}
+                                <tr class="fila-aporte">
+                                    <td>{{ r3.d0 }}</td>
+                                    <td>{{ r3.d1 }}</td>
+                                    <td>{{ r3.d2 }}</td>
+                                    <td>{{ r3.d3 }}</td>
+                                    <td>{{ r3.d4 }}</td>
+                                    <td><strong>{{ r3.d11 }}</strong></td>
+                                    <td style="text-align:right;background-color:rgb(226, 247, 185)"><b>S/{{ r3.d7 }}</b></td>
+                                    <td>
+                                        <span class="badge {{ 'badge-activo' if r3.d8 == 'S' else 'badge-inactivo' }}">
+                                            {{ 'S' if r3.d8 == 'S' else 'N' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ r3.d9 }}</td>
+                                    <td>{{ r3.d10 }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('imprimir_recibo', l_id=r3.d10 ) }}" target="_blank"
+                                               class="btn btn-outline-primary" 
+                                               title="Imprimir Recibo">
+                                                <i class="bi-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot><td colspan="6"></td>
+                                <td style="text-align:right;background-color:rgb(226, 247, 185)"><b>S/{{ total }}</b></td>
+                                <td></td></tfoot>
+                        </table>
+                    </div>
+                </form>    
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

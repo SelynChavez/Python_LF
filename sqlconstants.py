@@ -1,4 +1,14 @@
 REP0PCGE = "SELECT concat(elemento) d1, concat(cuenta) d2, concat(coalesce(nombre,'.')) d3,concat(id) d4 FROM av_plan_contable_general ORDER BY 1,2 LIMIT 9000"
+REP_SS_APORTES = """
+SELECT CONCAT('',serie,'-',LPAD(numero,4,'0')) d1,  dateDMY(fecha) d2,  dateDMY(giro) d3,
+  if(fecha>giro,'ATRAZADO',if(fecha<giro,'ADELANTO','NORMAL')) d4,
+  (SELECT CONCAT(p.id,':',p.placa,':',s.nombre) FROM a_padrones p, a_socios s WHERE p.socio=s.id AND v.padron=p.id) d6,
+  concat(round((SELECT SUM(monto) FROM a_recibos_detalle d WHERE d.recibo=v.id),2),'') d7,
+  v.active d8,  upper(substr(v.webuser,1,10)) d9,  concat(v.id) d10,  concat(v.padron) d11,  '0' d0, v.serie d12 
+FROM a_recibos v 
+WHERE serie>0 and v.fecha>=date('$p1$') and v.fecha<=date('$p2$') and (v.padron='$p3$' or '0'='$p3$') and (v.active='S') 
+ORDER BY v.fecha, v.padron, v.id
+"""
 REP_S3_APORTES = """
 SELECT CONCAT( 'RP0',serie,'-',LPAD(numero,6,'0')) d1,  dateDMY(fecha) d2,  dateDMY(giro) d3,
   if(fecha>giro,'ATRAZADO',if(fecha<giro,'ADELANTO','NORMAL')) d4,
@@ -101,6 +111,7 @@ SEL_NM_TIPO = "SELECT tipo,codigo FROM a_tipos WHERE id = %s"
 DELETE_TIPO = "DELETE FROM a_tipos WHERE id = %s"
 
 DROPLIST_APORTES = "SELECT codigo d1,concat(codigo,':',descripcion) d2 FROM a_tipos WHERE tipo='APORTE' "
+DROPLIST_APORTES_RET = "SELECT codigo d1,concat(codigo,':',descripcion) d2 FROM a_tipos WHERE tipo='APORTE' and atributo4='S' "
 INSERT_LOGUSUARIO = "INSERT INTO logs_usuarios (usuario_id, accion, descripcion) VALUES (%s, %s, %s)"
 
 DELETE_RECIBO_U = "DELETE FROM a_recibos WHERE serie=%s AND giro=%s AND padron=%s AND active != 'S' "
@@ -250,4 +261,4 @@ SELECT_CUENTA_CONTABLE = "SELECT t.* FROM a_pcge t WHERE t.id = %s"
 SEL_NM_CUENTA_CONTABLE = "SELECT nombre FROM a_pcge WHERE id = %s"
 DELETE_CUENTA_CONTABLE = "DELETE FROM a_pcge WHERE id = %s"
 
-SELECT_LISTA_PADRONES = "SELECT p.id, p.placa, p.socio FROM a_padrones p, a_socios s WHERE p.socio = s.id and s.usuario = '$usr$'"
+SELECT_LISTA_PADRONES = "SELECT concat(p.id) id, p.placa, p.socio FROM a_padrones p, a_socios s WHERE p.socio = s.id and s.usuario = '$usr$'"
