@@ -618,22 +618,22 @@ def crear_recibo_s6():
                     connection.close()
                     flash('Recibo registrado.', 'success')
                    # Datos de ejemplo
-                    codigo_padron = pad
-                    nombre_socio = nom
-                    fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
-                    date_format = '%Y-%m-%d'
-                    date_obj = datetime.datetime.strptime(fec, date_format)
-                    fecha_giro = date_obj.strftime('%d-%m-%Y')
+                    #codigo_padron = pad
+                    #nombre_socio = nom
+                    #fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
+                    #date_format = '%Y-%m-%d'
+                    #date_obj = datetime.datetime.strptime(fec, date_format)
+                    #fecha_giro = date_obj.strftime('%d-%m-%Y')
                     # Generar recibo
-                    archivo = generar_recibo('RECIBO DE PAGO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
+                    #archivo = generar_recibo('RECIBO DE PAGO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
                     # Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
-                    try:
-                        if os.name == 'nt':  # Windows
-                            os.startfile(archivo)
-                        elif os.name == 'posix':  # Linux o macOS
-                            os.system(f'open "{archivo}"')
-                    except:
-                        print(f"Recibo guardado en: {os.path.abspath(archivo)}")
+                    # try:
+                    #    if os.name == 'nt':  # Windows
+                    #        os.startfile(archivo)
+                    #    elif os.name == 'posix':  # Linux o macOS
+                    #        os.system(f'open "{archivo}"')
+                    #except:
+                    #    print(f"Recibo guardado en: {os.path.abspath(archivo)}")
                     return render_template('crear_recibo_s6.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
@@ -729,22 +729,22 @@ def crear_recibo_s5():
                     connection.close()
                     flash('Recibo registrado.', 'success')
                    # Datos de ejemplo
-                    codigo_padron = pad
-                    nombre_socio = nom
-                    fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
-                    date_format = '%Y-%m-%d'
-                    date_obj = datetime.datetime.strptime(fec, date_format)
-                    fecha_giro = date_obj.strftime('%d-%m-%Y')
+                    #codigo_padron = pad
+                    #nombre_socio = nom
+                    #fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
+                    #date_format = '%Y-%m-%d'
+                    #date_obj = datetime.datetime.strptime(fec, date_format)
+                    #fecha_giro = date_obj.strftime('%d-%m-%Y')
                     # Generar recibo
-                    archivo = generar_recibo('RECIBO DE PAGO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
+                    # archivo = generar_recibo('RECIBO DE PAGO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
                     # Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
-                    try:
-                        if os.name == 'nt':  # Windows
-                            os.startfile(archivo)
-                        elif os.name == 'posix':  # Linux o macOS
-                            os.system(f'open "{archivo}"')
-                    except:
-                        print(f"Recibo guardado en: {os.path.abspath(archivo)}")
+                    #try:
+                    #    if os.name == 'nt':  # Windows
+                    #        os.startfile(archivo)
+                    #    elif os.name == 'posix':  # Linux o macOS
+                    #        os.system(f'open "{archivo}"')
+                    #except:
+                    #    print(f"Recibo guardado en: {os.path.abspath(archivo)}")
                     return render_template('crear_recibo_s5.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
@@ -841,22 +841,22 @@ def crear_recibo_s4():
                     connection.close()
                     flash('Recibo registrado.', 'success')
                    # Datos de ejemplo
-                    codigo_padron = pad
-                    nombre_socio = nom
-                    fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
-                    date_format = '%Y-%m-%d'
-                    date_obj = datetime.datetime.strptime(fec, date_format)
-                    fecha_giro = date_obj.strftime('%d-%m-%Y')
+                    #codigo_padron = pad
+                    #nombre_socio = nom
+                    #fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
+                    #date_format = '%Y-%m-%d'
+                    #date_obj = datetime.datetime.strptime(fec, date_format)
+                    #fecha_giro = date_obj.strftime('%d-%m-%Y')
                     # Generar recibo
-                    archivo = generar_recibo('RECIBO DE PAGO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
+                    # archivo = generar_recibo('RECIBO DE PAGO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
                     # Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
-                    try:
-                        if os.name == 'nt':  # Windows
-                            os.startfile(archivo)
-                        elif os.name == 'posix':  # Linux o macOS
-                            os.system(f'open "{archivo}"')
-                    except:
-                        print(f"Recibo guardado en: {os.path.abspath(archivo)}")
+                    #try:
+                    #    if os.name == 'nt':  # Windows
+                    #        os.startfile(archivo)
+                    #    elif os.name == 'posix':  # Linux o macOS
+                    #        os.system(f'open "{archivo}"')
+                    #except:
+                    #    print(f"Recibo guardado en: {os.path.abspath(archivo)}")
                     return render_template('crear_recibo_s4.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
@@ -953,22 +953,22 @@ def crear_recibo_s3():
                     connection.close()
                     flash('Recibo registrado.', 'success')
                    # Datos de ejemplo
-                    codigo_padron = pad
-                    nombre_socio = nom
-                    fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
-                    date_format = '%Y-%m-%d'
-                    date_obj = datetime.datetime.strptime(fec, date_format)
-                    fecha_giro = date_obj.strftime('%d-%m-%Y')
+                    #codigo_padron = pad
+                    #nombre_socio = nom
+                    #fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
+                    #date_format = '%Y-%m-%d'
+                    #date_obj = datetime.datetime.strptime(fec, date_format)
+                    #fecha_giro = date_obj.strftime('%d-%m-%Y')
                     # Generar recibo
-                    archivo = generar_recibo('RECIBO DE PAGO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
+                    # archivo = generar_recibo('RECIBO DE PAGO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
                     # Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
-                    try:
-                        if os.name == 'nt':  # Windows
-                            os.startfile(archivo)
-                        elif os.name == 'posix':  # Linux o macOS
-                            os.system(f'open "{archivo}"')
-                    except:
-                        print(f"Recibo guardado en: {os.path.abspath(archivo)}")
+                    #try:
+                    #    if os.name == 'nt':  # Windows
+                    #        os.startfile(archivo)
+                    #    elif os.name == 'posix':  # Linux o macOS
+                    #        os.system(f'open "{archivo}"')
+                    #except:
+                    #    print(f"Recibo guardado en: {os.path.abspath(archivo)}")
                     return render_template('crear_recibo_s3.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
@@ -1063,22 +1063,22 @@ def crear_recibo_s2():
                     connection.close()
                     flash('Recibo registrado.', 'success')
                    # Datos de ejemplo
-                    codigo_padron = pad
-                    nombre_socio = nom
-                    fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
-                    date_format = '%Y-%m-%d'
-                    date_obj = datetime.datetime.strptime(fec, date_format)
-                    fecha_giro = date_obj.strftime('%d-%m-%Y')
+                    #codigo_padron = pad
+                    #nombre_socio = nom
+                    #fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
+                    #date_format = '%Y-%m-%d'
+                    #date_obj = datetime.datetime.strptime(fec, date_format)
+                    #fecha_giro = date_obj.strftime('%d-%m-%Y')
                     # Generar recibo
-                    archivo = generar_recibo('BOLETA ELECTRONICA', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
+                    # archivo = generar_recibo('BOLETA ELECTRONICA', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
                     # Intentar abrir el archivo automáticamente (dependiendo del sistema operativo)
-                    try:
-                        if os.name == 'nt':  # Windows
-                            os.startfile(archivo)
-                        elif os.name == 'posix':  # Linux o macOS
-                            os.system(f'open "{archivo}"')
-                    except:
-                        print(f"Recibo guardado en: {os.path.abspath(archivo)}")
+                    #try:
+                    #    if os.name == 'nt':  # Windows
+                    #        os.startfile(archivo)
+                    #    elif os.name == 'posix':  # Linux o macOS
+                    #        os.system(f'open "{archivo}"')
+                    #except:
+                    #    print(f"Recibo guardado en: {os.path.abspath(archivo)}")
                     return render_template('crear_recibo_s2.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
@@ -1191,21 +1191,21 @@ def crear_recibo():
                     cursor.close()
                     connection.close()
                     flash('Recibo registrado.', 'success')
-                    codigo_padron = pad
-                    nombre_socio = nom
-                    fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
-                    date_format = '%Y-%m-%d'
-                    date_obj = datetime.datetime.strptime(fec, date_format)
-                    fecha_giro = date_obj.strftime('%d-%m-%Y')
+                    #codigo_padron = pad
+                    #nombre_socio = nom
+                    #fecha_recibo = datetime.datetime.now().strftime('%d-%m-%Y')
+                    #date_format = '%Y-%m-%d'
+                    #date_obj = datetime.datetime.strptime(fec, date_format)
+                    #fecha_giro = date_obj.strftime('%d-%m-%Y')
                     # Generar recibo
-                    archivo = generar_recibo('RECIBO DE INGRESO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
-                    try:
-                        if os.name == 'nt':  # Windows
-                            os.startfile(archivo)
-                        elif os.name == 'posix':  # Linux o macOS
-                            os.system(f'open "{archivo}"')
-                    except:
-                        print(f"Recibo guardado en: {os.path.abspath(archivo)}")
+                    # archivo = generar_recibo('RECIBO DE INGRESO', ser, num, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items)
+                    #try:
+                    #    if os.name == 'nt':  # Windows
+                    #        os.startfile(archivo)
+                    #    elif os.name == 'posix':  # Linux o macOS
+                    #        os.system(f'open "{archivo}"')
+                    #except:
+                    #    print(f"Recibo guardado en: {os.path.abspath(archivo)}")
                     return render_template('crear_recibo.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
                 except Error as e:
                     if 'Duplicate entry' in str(e):
