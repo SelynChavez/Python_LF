@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Registro de Ingresos{% endblock %}
+{% block content %}
+<div class="row">
+
+    <div class="container main-container">
+        <div class="content-card">
+            <!-- Header -->
+            <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="bi bi-fuel-pump"></i>
+                    Gestión de Combustibles
+                </h2>
+                <button class="btn btn-custom" onclick="abrirModalNuevo();">
+                    <i class="bi bi-plus-circle"></i> Nuevo Combustible
+                </button>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="row p-4">
+                <div class="col-md-4">
+                    <div class="stats-card text-center">
+                        <i class="bi bi-droplet-half" style="font-size: 2em; color: #667eea;"></i>
+                        <div class="stats-number" id="totalRegistros">{{total1}}</div>
+                        <div class="text-muted">Total de Registros</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card text-center">
+                        <i class="bi bi-cash-stack" style="font-size: 2em; color: #28a745;"></i>
+                        <div class="stats-number" id="precioPromedio">S/. {{ "{:,.4f}".format(total2)}}</div>
+                        <div class="text-muted">Precio Promedio</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card text-center">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 2em; color: #dc3545;"></i>
+                        <div class="stats-number" id="stockBajo">{{total3}}</div>
+                        <div class="text-muted">Stock Bajo</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabla de registros -->
+            <div class="table-wrapper">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Precio</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaCombustibles">
+                        {% for c0 in combustibles %}
+                        <tr>
+                            <td><strong>#{{ c0.id }}</strong></td>
+                            <td>{{ c0.nombre }}</td>
+                            <td>{{ c0.descripcion }}</td>
+                            <td>{{ c0.precio_unitario }}</td>
+
+                            <td>
+                                <button class="action-btn btn-edit" onclick="event.stopPropagation(); editarCombustible( {{c0.id}} )" title="Editar">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="action-btn btn-delete" onclick="event.stopPropagation(); confirmarEliminar({{c0.id}}, '{{c0.nombre}}')" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Crear/Editar -->
+    <div class="modal fade" id="combustibleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="bi bi-plus-circle"></i> Nuevo Combustible
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="combustibleForm">
+                        <input type="hidden" id="id" name="id">
+                        
+                        <div class="floating-label">
+                            <label for="nombre">Nombre *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" 
+                                   required maxlength="50" placeholder="Ingrese el nombre del combustible">
+                        </div>
+                        
+                        <div class="floating-label">
+                            <label for="descripcion">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" 
+                                      rows="3" placeholder="Ingrese una descripción"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="precio_unitario">Precio Unitario (S/.) *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">S/.</span>
+                                        <input type="number" step="0.01" min="0" class="form-control" 
+                                               id="precio_unitario" name="precio_unitario" required 
+                                               placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="stock_actual">Stock Actual</label>
+                                    <input type="number" step="0.01" min="0" class="form-control" 
+                                           id="stock_actual" name="stock_actual" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="stock_minimo">Stock Mínimo</label>
+                                    <input type="number" step="0.01" min="0" class="form-control" 
+                                           id="stock_minimo" name="stock_minimo" placeholder="0.00">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="modified">Última Modificación</label>
+                                    <input type="text" class="form-control" id="modified" readonly 
+                                           placeholder="YYYY-MM-DD HH:MM:SS">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview del precio -->
+                        <div class="alert alert-info mt-3" id="previewPrecio" style="display: none;">
+                            <i class="bi bi-info-circle"></i> Precio registrado: 
+                            <strong>S/. <span id="precioPreview">0.00</span></strong>
+                        </div>
+                        
+                        <!-- Alerta de stock bajo -->
+                        <div class="alert alert-warning mt-3" id="stockBajoAlert" style="display: none;">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            <span id="stockBajoMessage">El stock actual está por debajo del mínimo</span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="guardarCombustible();">
+                        <i class="bi bi-check-circle"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Confirmar Eliminación -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="bi bi-trash" style="font-size: 4em; color: #dc3545;"></i>
+                    <p class="mt-3 mb-0">¿Está seguro que desea eliminar este registro?</p>
+                    <p class="text-muted mt-2" id="deleteInfo"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Ver Detalles -->
+    <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-eye"></i> Detalles del Combustible
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-droplet" style="font-size: 4em; color: #17a2b8;"></i>
+                    </div>
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>ID:</th>
+                            <td><span class="badge-id" id="viewId"></span></td>
+                        </tr>
+                        <tr>
+                            <th>Nombre:</th>
+                            <td id="viewNombre"></td>
+                        </tr>
+                        <tr>
+                            <th>Descripción:</th>
+                            <td id="viewDescripcion"></td>
+                        </tr>
+                        <tr>
+                            <th>Precio Unitario:</th>
+                            <td><span class="precio-badge" id="viewPrecio"></span></td>
+                        </tr>
+                        <tr>
+                            <th>Stock Actual:</th>
+                            <td id="viewStockActual"></td>
+                        </tr>
+                        <tr>
+                            <th>Stock Mínimo:</th>
+                            <td id="viewStockMinimo"></td>
+                        </tr>
+                        <tr>
+                            <th>Última Modificación:</th>
+                            <td id="viewModified"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast para notificaciones -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong class="me-auto">Notificación</strong>
+                <small>ahora</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                Mensaje de notificación
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables globales
+        let deleteId = null;
+        let combustibleModal = null;
+        let deleteModal = null;
+        let viewModal = null;
+        let toast = null;
+        let combustiblesData = [];
+
+        // Inicializar cuando el documento esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar modales de Bootstrap
+            combustibleModal = new bootstrap.Modal(document.getElementById('combustibleModal'));
+            deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
+            toast = new bootstrap.Toast(document.getElementById('liveToast'));
+            
+            // Configurar eventos
+            document.getElementById('confirmDelete').addEventListener('click', eliminarRegistro);
+            document.getElementById('precio_unitario').addEventListener('input', actualizarPreviewPrecio);
+            document.getElementById('stock_actual').addEventListener('input', verificarStockBajo);
+            document.getElementById('stock_minimo').addEventListener('input', verificarStockBajo);
+
+        });
+
+        // Función para mostrar notificación
+        function mostrarNotificacion(mensaje, tipo = 'success') {
+            const toastEl = document.getElementById('liveToast');
+            const toastHeader = toastEl.querySelector('.toast-header');
+            const toastIcon = toastHeader.querySelector('i');
+            
+            toastHeader.className = 'toast-header';
+            if (tipo === 'success') {
+                toastHeader.classList.add('text-white', 'bg-success');
+                toastIcon.className = 'bi bi-check-circle me-2';
+            } else if (tipo === 'error') {
+                toastHeader.classList.add('text-white', 'bg-danger');
+                toastIcon.className = 'bi bi-exclamation-triangle me-2';
+            } else {
+                toastHeader.classList.add('bg-light');
+                toastIcon.className = 'bi bi-info-circle me-2';
+            }
+            
+            document.getElementById('toastMessage').textContent = mensaje;
+            toast.show();
+        }
+        
+        // Función para abrir modal de nuevo registro
+        function abrirModalNuevo() {
+            document.getElementById('combustibleForm').reset();
+            document.getElementById('id').value = '';
+            document.getElementById('modified').value = '';
+            document.getElementById('modalTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Nuevo Combustible';
+            document.getElementById('previewPrecio').style.display = 'none';
+            document.getElementById('stockBajoAlert').style.display = 'none';
+            combustibleModal.show();
+        }
+
+        // Función para editar un combustible
+        function editarCombustible(id) {
+            fetch(`/api/combustibles/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('id').value = data.id || '';
+                    document.getElementById('nombre').value = data.nombre || '';
+                    document.getElementById('descripcion').value = data.descripcion || '';
+                    document.getElementById('precio_unitario').value = data.precio_unitario || '';
+                    document.getElementById('stock_actual').value = data.stock_actual || '';
+                    document.getElementById('stock_minimo').value = data.stock_minimo || '';
+                    document.getElementById('modified').value = data.modified || '';
+                    document.getElementById('modalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Editar Combustible';
+                    actualizarPreviewPrecio();
+                    verificarStockBajo();
+                    combustibleModal.show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarNotificacion('Error al cargar el registro', 'error');
+                });
+        }
+
+        // Función para ver detalles
+        function verDetalles(id) {
+            fetch(`/api/combustibles/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('viewId').textContent = `#${data.id}`;
+                    document.getElementById('viewNombre').textContent = data.nombre || '-';
+                    document.getElementById('viewDescripcion').textContent = data.descripcion || '-';
+                    document.getElementById('viewPrecio').textContent = `S/. ${(data.precio_unitario || 0).toFixed(2)}`;
+                    document.getElementById('viewStockActual').textContent = data.stock_actual || '0';
+                    document.getElementById('viewStockMinimo').textContent = data.stock_minimo || '0';
+                    document.getElementById('viewModified').textContent = data.modified || 'No registrado';
+                    
+                    viewModal.show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarNotificacion('Error al cargar los detalles', 'error');
+                });
+        }
+
+        // Función para guardar (crear o actualizar)
+        function guardarCombustible() {
+            const form = document.getElementById('combustibleForm');
+            
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const id = document.getElementById('id').value;
+            const data = {
+                nombre: document.getElementById('nombre').value,
+                descripcion: document.getElementById('descripcion').value,
+                precio_unitario: parseFloat(document.getElementById('precio_unitario').value) || 0,
+                stock_actual: document.getElementById('stock_actual').value ? 
+                             parseFloat(document.getElementById('stock_actual').value) : null,
+                stock_minimo: document.getElementById('stock_minimo').value ? 
+                             parseFloat(document.getElementById('stock_minimo').value) : null
+            };
+            
+            const url = id ? `/api/combustibles/${id}` : '/api/combustibles';
+            const method = id ? 'PUT' : 'POST';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    mostrarNotificacion('Error: ' + data.error, 'error');
+                } else {
+                    combustibleModal.hide();
+                    window.location.reload();
+                    mostrarNotificacion(id ? 'Registro actualizado exitosamente' : 'Registro creado exitosamente', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al guardar el registro', 'error');
+            });
+
+        }
+
+        // Función para confirmar eliminación
+        function confirmarEliminar(id, nombre) {
+            deleteId = id;
+            document.getElementById('deleteInfo').innerHTML = `
+                <strong>ID:</strong> #${id}<br>
+                <strong>Nombre:</strong> ${nombre || 'Registro'}
+            `;
+            deleteModal.show();
+        }
+
+        // Función para eliminar registro
+        function eliminarRegistro() {
+            if (deleteId) {
+                fetch(`/api/combustibles/${deleteId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        mostrarNotificacion('Error: ' + data.error, 'error');
+                    } else {
+                        deleteModal.hide();
+                        window.location.reload();
+                        mostrarNotificacion('Registro eliminado exitosamente', 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarNotificacion('Error al eliminar el registro', 'error');
+                });
+            }
+        }
+
+        // Función para actualizar preview del precio
+        function actualizarPreviewPrecio() {
+            const precio = document.getElementById('precio_unitario').value;
+            if (precio && parseFloat(precio) > 0) {
+                document.getElementById('precioPreview').textContent = parseFloat(precio).toFixed(2);
+                document.getElementById('previewPrecio').style.display = 'block';
+            } else {
+                document.getElementById('previewPrecio').style.display = 'none';
+            }
+        }
+
+        // Función para verificar stock bajo
+        function verificarStockBajo() {
+            const stockActual = parseFloat(document.getElementById('stock_actual').value) || 0;
+            const stockMinimo = parseFloat(document.getElementById('stock_minimo').value) || 0;
+            
+            if (stockMinimo > 0 && stockActual < stockMinimo) {
+                document.getElementById('stockBajoMessage').textContent = 
+                    `¡Atención! El stock actual (${stockActual}) está por debajo del mínimo (${stockMinimo})`;
+                document.getElementById('stockBajoAlert').style.display = 'block';
+            } else {
+                document.getElementById('stockBajoAlert').style.display = 'none';
+            }
+        }
+    </script>    
+
+</div>
+{% endblock %}

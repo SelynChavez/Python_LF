@@ -89,7 +89,7 @@ DELETE_EMPLEADO = "DELETE FROM a_empleados WHERE id = %s"
 
 LISTA_PROVEEDORES = "SELECT * FROM a_proveedores ORDER BY modified DESC "
 INSERT_PROVEEDOR = "INSERT INTO a_proveedores (nombre, ruc, contacto, cargo, fono, email, tipo, direccion, observaciones, active, modified, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'S', now(), %s)"
-UPDATE_PROVEEDOR = "UPDATE a_proveedores SET nombre=%s, ruc=%s, contacto=%s, cargo=%s, fono=%s, email=%s, tipo=%s, direccion=%s, observaciones=%s, active=%s,  modified=now() WHERE id=%s "
+UPDATE_PROVEEDOR = "UPDATE a_proveedores SET nombre=%s, ruc=%s, contacto=%s, cargo=%s, fono=%s, email=%s, tipo=%s, direccion=%s, observaciones=%s, active=%s,webuser=%s, modified=now() WHERE id=%s "
 SELECT_PROVEEDOR = "SELECT * FROM a_proveedores WHERE id = %s"
 SEL_NM_PROVEEDOR = "SELECT nombre FROM a_proveedores WHERE id = %s"
 DELETE_PROVEEDOR = "DELETE FROM a_proveedores WHERE id = %s"
@@ -179,7 +179,7 @@ LISTA_TURNOS_MAQUINA_COMB = '''
     FROM a_ventas_comb WHERE maquina = %s AND DATE(fecha) = CURDATE() ORDER BY fecha DESC
 '''
 LISTA_MAQUINAS_X_TURNOS = """
-SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, 
+SELECT m.id, m.numero machine_number, m.ubicacion, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, 
        m.lectura_actual current_reading, capacidad_stock stock_capacity, disponible_stock stock_available, 
        estado status, m.modified created_at, f.nombre as fuel_name 
 FROM a_maquinas m LEFT JOIN a_combustible f ON m.tipo_combustible = f.id ORDER BY m.numero
@@ -190,7 +190,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 '''
 UPDATE_VTAS_COMB_MAQUINAS = "UPDATE a_maquinas SET disponible_stock = disponible_stock - %s, lectura_actual = %s WHERE id = %s"
 LISTA_MAQUINAS = '''
-SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
+SELECT m.id, m.numero machine_number, ubicacion, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
         capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at,
         f.nombre as fuel_name, f.precio_unitario unit_price, 
         COALESCE(SUM(s.galones_vendidos), 0) as total_gallons_today, m.disponible_stock as current_stock
@@ -200,7 +200,7 @@ LEFT JOIN a_ventas_comb s ON m.id = s.maquina AND DATE(s.fecha) = CURDATE()
 GROUP BY m.id
 '''
 LISTA_COMBUSTIBLE_TODOS = "SELECT id,nombre name, descripcion description,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock FROM a_combustible"
-INS_MAQUINAS = "INSERT INTO a_maquinas (numero,tipo_combustible,lectura_inicial,capacidad_stock,disponible_stock) VALUES (%s, %s, %s, %s, %s)"
+INS_MAQUINAS = "INSERT INTO a_maquinas (numero,tipo_combustible,lectura_inicial,capacidad_stock,disponible_stock,ubicacion) VALUES (%s, %s, %s, %s, %s, %s)"
 SEL_COMBUSTIBLE = "SELECT id,nombre name,descripcion,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock,modified FROM a_combustible ORDER BY nombre"
 SEL_1_MAQUINA = """
 SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 

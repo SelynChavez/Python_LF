@@ -2881,16 +2881,18 @@ def dashboardC():   ### DASHBOARD COMBUSTIBLE
                           low_stock=low_stock, 
                           now=now)
 
+### 1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1
 @app.route('/cargar_turnos', methods=['GET', 'POST'])
 def cargar_turnos():  ##Actualización masiva de todas las máquinas en una página
+    usr = session['user_username']
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
     cursor.execute(sqlconstants.LISTA_MAQUINAS_X_TURNOS)       # Obtener todas las máquinas
     machines = cursor.fetchall()
     shifts = [              # Obtener turnos disponibles
-        {'code': 'TURNO_1', 'name': '11AM - 6PM'},
-        {'code': 'TURNO_2', 'name': '6PM - 2AM'},
-        {'code': 'TURNO_3', 'name': '2AM - 11AM'}
+        {'code': 'TURNO_1', 'name': '11PM - 6AM'},
+        {'code': 'TURNO_2', 'name': '6AM - 2PM'},
+        {'code': 'TURNO_3', 'name': '2PM - 11PM'}
     ]    
     if request.method == 'POST':
         shift_code = request.form['shift_code']
@@ -2931,7 +2933,7 @@ def cargar_turnos():  ##Actualización masiva de todas las máquinas en una pág
                 flash(error, 'warning')        
         return redirect(url_for('cargar_turnos'))
     cursor.close()
-    return render_template('cargar_turnos.html', machines=machines, shifts=shifts, today=datetime.datetime.now().strftime('%Y-%m-%d'))
+    return render_template('cargar_turnos.html', machines=machines, shifts=shifts, today=datetime.datetime.now().strftime('%Y-%m-%d'), usr=usr)
 
 @app.route('/maquinas')
 def maquinas(): ## Listar todas las máquinas
@@ -2954,10 +2956,11 @@ def crear_maquina():
         initial_reading = request.form['lectura_inicial']
         stock_capacity = request.form['capacidad_stock']
         stock_available = request.form['disponible_stock']        
+        ubicacion = request.form['ubicacion']        
         connection = get_db_connection()
         cursor = connection.cursor()
         try:
-            cursor.execute(sqlconstants.INS_MAQUINAS,(machine_number, fuel_type_id, initial_reading, stock_capacity, stock_available))
+            cursor.execute(sqlconstants.INS_MAQUINAS,(machine_number, fuel_type_id, initial_reading, stock_capacity, stock_available, ubicacion))
             connection.commit()
             flash('Máquina agregada exitosamente', 'success')
         except mysql.connector.Error as err:
@@ -4258,7 +4261,151 @@ def obtener_ingreso(id):
     finally:
         cursor.close()
         conn.close()
+#### $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
+@app.route('/reg_combustible', methods=['GET'])
+def reg_combustible():
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute('SELECT * FROM a_combustible ORDER BY id DESC')
+        combustibles = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+        total1 = 0
+        total2 = 0
+        total3 = 0 
+        for x0 in combustibles:
+            total1 += 1
+            total2 += float(x0['precio_unitario'])
+            if (float(x0['stock_actual']) < float(x0['stock_minimo'])):
+                total3 += 1
+        total2f = total2 / total1
+        return render_template('reg_combustible.html', combustibles = combustibles, total1=total1, total2=total2f, total3=total3)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+    return render_template('reg_combustible.html')
+
+# API para obtener un registro específico
+@app.route('/api/combustibles/<int:id>', methods=['GET'])
+def get_combustible(id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute('SELECT * FROM a_combustible WHERE id = %s', (id,))
+        combustible = cursor.fetchone()
+        cursor.close()
+        connection.close()
+        return jsonify(combustible)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+# API para crear un nuevo registro
+@app.route('/api/combustibles', methods=['POST'])
+def create_combustible():
+    data = request.json
+    
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    
+    cursor = connection.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO a_combustible (nombre, descripcion, precio_unitario, stock_actual, stock_minimo, modified)
+            VALUES (%s, %s, %s, %s, %s, NOW())
+        ''', (
+            data['nombre'], 
+            data['descripcion'], 
+            data['precio_unitario'], 
+            data.get('stock_actual'), 
+            data.get('stock_minimo')
+        ))
+        
+        connection.commit()
+        new_id = cursor.lastrowid
+        
+        return jsonify({
+            'id': new_id, 
+            'message': 'Registro creado exitosamente'
+        }), 201
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+# API para actualizar un registro
+@app.route('/api/combustibles/<int:id>', methods=['PUT'])
+def update_combustible(id):
+    data = request.json
+    
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    
+    cursor = connection.cursor()
+    try:
+        cursor.execute('''
+            UPDATE a_combustible 
+            SET nombre = %s, descripcion = %s, precio_unitario = %s, 
+                stock_actual = %s, stock_minimo = %s, modified = NOW()
+            WHERE id = %s
+        ''', (
+            data['nombre'], 
+            data['descripcion'], 
+            data['precio_unitario'],
+            data.get('stock_actual'), 
+            data.get('stock_minimo'), 
+            id
+        ))
+        
+        connection.commit()
+        
+        if cursor.rowcount > 0:
+            return jsonify({'message': 'Registro actualizado exitosamente'})
+        return jsonify({'error': 'Registro no encontrado'}), 404
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+# API para eliminar un registro
+@app.route('/api/combustibles/<int:id>', methods=['DELETE'])
+def delete_combustible(id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    
+    cursor = connection.cursor()
+    try:
+        cursor.execute('DELETE FROM a_combustible WHERE id = %s', (id,))
+        connection.commit()
+        
+        if cursor.rowcount > 0:
+            return jsonify({'message': 'Registro eliminado exitosamente'})
+        return jsonify({'error': 'Registro no encontrado'}), 404
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
 
 #### $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 if __name__ == '__main__':

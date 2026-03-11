@@ -4,21 +4,26 @@
 <div class="row">
     <div class="col-md-8 mx-auto">
         <div class="card">
-            <div class="card-header">
-                <i class="bi-plus-circle"></i> Agregar Nueva Máquina
-            </div>
+            <div class="card-header"> <i class="bi-plus-circle"></i> Nueva Máquina </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('crear_maquina') }}">
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="numero" class="form-label">Número de Máquina *</label>
                             <input type="text" class="form-control" id="numero" 
                                    name="numero" required 
                                    pattern="[A-Z0-9\-]+" 
                                    title="Solo letras mayúsculas, números y guiones">
                         </div>
-                        
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label for="ubicacion" class="form-label">Local *</label>
+                            <select class="form-select" id="ubicacion" name="ubicacion" required>
+                                <option value="SJL">San Juan de Lurigancho.</option>
+                                <option value="JICAMARCA">Jicamarca</option>
+                                <option value="CALLAO">Callao</option>
+                            </select>
+                        </div>                        
+                        <div class="col-md-4 mb-3">
                             <label for="tipo_combustible" class="form-label">Tipo de Combustible *</label>
                             <select class="form-select" id="tipo_combustible" name="tipo_combustible" required>
                                 <option value="">Seleccionar combustible...</option>

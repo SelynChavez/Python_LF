@@ -170,6 +170,20 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <div class="dashboard-icon">
+                <i class="bi bi-music-player"></i>
+            </div>
+            <h3>Combustbles</h3>
+            <p>Ajustes y preferencias de los combustibles del sistema</p>
+            <a href="{{ url_for('reg_combustible') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Combustibles
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
                 <i class="bi bi-people"></i>
             </div>
             <h3>Usuarios</h3>

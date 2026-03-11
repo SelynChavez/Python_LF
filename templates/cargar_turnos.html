@@ -35,13 +35,14 @@
                             <th>Lectura Final</th>
                             <th>Stock Disp.</th>
                             <th>Calculado</th>
+                            <th>Operador Usr</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for machine in machines %}
                         <tr>
                             <td>
-                                <strong>{{ machine.machine_number }}</strong>
+                                <strong>{{ machine.machine_number }} - {{ machine.ubicacion }}</strong>
                             </td>
                             <td>{{ machine.fuel_name }}</td>
                             <td class="text-center">
@@ -75,6 +76,7 @@
                             <td class="text-center">
                                 <span id="calc_{{ machine.id }}" class="badge bg-secondary">0.00</span>
                             </td>
+                            <td><strong>{{ usr }}</strong></td>
                         </tr>
                         {% endfor %}
                     </tbody>

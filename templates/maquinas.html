@@ -51,6 +51,7 @@ $(document).ready(function() {
                 <thead>
                     <tr>
                         <th># Máquina</th>
+                        <th>Ubicacion</th>
                         <th>Combustible</th>
                         <th>Lectura Actual</th>
                         <th>Stock</th>
@@ -64,6 +65,7 @@ $(document).ready(function() {
                     {% for machine in machines %}
                     <tr class="fila-maq">
                         <td><strong>{{ machine.machine_number }}</strong></td>
+                        <td><strong>{{ machine.ubicacion }}</strong></td>
                         <td>{{ machine.fuel_name }}</td>
                         <td>{{ "%.2f"|format(machine.current_reading) }}</td>
                         <td>

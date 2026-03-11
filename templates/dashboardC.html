@@ -27,7 +27,7 @@
     <div class="col-md-3">
         <div class="card stat-card bg-primary text-white">
             <div class="card-body">
-                <h6 class="card-subtitle mb-2"><a class="btn btn-warning" href="{{ url_for('stock') }}">Stock</a> - Galones Hoy</h6>
+                <h6 class="card-subtitle mb-2">Estado del <a class="btn btn-warning" href="{{ url_for('stock') }}">Stock</a> - Galones Hoy</h6>
                 <h2 class="card-title">{{ "%.2f"|format(today_stats.total_gallons) }}</h2>
                 <i class="bi-droplet fs-1 opacity-50"></i>
             </div>
@@ -36,8 +36,8 @@
     <div class="col-md-3">
         <div class="card stat-card bg-success text-white">
             <div class="card-body">
-                <h6 class="card-subtitle mb-2">Ingresos Hoy</h6>
-                <h2 class="card-title">${{ "%.2f"|format(today_stats.total_revenue) }}</h2>
+                <h6 class="card-subtitle mb-2">Total <a class="btn btn-warning" href="{{ url_for('cargar_turnos') }}">Ventas</a> Hoy</h6>
+                <h2 class="card-title">S/.{{ "%.2f"|format(today_stats.total_revenue) }}</h2>
                 <i class="bi-cash-coin fs-1 opacity-50"></i>
             </div>
         </div>
@@ -45,7 +45,7 @@
     <div class="col-md-3">
         <div class="card stat-card bg-info text-white">
             <div class="card-body">
-                <h6 class="card-subtitle mb-2"><a class="btn btn-warning" href="{{ url_for('maquinas') }}">Máquinas</a> Activas</h6>
+                <h6 class="card-subtitle mb-2">Total <a class="btn btn-warning" href="{{ url_for('maquinas') }}">Máquinas</a> Activas</h6>
                 <h2 class="card-title">{{ today_stats.active_machines }}</h2>
                 <i class="bi-hdd fs-1 opacity-50"></i>
             </div>
@@ -54,18 +54,18 @@
     <div class="col-md-3">
         <div class="card stat-card bg-secondary text-white">
             <div class="card-body">
-                <h6 class="card-subtitle mb-2"><a class="btn btn-warning" href="{{ url_for('cargar_turnos') }}">Turno</a> Actual</strong></h6>
+                <h6 class="card-subtitle mb-2">Turno Actual</strong></h6>
                 <h3 class="card-title">
                     {% set current_shift = namespace(name='') %}
                     {% set current_time = now.strftime('%H:%M') %}
-                    {% if current_time >= '11:00' and current_time < '18:00' %}
-                        TURNO 1 (11AM-6PM)
-                    {% elif current_time >= '2:00' or current_time < '11:00' %}
-                        TURNO 3 (2AM-11AM)
+                    {% if current_time >= '06:00' and current_time < '14:00' %}
+                        TURNO 2 (6AM-2PM)
+                    {% elif current_time >= '14:00' or current_time < '23:00' %}
+                        TURNO 3 (2PM-11PM)
                     {% else %}
-                        TURNO 2 (6PM-2AM)
+                        TURNO 1 (11PM-6AM)
                     {% endif %}
-                </h3>                
+                </h3>
                 <i class="bi-clock fs-1 opacity-50"></i>
             </div>
         </div>
