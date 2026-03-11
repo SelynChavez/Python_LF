@@ -2144,7 +2144,7 @@ def editar_proveedor(id):
         active = request.form.get('active')
         try:
             cursor = connection.cursor()
-            cursor.execute(sqlconstants.UPDATE_PROVEEDOR, (nombre, ruc, contacto, cargo, fono, email, tipo, direccion, observaciones, active, id))            
+            cursor.execute(sqlconstants.UPDATE_PROVEEDOR, (nombre, ruc, contacto, cargo, fono, email, tipo, direccion, observaciones, active, session['user_username'], id))            
             connection.commit()
             # Logs
             cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_proveedor', f'Editó el proveedor: {nombre}'))
