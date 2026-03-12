@@ -23,9 +23,9 @@
                 <div class="card {% if fuel.current_stock < fuel.min_stock %}border-danger
                                {% else %}border-success{% endif %}">
                     <div class="card-body">
-                        <h4 class="card-title">{{ fuel.name }}</h4>
+                        <h4 class="card-title">STOCK: {{ fuel.name }}</h4>
                         <p class="card-text">
-                            <strong>Stock Actual:</strong> 
+                            <strong>Actual:</strong> 
                             <span class="{% if fuel.current_stock < fuel.min_stock %}stock-critical
                                        {% else %}stock-normal{% endif %}">
                                 {{ "%.1f"|format(fuel.current_stock) }} gal
