@@ -3007,7 +3007,7 @@ def editar_turno(machine_id): ### Actualizar lecturas por turno
             flash(f'Stock insuficiente. Disponible: {machine["stock_available"]} galones', 'danger')
             return redirect(url_for('editar_turno', machine_id=machine_id))
         try:
-            # Registrar la venta
+            # Registrar la venta  (**** ACA FALTA)
             cursor.execute(sqlconstants.INS_VENTAS_COMB, (machine_id,shift_code,shift_name,shift_date,initial_reading,final_reading,gallons_sold,gallons_sold * machine['unit_price']))
             # Actualizar stock de la máquina
             cursor.execute(sqlconstants.UPD_MAQUINAS_VTAS_COMB, (gallons_sold, final_reading, machine_id))
