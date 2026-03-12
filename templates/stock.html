@@ -19,11 +19,11 @@
     <div class="card-body">
         <div class="row">
             {% for fuel in fuels %}
-            <div class="col-md-3 mb-3">
+            <div class="col-md-2 mb-3">
                 <div class="card {% if fuel.current_stock < fuel.min_stock %}border-danger
                                {% else %}border-success{% endif %}">
                     <div class="card-body">
-                        <h5 class="card-title">{{ fuel.name }}</h5>
+                        <h4 class="card-title">{{ fuel.name }}</h4>
                         <p class="card-text">
                             <strong>Stock Actual:</strong> 
                             <span class="{% if fuel.current_stock < fuel.min_stock %}stock-critical
@@ -33,7 +33,7 @@
                         </p>
                         <p class="card-text"><strong>Mínimo:</strong> {{ "%.1f"|format(fuel.min_stock) }} gal </p>
                         <p class="card-text">
-                            <strong>Precio:</strong> ${{ "%.2f"|format(fuel.unit_price) }}/gal
+                            <strong>Precio:</strong> S/.{{ "%.2f"|format(fuel.unit_price) }}/gal
                         </p>
                         <div class="progress" style="height: 10px;">
                             {% set percentage = (fuel.current_stock / (fuel.min_stock * 2) * 100) %}
