@@ -3036,12 +3036,12 @@ def editar_turno(machine_id): ### Actualizar lecturas por turno
 def get_shift_name(current_time=None): ### Determinar el turno actual basado en la hora
     if current_time is None:
         current_time = datetime.datetime.now().time()
-    if time(11, 0) <= current_time < time(18, 0):
-        return 'TURNO_1', '11AM - 6PM'
-    elif time(18, 0) <= current_time < time(2, 0):
-        return 'TURNO_2', '6PM - 2AM'
+    if time(6, 0) <= current_time < time(14, 0):
+        return 'TURNO_2', '6AM - 2PM'
+    elif time(14, 0) <= current_time < time(23, 0):
+        return 'TURNO_3', '2PM - 11PM'
     else:
-        return 'TURNO_3', '2AM - 11AM'
+        return 'TURNO_1', '11PM - 6AM'
 ### ???????????????????????????????????????????????????????????????????????????????????????
 # Rutas para préstamos 
 @app.route('/prestamos', methods=['GET', 'POST'])
