@@ -88,9 +88,9 @@
                                 {% endfor %}
                             </tbody>
                             <tfoot><td colspan="6"></td>
-                                <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ subtotal }}</b></td>
-                                <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ totaligv }}</b></td>
-                                <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ total }}</b></td>
+                                <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ "{:,.2f}".format(subtotal) }}</b></td>
+                                <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ "{:,.2f}".format(totaligv) }}</b></td>
+                                <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ "{:,.2f}".format(total) }}</b></td>
                                 <td></td></tfoot>
                         </table>
                     </div>

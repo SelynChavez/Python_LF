@@ -85,7 +85,7 @@
                                 {% endfor %}
                             </tbody>
                             <tfoot><td colspan="6"></td>
-                                <td style="text-align:right;background-color:rgb(226, 247, 185)"><b>S/{{ total }}</b></td>
+                                <td style="text-align:right;background-color:rgb(226, 247, 185)"><b>S/{{ "{:,.2f}".format(total) }}</b></td>
                                 <td></td></tfoot>
                         </table>
                     </div>
