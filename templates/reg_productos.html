@@ -1,0 +1,663 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Registro de Productos{% endblock %}
+{% block content %}
+<div class="row">
+
+    <div class="container main-container">
+        <div class="content-card">
+            <!-- Header -->
+            <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="bi bi-box-seam"></i>
+                    Gestión de Productos
+                </h2>
+                <button class="btn btn-custom" onclick="abrirModalNuevo();">
+                    <i class="bi bi-plus-circle"></i> Nuevo Producto
+                </button>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="row p-4">
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <i class="bi bi-box" style="font-size: 2em; color: #667eea;"></i>
+                        <div class="stats-number" id="totalRegistros">{{total1}}</div>
+                        <div class="text-muted">Total Productos</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <i class="bi bi-wrench" style="font-size: 2em; color: #ffc107;"></i>
+                        <div class="stats-number">{{repuestos}}</div>
+                        <div class="text-muted">Repuestos</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <i class="bi bi-circle" style="font-size: 2em; color: #28a745;"></i>
+                        <div class="stats-number">{{llantas}}</div>
+                        <div class="text-muted">Llantas</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <i class="bi bi-person-badge" style="font-size: 2em; color: #17a2b8;"></i>
+                        <div class="stats-number">{{uniformes}}</div>
+                        <div class="text-muted">Uniformes</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <i class="bi bi-cash-stack" style="font-size: 2em; color: #28a745;"></i>
+                        <div class="stats-number" id="precioPromedio">S/. {{ "{:,.4f}".format(total2)}}</div>
+                        <div class="text-muted">Precio Promedio</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 2em; color: #dc3545;"></i>
+                        <div class="stats-number" id="stockBajo">{{total3}}</div>
+                        <div class="text-muted">Stock Bajo</div>
+                    </div>
+                </div>
+            </div>            
+            <!-- Filtros por tipo -->
+            <div class="row px-4 pb-3">
+                <div class="col-md-4">
+                    <select class="form-select" id="filtroTipo" onchange="filtrarPorTipo()">
+                        <option value="TODOS">Todos los tipos</option>
+                        <option value="REPUESTO">Repuestos</option>
+                        <option value="LLANTA">Llantas</option>
+                        <option value="UNIFORME">Uniformes</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="buscarProducto" 
+                           placeholder="Buscar por nombre..." onkeyup="buscarProductos()">
+                </div>
+            </div>
+            
+            <!-- Tabla de productos -->
+            <div class="table-wrapper">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Nombre</th>
+                            <th>Precio Unit.</th>
+                            <th>Stock Actual</th>
+                            <th>Stock Mínimo</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaProductos">
+                        {% for p in productos %}
+                        <tr data-tipo="{{ p.tipo }}" data-nombre="{{ p.nombre|lower }}">
+                            <td><strong>#{{ p.id }}</strong></td>
+                            <td>
+                                {% if p.tipo == 'REPUESTO' %}
+                                <span class="badge bg-warning text-dark">🔧 Repuesto</span>
+                                {% elif p.tipo == 'LLANTA' %}
+                                <span class="badge bg-success">⚫ Llanta</span>
+                                {% elif p.tipo == 'UNIFORME' %}
+                                <span class="badge bg-info">👕 Uniforme</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ p.tipo }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ p.nombre }}</td>
+                            <td>S/. {{ "{:,.2f}".format(p.precio_unitario) }}</td>
+                            <td class="{% if p.stock_actual and p.stock_minimo and p.stock_actual < p.stock_minimo %}text-danger fw-bold{% endif %}">
+                                {{ p.stock_actual or '0' }}
+                            </td>
+                            <td>{{ p.stock_minimo or '0' }}</td>
+                            <td>
+                                {% if p.active == 'S' %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="action-btn btn-edit" onclick="event.stopPropagation(); editarProducto({{p.id}})" title="Editar">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="action-btn btn-delete" onclick="event.stopPropagation(); confirmarEliminar({{p.id}}, '{{p.nombre}}')" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <button class="action-btn btn-view" onclick="event.stopPropagation(); verDetalles({{p.id}})" title="Ver detalles">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Crear/Editar Producto -->
+    <div class="modal fade" id="productoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="bi bi-plus-circle"></i> Nuevo Producto
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="productoForm">
+                        <input type="hidden" id="id" name="id">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="tipo">Tipo de Producto *</label>
+                                    <select class="form-control" id="tipo" name="tipo" required onchange="cambiarIconoTipo()">
+                                        <option value="REPUESTO">🔧 Repuesto</option>
+                                        <option value="LLANTA">⚫ Llanta</option>
+                                        <option value="UNIFORME">👕 Uniforme</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="nombre">Nombre del Producto *</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre" 
+                                           required maxlength="100" placeholder="Ingrese el nombre">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="precio_unitario">Precio Unitario (S/.) *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">S/.</span>
+                                        <input type="number" step="0.01" min="0" class="form-control" 
+                                               id="precio_unitario" name="precio_unitario" required 
+                                               placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="stock_actual">Stock Actual</label>
+                                    <input type="number" step="0.01" min="0" class="form-control" 
+                                           id="stock_actual" name="stock_actual" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="stock_minimo">Stock Mínimo</label>
+                                    <input type="number" step="0.01" min="0" class="form-control" 
+                                           id="stock_minimo" name="stock_minimo" placeholder="0.00">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="active">Estado</label>
+                                    <select class="form-control" id="active" name="active">
+                                        <option value="S">Activo</option>
+                                        <option value="N">Inactivo</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="floating-label">
+                            <label for="observaciones">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" 
+                                      rows="3" maxlength="400" placeholder="Ingrese observaciones si es necesario"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="webuser">Usuario</label>
+                                    <input type="text" class="form-control" id="webuser" name="webuser" 
+                                           value="{{ usr }}" readonly placeholder="Usuario">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="floating-label">
+                                    <label for="modified">Última Modificación</label>
+                                    <input type="text" class="form-control" id="modified" readonly 
+                                           placeholder="YYYY-MM-DD HH:MM:SS">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Icono según tipo -->
+                        <div class="text-center mt-3" id="tipoIconoPreview">
+                            <span style="font-size: 2em;">🔧</span>
+                            <span class="badge bg-secondary" id="tipoTextoPreview">REPUESTO</span>
+                        </div>
+                        
+                        <!-- Preview del precio -->
+                        <div class="alert alert-info mt-3" id="previewPrecio" style="display: none;">
+                            <i class="bi bi-info-circle"></i> Precio registrado: 
+                            <strong>S/. <span id="precioPreview">0.00</span></strong>
+                        </div>
+                        
+                        <!-- Alerta de stock bajo -->
+                        <div class="alert alert-warning mt-3" id="stockBajoAlert" style="display: none;">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            <span id="stockBajoMessage">El stock actual está por debajo del mínimo</span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="guardarProducto();">
+                        <i class="bi bi-check-circle"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Confirmar Eliminación -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="bi bi-trash" style="font-size: 4em; color: #dc3545;"></i>
+                    <p class="mt-3 mb-0">¿Está seguro que desea eliminar este producto?</p>
+                    <p class="text-muted mt-2" id="deleteInfo"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Ver Detalles -->
+    <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-eye"></i> Detalles del Producto
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4" id="viewIcono">
+                        <span style="font-size: 4em;">🔧</span>
+                    </div>
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>ID:</th>
+                            <td><span class="badge-id" id="viewId"></span></td>
+                        </tr>
+                        <tr>
+                            <th>Tipo:</th>
+                            <td id="viewTipo"></td>
+                        </tr>
+                        <tr>
+                            <th>Nombre:</th>
+                            <td id="viewNombre"></td>
+                        </tr>
+                        <tr>
+                            <th>Precio Unitario:</th>
+                            <td><span class="precio-badge" id="viewPrecio"></span></td>
+                        </tr>
+                        <tr>
+                            <th>Stock Actual:</th>
+                            <td id="viewStockActual"></td>
+                        </tr>
+                        <tr>
+                            <th>Stock Mínimo:</th>
+                            <td id="viewStockMinimo"></td>
+                        </tr>
+                        <tr>
+                            <th>Estado:</th>
+                            <td id="viewActive"></td>
+                        </tr>
+                        <tr>
+                            <th>Observaciones:</th>
+                            <td id="viewObservaciones"></td>
+                        </tr>
+                        <tr>
+                            <th>Usuario:</th>
+                            <td id="viewWebuser"></td>
+                        </tr>
+                        <tr>
+                            <th>Última Modificación:</th>
+                            <td id="viewModified"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast para notificaciones -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong class="me-auto">Notificación</strong>
+                <small>ahora</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                Mensaje de notificación
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables globales
+        let deleteId = null;
+        let productoModal = null;
+        let deleteModal = null;
+        let viewModal = null;
+        let toast = null;
+
+        // Inicializar cuando el documento esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar modales de Bootstrap
+            productoModal = new bootstrap.Modal(document.getElementById('productoModal'));
+            deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
+            toast = new bootstrap.Toast(document.getElementById('liveToast'));
+            
+            // Configurar eventos
+            document.getElementById('confirmDelete').addEventListener('click', eliminarRegistro);
+            document.getElementById('precio_unitario').addEventListener('input', actualizarPreviewPrecio);
+            document.getElementById('stock_actual').addEventListener('input', verificarStockBajo);
+            document.getElementById('stock_minimo').addEventListener('input', verificarStockBajo);
+            document.getElementById('tipo').addEventListener('change', cambiarIconoTipo);
+            
+            // Icono inicial
+            cambiarIconoTipo();
+        });
+
+        // Función para mostrar notificación
+        function mostrarNotificacion(mensaje, tipo = 'success') {
+            const toastEl = document.getElementById('liveToast');
+            const toastHeader = toastEl.querySelector('.toast-header');
+            const toastIcon = toastHeader.querySelector('i');
+            
+            toastHeader.className = 'toast-header';
+            if (tipo === 'success') {
+                toastHeader.classList.add('text-white', 'bg-success');
+                toastIcon.className = 'bi bi-check-circle me-2';
+            } else if (tipo === 'error') {
+                toastHeader.classList.add('text-white', 'bg-danger');
+                toastIcon.className = 'bi bi-exclamation-triangle me-2';
+            } else {
+                toastHeader.classList.add('bg-light');
+                toastIcon.className = 'bi bi-info-circle me-2';
+            }
+            
+            document.getElementById('toastMessage').textContent = mensaje;
+            toast.show();
+        }
+        
+        // Función para cambiar icono según tipo
+        function cambiarIconoTipo() {
+            const tipo = document.getElementById('tipo').value;
+            const iconoPreview = document.getElementById('tipoIconoPreview');
+            const tipoTexto = document.getElementById('tipoTextoPreview');
+            
+            let icono = '🔧';
+            if (tipo === 'LLANTA') icono = '⚫';
+            else if (tipo === 'UNIFORME') icono = '👕';
+            
+            iconoPreview.innerHTML = `<span style="font-size: 2em;">${icono}</span> <span class="badge bg-secondary" id="tipoTextoPreview">${tipo}</span>`;
+        }
+        
+        // Función para filtrar por tipo
+        function filtrarPorTipo() {
+            const tipoFiltro = document.getElementById('filtroTipo').value;
+            const filas = document.querySelectorAll('#tablaProductos tr');
+            
+            filas.forEach(fila => {
+                const tipo = fila.getAttribute('data-tipo');
+                if (tipoFiltro === 'TODOS' || tipo === tipoFiltro) {
+                    fila.style.display = '';
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+        }
+        
+        // Función para buscar productos por nombre
+        function buscarProductos() {
+            const texto = document.getElementById('buscarProducto').value.toLowerCase();
+            const filas = document.querySelectorAll('#tablaProductos tr');
+            
+            filas.forEach(fila => {
+                const nombre = fila.getAttribute('data-nombre') || '';
+                if (nombre.includes(texto)) {
+                    fila.style.display = '';
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+        }
+        
+        // Función para abrir modal de nuevo registro
+        function abrirModalNuevo() {
+            document.getElementById('productoForm').reset();
+            document.getElementById('id').value = '';
+            document.getElementById('modified').value = '';
+            document.getElementById('webuser').value = '{{usr}}';
+            document.getElementById('active').value = 'S';
+            document.getElementById('tipo').value = 'REPUESTO';
+            document.getElementById('modalTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Nuevo Producto';
+            document.getElementById('previewPrecio').style.display = 'none';
+            document.getElementById('stockBajoAlert').style.display = 'none';
+            cambiarIconoTipo();
+            productoModal.show();
+        }
+
+        // Función para editar un producto
+        function editarProducto(id) {
+            fetch(`/api/productos/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('id').value = data.id || '';
+                    document.getElementById('nombre').value = data.nombre || '';
+                    document.getElementById('tipo').value = data.tipo || 'REPUESTO';
+                    document.getElementById('precio_unitario').value = data.precio_unitario || '';
+                    document.getElementById('stock_actual').value = data.stock_actual || '';
+                    document.getElementById('stock_minimo').value = data.stock_minimo || '';
+                    document.getElementById('active').value = data.active || 'S';
+                    document.getElementById('observaciones').value = data.observaciones || '';
+                    document.getElementById('webuser').value = data.webuser || '{{usr}}';
+                    document.getElementById('modified').value = data.modified || '';
+                    document.getElementById('modalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Editar Producto';
+                    actualizarPreviewPrecio();
+                    verificarStockBajo();
+                    cambiarIconoTipo();
+                    productoModal.show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarNotificacion('Error al cargar el producto', 'error');
+                });
+        }
+
+        // Función para ver detalles
+        function verDetalles(id) {
+            fetch(`/api/productos/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('viewId').textContent = `#${data.id}`;
+                    
+                    // Icono según tipo
+                    let icono = '🔧';
+                    if (data.tipo === 'LLANTA') icono = '⚫';
+                    else if (data.tipo === 'UNIFORME') icono = '👕';
+                    document.getElementById('viewIcono').innerHTML = `<span style="font-size: 4em;">${icono}</span>`;
+                    
+                    document.getElementById('viewTipo').innerHTML = 
+                        data.tipo === 'REPUESTO' ? '<span class="badge bg-warning text-dark">🔧 Repuesto</span>' :
+                        data.tipo === 'LLANTA' ? '<span class="badge bg-success">⚫ Llanta</span>' :
+                        '<span class="badge bg-info">👕 Uniforme</span>';
+                    
+                    document.getElementById('viewNombre').textContent = data.nombre || '-';
+                    document.getElementById('viewPrecio').textContent = `S/. ${(data.precio_unitario || 0).toFixed(2)}`;
+                    document.getElementById('viewStockActual').textContent = data.stock_actual || '0';
+                    document.getElementById('viewStockMinimo').textContent = data.stock_minimo || '0';
+                    document.getElementById('viewActive').innerHTML = data.active === 'S' ? 
+                        '<span class="badge bg-success">Activo</span>' : 
+                        '<span class="badge bg-secondary">Inactivo</span>';
+                    document.getElementById('viewObservaciones').textContent = data.observaciones || '-';
+                    document.getElementById('viewWebuser').textContent = data.webuser || '{{usr}}';
+                    document.getElementById('viewModified').textContent = data.modified || 'No registrado';
+                    
+                    viewModal.show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarNotificacion('Error al cargar los detalles', 'error');
+                });
+        }
+
+        // Función para guardar (crear o actualizar)
+        function guardarProducto() {
+            const form = document.getElementById('productoForm');
+            
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const id = document.getElementById('id').value;
+            const data = {
+                nombre: document.getElementById('nombre').value,
+                tipo: document.getElementById('tipo').value,
+                precio_unitario: parseFloat(document.getElementById('precio_unitario').value) || 0,
+                stock_actual: document.getElementById('stock_actual').value ? 
+                             parseFloat(document.getElementById('stock_actual').value) : null,
+                stock_minimo: document.getElementById('stock_minimo').value ? 
+                             parseFloat(document.getElementById('stock_minimo').value) : null,
+                active: document.getElementById('active').value,
+                observaciones: document.getElementById('observaciones').value || null,
+                webuser: document.getElementById('webuser').value || '{{usr}}'
+            };
+            
+            const url = id ? `/api/productos/${id}` : '/api/productos';
+            const method = id ? 'PUT' : 'POST';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    mostrarNotificacion('Error: ' + data.error, 'error');
+                } else {
+                    productoModal.hide();
+                    window.location.reload();
+                    mostrarNotificacion(id ? 'Producto actualizado exitosamente' : 'Producto creado exitosamente', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al guardar el producto', 'error');
+            });
+        }
+
+        // Función para confirmar eliminación
+        function confirmarEliminar(id, nombre) {
+            deleteId = id;
+            document.getElementById('deleteInfo').innerHTML = `
+                <strong>ID:</strong> #${id}<br>
+                <strong>Nombre:</strong> ${nombre || 'Producto'}
+            `;
+            deleteModal.show();
+        }
+
+        // Función para eliminar registro
+        function eliminarRegistro() {
+            if (deleteId) {
+                fetch(`/api/productos/${deleteId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        mostrarNotificacion('Error: ' + data.error, 'error');
+                    } else {
+                        deleteModal.hide();
+                        window.location.reload();
+                        mostrarNotificacion('Producto eliminado exitosamente', 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarNotificacion('Error al eliminar el producto', 'error');
+                });
+            }
+        }
+
+        // Función para actualizar preview del precio
+        function actualizarPreviewPrecio() {
+            const precio = document.getElementById('precio_unitario').value;
+            if (precio && parseFloat(precio) > 0) {
+                document.getElementById('precioPreview').textContent = parseFloat(precio).toFixed(2);
+                document.getElementById('previewPrecio').style.display = 'block';
+            } else {
+                document.getElementById('previewPrecio').style.display = 'none';
+            }
+        }
+
+        // Función para verificar stock bajo
+        function verificarStockBajo() {
+            const stockActual = parseFloat(document.getElementById('stock_actual').value) || 0;
+            const stockMinimo = parseFloat(document.getElementById('stock_minimo').value) || 0;
+            
+            if (stockMinimo > 0 && stockActual < stockMinimo) {
+                document.getElementById('stockBajoMessage').textContent = 
+                    `¡Atención! El stock actual (${stockActual}) está por debajo del mínimo (${stockMinimo})`;
+                document.getElementById('stockBajoAlert').style.display = 'block';
+            } else {
+                document.getElementById('stockBajoAlert').style.display = 'none';
+            }
+        }
+    </script>    
+
+</div>
+{% endblock %}

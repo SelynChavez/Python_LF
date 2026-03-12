@@ -161,9 +161,10 @@
             </div>
             <h3>Productos</h3>
             <p>Ajustes y preferencias de productos del sistema</p>
-            <button class="btn btn-secondary" disabled>
-                <i class="bi bi-tools"></i> Próximamente
-            </button>
+            <a href="{{ url_for('reg_productos') if session.user_rol == 'ADMIN' else '#' }}" 
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Productos
+            </a>
         </div>
     </div>
 

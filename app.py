@@ -4262,7 +4262,6 @@ def obtener_ingreso(id):
         cursor.close()
         conn.close()
 #### $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
 @app.route('/reg_combustible', methods=['GET'])
 def reg_combustible():
     connection = get_db_connection()
@@ -4274,7 +4273,6 @@ def reg_combustible():
         combustibles = cursor.fetchall()
         cursor.close()
         connection.close()
-
         total1 = 0
         total2 = 0
         total3 = 0 
@@ -4298,7 +4296,6 @@ def get_combustible(id):
     connection = get_db_connection()
     if not connection:
         return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-    
     cursor = connection.cursor(dictionary=True)
     try:
         cursor.execute('SELECT * FROM a_combustible WHERE id = %s', (id,))
@@ -4316,11 +4313,9 @@ def get_combustible(id):
 @app.route('/api/combustibles', methods=['POST'])
 def create_combustible():
     data = request.json
-    
     connection = get_db_connection()
     if not connection:
         return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-    
     cursor = connection.cursor()
     try:
         cursor.execute('''
@@ -4333,10 +4328,8 @@ def create_combustible():
             data.get('stock_actual'), 
             data.get('stock_minimo')
         ))
-        
         connection.commit()
         new_id = cursor.lastrowid
-        
         return jsonify({
             'id': new_id, 
             'message': 'Registro creado exitosamente'
@@ -4352,19 +4345,12 @@ def create_combustible():
 @app.route('/api/combustibles/<int:id>', methods=['PUT'])
 def update_combustible(id):
     data = request.json
-    
     connection = get_db_connection()
     if not connection:
         return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-    
     cursor = connection.cursor()
     try:
-        cursor.execute('''
-            UPDATE a_combustible 
-            SET nombre = %s, descripcion = %s, precio_unitario = %s, 
-                stock_actual = %s, stock_minimo = %s, modified = NOW()
-            WHERE id = %s
-        ''', (
+        cursor.execute("UPDATE a_combustible SET nombre = %s, descripcion = %s, precio_unitario = %s, stock_actual = %s, stock_minimo = %s, modified = NOW() WHERE id = %s", (
             data['nombre'], 
             data['descripcion'], 
             data['precio_unitario'],
@@ -4372,9 +4358,7 @@ def update_combustible(id):
             data.get('stock_minimo'), 
             id
         ))
-        
         connection.commit()
-        
         if cursor.rowcount > 0:
             return jsonify({'message': 'Registro actualizado exitosamente'})
         return jsonify({'error': 'Registro no encontrado'}), 404
@@ -4391,12 +4375,10 @@ def delete_combustible(id):
     connection = get_db_connection()
     if not connection:
         return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-    
     cursor = connection.cursor()
     try:
         cursor.execute('DELETE FROM a_combustible WHERE id = %s', (id,))
         connection.commit()
-        
         if cursor.rowcount > 0:
             return jsonify({'message': 'Registro eliminado exitosamente'})
         return jsonify({'error': 'Registro no encontrado'}), 404
@@ -4407,6 +4389,174 @@ def delete_combustible(id):
         cursor.close()
         connection.close()
 
+#### $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+# Ruta principal para productos
+@app.route('/reg_productos', methods=['GET'])
+def reg_productos():
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor(dictionary=True)
+    try:
+        usr = session['user_username']
+        cursor.execute('SELECT * FROM a_productos ORDER BY id DESC')
+        productos = cursor.fetchall()
+        
+        # Calcular estadísticas
+        total_registros = len(productos)
+        total_precio = 0
+        stock_bajo = 0
+        
+        # Contadores por tipo
+        repuestos_count = 0
+        llantas_count = 0
+        uniformes_count = 0
+        
+        for producto in productos:
+            total_precio += float(producto['precio_unitario'] or 0)
+            if producto['stock_actual'] and producto['stock_minimo']:
+                if float(producto['stock_actual']) < float(producto['stock_minimo']):
+                    stock_bajo += 1
+            
+            # Contar por tipo
+            if producto['tipo'] == 'REPUESTO':
+                repuestos_count += 1
+            elif producto['tipo'] == 'LLANTA':
+                llantas_count += 1
+            elif producto['tipo'] == 'UNIFORME':
+                uniformes_count += 1
+        
+        precio_promedio = total_precio / total_registros if total_registros > 0 else 0
+        
+        return render_template('reg_productos.html', 
+                             productos=productos, 
+                             total1=total_registros, 
+                             total2=precio_promedio, 
+                             total3=stock_bajo,
+                             repuestos=repuestos_count,
+                             llantas=llantas_count,
+                             uniformes=uniformes_count, usr = usr)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+# API para obtener un producto específico
+@app.route('/api/productos/<int:id>', methods=['GET'])
+def get_producto(id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute('SELECT * FROM a_productos WHERE id = %s', (id,))
+        producto = cursor.fetchone()
+        return jsonify(producto)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+# API para crear un nuevo producto
+@app.route('/api/productos', methods=['POST'])
+def create_producto():
+    data = request.json
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO a_productos 
+            (nombre, tipo, precio_unitario, stock_actual, stock_minimo, active, observaciones, modified, webuser)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), %s)
+        ''', (
+            data['nombre'],
+            data.get('tipo', 'REPUESTO'),
+            data['precio_unitario'],
+            data.get('stock_actual'),
+            data.get('stock_minimo'),
+            data.get('active', 'S'),
+            data.get('observaciones'),
+            data.get('webuser', 'SYSTEM')
+        ))
+        connection.commit()
+        new_id = cursor.lastrowid
+        return jsonify({
+            'id': new_id, 
+            'message': 'Producto creado exitosamente'
+        }), 201
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+# API para actualizar un producto
+@app.route('/api/productos/<int:id>', methods=['PUT'])
+def update_producto(id):
+    data = request.json
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor()
+    try:
+        cursor.execute('''
+            UPDATE a_productos 
+            SET nombre = %s, 
+                tipo = %s,
+                precio_unitario = %s, 
+                stock_actual = %s, 
+                stock_minimo = %s, 
+                active = %s, 
+                observaciones = %s, 
+                modified = NOW(),
+                webuser = %s
+            WHERE id = %s
+        ''', (
+            data['nombre'],
+            data.get('tipo', 'REPUESTO'),
+            data['precio_unitario'],
+            data.get('stock_actual'),
+            data.get('stock_minimo'),
+            data.get('active', 'S'),
+            data.get('observaciones'),
+            data.get('webuser', 'SYSTEM'),
+            id
+        ))
+        connection.commit()
+        if cursor.rowcount > 0:
+            return jsonify({'message': 'Producto actualizado exitosamente'})
+        return jsonify({'error': 'Producto no encontrado'}), 404
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+# API para eliminar un producto
+@app.route('/api/productos/<int:id>', methods=['DELETE'])
+def delete_producto(id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor()
+    try:
+        cursor.execute('DELETE FROM a_productos WHERE id = %s', (id,))
+        connection.commit()
+        if cursor.rowcount > 0:
+            return jsonify({'message': 'Producto eliminado exitosamente'})
+        return jsonify({'error': 'Producto no encontrado'}), 404
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
 #### $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
