@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ 'ETLF - Editar Socio' if socio else 'ETLF - Crear Socio' }}{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi {{ 'bi-pencil' if socio else 'bi-person-plus' }}"></i> 
+                    {{ 'Editar Socio: ' + socio.nombre if socio else 'Crear Nuevo Socio' }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('configuracion.guardar_socio', id=socio.id if socio else 0) }}">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" 
+                                   value="{{ socio.nombre if socio else '' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="dni" class="form-label">DNI *</label>
+                            <input type="number" class="form-control" id="dni" name="dni" 
+                                   value="{{ socio.dni if socio else '' }}" min="0" max="99999999" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fono" class="form-label">Fono *</label>
+                            <input type="text" class="form-control" id="fono" name="fono" 
+                                   value="{{ socio.fono if socio else '' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">E.Mail</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ socio.email if socio else '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label">Tipo *</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                <option value="">Seleccionar Tipo...</option>
+                                <option value="SOCIO" {{ 'selected' if (socio and socio.tipo == 'SOCIO') }}>Socio</option>
+                                <option value="CHOFER" {{ 'selected' if (socio and socio.tipo == 'CHOFER') }}>Chofer</option>
+                                <option value="ALQUILADO" {{ 'selected' if (socio and socio.tipo == 'ALQUILADO') }}>Alquilado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="comentarios" class="form-label">Comentarios</label>
+                            <input type="text" class="form-control" id="comentarios" name="comentarios" 
+                                   value="{{ socio.comentarios if socio else '' }}" required>
+                        </div>
+                    </div>
+
+                    {% if socio %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="active" class="form-label">Activo?</label>
+                            <select class="form-select" id="active" name="active" required>
+                                <option value="S" {{ 'selected' if socio.active == 'S' }}>Si</option>
+                                <option value="N" {{ 'selected' if socio.active == 'N' }}>No</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="usuario" class="form-label">Usuario Asociado *</label>
+                            <input type="text" class="form-control" id="usuario" name="usuario" 
+                                   value="{{ socio.usuario if socio else '' }}" required>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        Los campos marcados con * son obligatorios
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn {{ 'btn-primary' if socio else 'btn-success' }}">
+                            <i class="bi {{ 'bi-save' if socio else 'bi-check-circle' }}"></i> 
+                            {{ 'Guardar Cambios' if socio else 'Crear Socio' }}
+                        </button>
+                        <a href="{{ url_for('configuracion.listar_socios') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> {{ 'Volver a la lista' if socio else 'Cancelar' }}
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -236,7 +236,7 @@
                                     <i class="bi bi-eraser me-2"></i>Nuevo
                                 </button>
 
-                                <a href="{{ url_for('menuiocash') }}" class="btn btn-secondary"> 
+                                <a href="{{ url_for('dashboard.menuiocash') }}" class="btn btn-secondary"> 
                                     <i class="bi bi-arrow-left me-2"></i> Regresar 
                                 </a>
                             </div>
@@ -314,7 +314,7 @@
         document.querySelectorAll('.periodo-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const periodo = this.dataset.periodo;
-                window.location.href = "{{ url_for('reg_ingresos') }}?periodo=" + periodo;
+                window.location.href = "{{ url_for('io_cash.reg_ingresos') }}?periodo=" + periodo;
             });
         });
         

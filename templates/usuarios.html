@@ -33,7 +33,7 @@ $(document).ready(function() {
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0"><i class="bi bi-people"></i> Gestión de Usuarios</h4>
-                <a href="{{ url_for('crear_usuario') }}" class="btn btn-success">
+                <a href="{{ url_for('configuracion.crear_usuario') }}" class="btn btn-success">
                     <i class="bi bi-person-plus"></i> Nuevo Usuario
                 </a>
             </div>
@@ -47,7 +47,7 @@ $(document).ready(function() {
                         </div>
                     </div>
                     <div class="col-md-6 text-end">
-                        <a href="{{ url_for('configuracion') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('dashboard.configuracion') }}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Volver al Menu
                         </a>
                     </div>
@@ -93,12 +93,12 @@ $(document).ready(function() {
                                 <td>{{ usuario.modified.strftime('%d/%m/%Y %H:%M') if usuario.modified }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="{{ url_for('editar_usuario', id=usuario.id) }}" 
+                                        <a href="{{ url_for('configuracion.editar_usuario', id=usuario.id) }}" 
                                            class="btn btn-sm btn-warning" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         {% if usuario.id != session.user_id %}
-                                        <a href="{{ url_for('eliminar_usuario', id=usuario.id) }}" 
+                                        <a href="{{ url_for('configuracion.eliminar_usuario', id=usuario.id) }}" 
                                            class="btn btn-sm btn-danger btn-eliminar" 
                                            data-nombre="{{ usuario.fullname }}"
                                            title="Eliminar">

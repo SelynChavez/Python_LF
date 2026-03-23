@@ -16,7 +16,7 @@
                     <p><strong>Precio Unitario:</strong> ${{ machine.unit_price }}/gal</p>
                     <p><strong>Stock Disponible:</strong> {{ "%.1f"|format(machine.stock_available) }} gal</p>
                 </div>
-                <form method="POST" action="{{ url_for('editar_turno', machine_id=machine.id) }}">
+                <form method="POST" action="{{ url_for('combustibles.editar_turno', machine_id=machine.id) }}">
                     <div class="mb-3">
                         <label for="shift_date" class="form-label">Fecha del Turno</label>
                         <input type="date" class="form-control" id="shift_date" name="shift_date" value="{{ today }}" required>
@@ -42,7 +42,7 @@
                         $<span id="total">0.00</span>
                     </div>
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('dashboardC') }}" class="btn btn-secondary me-md-2">
+                        <a href="{{ url_for('combustibles.dashboardC') }}" class="btn btn-secondary me-md-2">
                             <i class="bi-arrow-left"></i> Volver
                         </a>
                         <button type="submit" class="btn btn-primary">

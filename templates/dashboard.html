@@ -24,7 +24,7 @@
                 </div>
                 <h3>Recibos</h3>
                 <p>Menu de Recibos y Aportes</p>
-                <a href="{{ url_for('menurecibos') }}" class="btn btn-primary" >
+                <a href="{{ url_for('dashboard.menurecibos') }}" class="btn btn-primary" >
                     <i class="bi bi-eye"></i> Gestion de Recibos
                 </a>
             </div>
@@ -39,7 +39,7 @@
                 </div>
                 <h3>Prestamos y Retiros</h3>
                 <p>Post aporte sobre prestamos y retiros de socios</p>
-                <a href="{{ url_for('dashboardP') if session.user_rol == 'ADMIN' or session.user_rol == 'SOCIO' else '#' }}" 
+                <a href="{{ url_for('dashboard.dashboardP') if session.user_rol == 'ADMIN' or session.user_rol == 'SOCIO' else '#' }}" 
                 class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' and session.user_rol != 'SOCIO' }}">
                     <i class="bi bi-eye"></i> Gestion Prestamos y Retiros
                 </a>
@@ -55,7 +55,7 @@
                 </div>
                 <h3>Administracion de Buses</h3>
                 <p>Gestion de ruta, gps, consumo de combustible</p>
-                <a href="{{ url_for('dashboardC') if session.user_rol == 'ADMIN' else '#' }}" 
+                <a href="{{ url_for('combustibles.dashboardC') if session.user_rol == 'ADMIN' else '#' }}" 
                 class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                     <i class="bi bi-eye"></i> Gestion Combustible
                 </a>    
@@ -69,7 +69,7 @@
                 </div>
                 <h3>Salidas / Ingresos</h3>
                 <p>Ingresos y Salidas de Dinero por multiples conceptos</p>
-                <a href="{{ url_for('menuiocash') if session.user_rol == 'ADMIN' else '#' }}" 
+                <a href="{{ url_for('dashboard.menuiocash') if session.user_rol == 'ADMIN' else '#' }}" 
                 class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                     <i class="bi bi-eye"></i> Opciones de I/S de dinero
                 </a>
@@ -83,7 +83,7 @@
                 </div>
                 <h3>Reportes</h3>
                 <p>Reportes y Listados de varios termas</p>
-                <a href="{{ url_for('reportes') if session.user_rol == 'ADMIN' else '#' }}" 
+                <a href="{{ url_for('reportes.reportes') if session.user_rol == 'ADMIN' else '#' }}" 
                 class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                     <i class="bi bi-eye"></i> Reportes Varios
                 </a>
@@ -97,7 +97,7 @@
                 </div>
                 <h3>Configuración</h3>
                 <p>Ajustes y preferencias del sistema</p>
-                <a href="{{ url_for('configuracion') if session.user_rol == 'ADMIN' else '#' }}" 
+                <a href="{{ url_for('dashboard.configuracion') if session.user_rol == 'ADMIN' else '#' }}" 
                 class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                     <i class="bi bi-eye"></i> Opciones de Configuracion
                 </a>
@@ -114,7 +114,7 @@
                         <i class="bi bi-receipt-cutoff"></i>
                     </div>
                     <h3>Consulta de Recibos</h3>
-                    <a href="{{ url_for('aportes_socio') }}" class="btn btn-primary" >
+                    <a href="{{ url_for('aportes.aportes_socio') }}" class="btn btn-primary" >
                         <i class="bi bi-eye"></i> Ver Recibos
                     </a>
                 </div>
@@ -126,7 +126,7 @@
                         <i class="bi bi-box-arrow-up-right"></i>
                     </div>
                     <h3>Solicitud de Prestamo</h3>
-                    <a href="{{ url_for('prestamos_socio') if session.user_rol == 'SOCIO' else '#' }}" 
+                    <a href="{{ url_for('prestamos.prestamos_socio') if session.user_rol == 'SOCIO' else '#' }}" 
                     class="btn btn-primary {{ 'disabled' if session.user_rol != 'SOCIO' }}">
                         <i class="bi bi-eye"></i> Ver Prestamos
                     </a>
@@ -139,7 +139,7 @@
                         <i class="bi bi-box-arrow-in-down-left"></i>
                     </div>
                     <h3>Solicitud de Retiro</h3>
-                    <a href="{{ url_for('retiros_socio') if session.user_rol == 'SOCIO' else '#' }}" 
+                    <a href="{{ url_for('retiros.retiros_socio') if session.user_rol == 'SOCIO' else '#' }}" 
                     class="btn btn-primary {{ 'disabled' if session.user_rol != 'SOCIO' }}">
                         <i class="bi bi-eye"></i> Ver Retiros
                     </a>

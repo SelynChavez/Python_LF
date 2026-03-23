@@ -6,7 +6,7 @@
         <div class="card">
             <div class="card-header"> <i class="bi-plus-circle"></i> Nueva Máquina </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('crear_maquina') }}">
+                <form method="POST" action="{{ url_for('combustibles.crear_maquina') }}">
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="numero" class="form-label">Número de Máquina *</label>
@@ -54,7 +54,7 @@
                     </div>
                     
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('maquinas') }}" class="btn btn-secondary me-md-2">
+                        <a href="{{ url_for('combustibles.maquinas') }}" class="btn btn-secondary me-md-2">
                             <i class="bi-x-circle"></i> Cancelar
                         </a>
                         <button type="submit" class="btn btn-primary">

@@ -8,7 +8,7 @@
                 <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Solicitud de Prestamo</h4>
             </div>
             <div class="card-body">
-                <form method="POST" iaction="{{ url_for('crear_prestamo') }}">
+                <form method="POST" iaction="{{ url_for('prestamos.crear_prestamo') }}">
                     <input type="hidden" id="act" name="act" value="{{act}}">
                     <input type="hidden" id="lid" name="lid" value="{{lid}}">
                     <input type="hidden" id="nom" name="nom" value="{{nom}}">
@@ -86,12 +86,12 @@
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         {% if session.user_rol == 'ADMIN' %}
-                            <a href="{{ url_for('prestamos') }}" class="btn btn-secondary me-md-2">
+                            <a href="{{ url_for('prestamos.prestamos') }}" class="btn btn-secondary me-md-2">
                                 <i class="bi bi-x"></i> Cancelar / Regresar
                             </a>
                         {% endif %}
                         {% if session.user_rol == 'SOCIO' %}
-                            <a href="{{ url_for('prestamos_socio') }}" class="btn btn-secondary me-md-2">
+                            <a href="{{ url_for('prestamos.prestamos_socio') }}" class="btn btn-secondary me-md-2">
                                 <i class="bi bi-x"></i> Cancelar / Regresar
                             </a>
                         {% endif %}

@@ -16,7 +16,7 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <p><b>Rep. Recibos Serie #1 por Fechas y Padron</b></p>
-            <a href="{{ url_for('rep1recibos') if session.user_rol == 'ADMIN' else '#' }}" 
+            <a href="{{ url_for('reportes.rep1recibos') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                 <i class="bi bi-eye"></i> Rep #1 Aportes
             </a>
@@ -25,7 +25,7 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <p><b>Rep. Recibos Serie #1 por Fechas y Aportes</b></p>
-            <a href="{{ url_for('rep2recibos') if session.user_rol == 'ADMIN' else '#' }}" 
+            <a href="{{ url_for('reportes.rep2recibos') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                 <i class="bi bi-eye"></i> Rep #2 Aportes
             </a>

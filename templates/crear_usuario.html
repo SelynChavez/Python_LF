@@ -10,7 +10,7 @@
                 <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Nuevo Usuario</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('crear_usuario') }}">
+                <form method="POST" action="{{ url_for('configuracion.crear_usuario') }}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="username" class="form-label">Nombre de Usuario *</label>
@@ -50,7 +50,7 @@
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-check-circle"></i> Crear Usuario
                         </button>
-                        <a href="{{ url_for('listar_usuarios') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('configuracion.listar_usuarios') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>

@@ -8,7 +8,7 @@
                 <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Recibo Padron Serie #4</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('crear_recibo_s4') }}">
+                <form method="POST" action="{{ url_for('recibos.crear_recibo_s4') }}">
                     <input type="hidden" id="act" name="act" value="{{act}}">
                     <input type="hidden" id="lid" name="lid" value="{{lid}}">
                     <input type="hidden" id="num" name="num" value="{{num}}">
@@ -70,7 +70,7 @@
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-check-circle"></i> {{but}}
                         </button>
-                        <a href="{{ url_for('aportes_s4') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('aportes.aportes_s4') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>

@@ -8,7 +8,7 @@
                 <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Cuenta: {{ cuenta.nombre }}</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('editar_cuenta', id=cuenta.id) }}">
+                <form method="POST" action="{{ url_for('contabilidad.editar_cuenta', id=cuenta.id) }}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Elemento</label>
@@ -86,7 +86,7 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-save"></i> Guardar Cambios
                         </button>
-                        <a href="{{ url_for('cuentas_contables') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('contabilidad.cuentas_contables') }}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Volver a la lista
                         </a>
                     </div>

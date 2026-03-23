@@ -104,7 +104,7 @@ GET_NOMBRE_PADRON = "SELECT concat(p.id,':',p.placa,':',s.nombre) as n0 FROM a_p
 
 LISTA_TIPOS_APORTE = "SELECT t.*,concat('S00',atributo1) serie FROM a_tipos t WHERE t.tipo=%s ORDER BY t.modified DESC "
 LISTA_TIPOS = "SELECT t.* FROM a_tipos t WHERE t.tipo=%s ORDER BY t.modified DESC "
-INSERT_TIPO = "INSERT INTO a_tipos (tipo, codigo, descripcion, monto1, monto2, atributo1, atributo2, atributo3, atributo4, atributo5, modified, webuser) VALUES (%s, %s, %s, '0','0','','','','','', now(), %s)"
+INSERT_TIPO = "INSERT INTO a_tipos (tipo, codigo, descripcion, monto1, monto2, atributo1, atributo2, atributo3, atributo4, atributo5, modified, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s)"
 UPDATE_TIPO = "UPDATE a_tipos SET codigo=%s, descripcion=%s, monto1=%s,monto2=%s,atributo1=%s,atributo2=%s,atributo3=%s,atributo4=%s,atributo5=%s, modified=now() WHERE id=%s "
 SELECT_TIPO = "SELECT t.* FROM a_tipos t WHERE t.id = %s"
 SEL_NM_TIPO = "SELECT tipo,codigo FROM a_tipos WHERE id = %s"
@@ -199,6 +199,10 @@ LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
 LEFT JOIN a_ventas_comb s ON m.id = s.maquina AND DATE(s.fecha) = CURDATE()
 GROUP BY m.id
 '''
+DEL_1_COMBUSTIBLE = 'DELETE FROM a_combustible WHERE id = %s'
+UPD_1_COMBUSTIBLE = "UPDATE a_combustible SET nombre = %s, descripcion = %s, precio_unitario = %s, stock_actual = %s, stock_minimo = %s, modified = NOW() WHERE id = %s"
+INS_1_COMBUSTIBLE = 'INSERT INTO a_combustible (nombre, descripcion, precio_unitario, stock_actual, stock_minimo, modified) VALUES (%s, %s, %s, %s, %s, NOW())'
+SELECT_1_COMBUSTIBLE = 'SELECT * FROM a_combustible WHERE id = %s'
 LISTA_COMBUSTIBLE_TODOS = "SELECT id,nombre name, descripcion description,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock FROM a_combustible"
 INS_MAQUINAS = "INSERT INTO a_maquinas (numero,tipo_combustible,lectura_inicial,capacidad_stock,disponible_stock,ubicacion) VALUES (%s, %s, %s, %s, %s, %s)"
 SEL_COMBUSTIBLE = "SELECT id,nombre name,descripcion,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock,modified FROM a_combustible ORDER BY nombre"
@@ -262,3 +266,71 @@ SEL_NM_CUENTA_CONTABLE = "SELECT nombre FROM a_pcge WHERE id = %s"
 DELETE_CUENTA_CONTABLE = "DELETE FROM a_pcge WHERE id = %s"
 
 SELECT_LISTA_PADRONES = "SELECT concat(p.id) id, p.placa, p.socio FROM a_padrones p, a_socios s WHERE p.socio = s.id and s.usuario = '$usr$'"
+
+LISTA_PRODUCTOS = "SELECT * FROM a_productos ORDER BY id DESC"
+SELECT_1_PRODUCTO = 'SELECT * FROM a_productos WHERE id = %s'
+INSERT_PRODUCTO = 'INSERT INTO a_productos (nombre, tipo, precio_unitario, stock_actual, stock_minimo, active, observaciones, modified, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), %s)'
+UPDATE_PRODUCTO = 'UPDATE a_productos SET nombre = %s,tipo = %s,precio_unitario = %s,stock_actual = %s,stock_minimo = %s,active = %s,observaciones = %s,modified = NOW(),webuser = %s WHERE id = %s'
+DELETE_PRODUCTO = 'DELETE FROM a_productos WHERE id = %s'
+
+UPD_SALIDA_ANULADO = "UPDATE a_salidas SET estado = 'ANULADO', modified = CURRENT_TIMESTAMP WHERE id = %s"
+SEL_SALIDA_ARCHIVO = "SELECT archivo FROM a_salidas WHERE id = %s"
+UPD_SALIDA_ARCHIVO = "UPDATE a_salidas SET archivo = %s, modified = CURRENT_TIMESTAMP WHERE id = %s"
+SELECT_1_SALIDA = "SELECT * FROM a_salidas WHERE id = %s"
+SELECT_1_INGRESO = "SELECT * FROM a_ingresos WHERE id = %s"
+LISTA_INGRESOS = "SELECT * FROM a_ingresos WHERE DATE(fecha_solicitud) BETWEEN %s AND %s AND estado in ('PENDIENTE','CONFIRMADO') ORDER BY fecha_solicitud DESC, id DESC"
+LISTA_SALIDAS = "SELECT * FROM a_salidas WHERE DATE(fecha_solicitud) BETWEEN %s AND %s AND estado in ('PENDIENTE','CONFIRMADO') ORDER BY fecha_solicitud DESC, id DESC"
+LISTA_TIPO_SALIDAS = "SELECT codigo,concat(descripcion,' [',codigo,']') descripcion FROM a_tipos WHERE tipo = 'SALIDA' ORDER BY 2"
+LISTA_TIPO_INGRESOS = "SELECT codigo, CONCAT(descripcion, ' [', codigo, ']') as descripcion FROM a_tipos WHERE tipo = 'INGRESO' ORDER BY 2"
+LISTA_DISCT_TIPO_SALIDAS = "SELECT DISTINCT codigo,descripcion nombre FROM a_tipos WHERE tipo = 'SALIDA' ORDER BY descripcion"
+LISTA_FILTRO_SALIDAS = "SELECT s.*, DATE_FORMAT(fecha_solicitud, '%d/%m/%Y') fecha FROM a_salidas s WHERE fecha_solicitud BETWEEN %s AND %s "
+LISTA_2_PADRONES = "SELECT id, nombPadronSocio(p.id) nombre, placa FROM a_padrones p ORDER BY nombre"
+LISTA_3_PADRONES = "SELECT id, nombre, placa FROM a_padrones ORDER BY nombre"
+LISTA_2_SOCIOS = "SELECT id, nombre, dni FROM a_socios ORDER BY nombre"
+LISTA_3_SOCIOS = "SELECT id, concat(id,': ',nombre) nombre, dni FROM a_socios ORDER BY nombre"
+LISTA_2_EMPLEADOS = "SELECT id, nombre, dni FROM a_empleados WHERE active = 'S' ORDER BY nombre"
+LISTA_3_EMPLEADOS = "SELECT id, concat(id,': ',nombre) nombre, dni FROM a_empleados WHERE active = 'S' ORDER BY nombre"
+LISTA_2_PROVEEDORES = "SELECT id, nombre, ruc FROM a_proveedores ORDER BY nombre"
+LISTA_3_PROVEEDORES = "SELECT id, concat(id,': ',nombre) nombre, ruc FROM a_proveedores WHERE active='S' ORDER BY nombre"
+LISTA_2_TERCEROS = "SELECT id, descripcion, codigo, atributo1, descripcion nombre FROM a_tipos WHERE tipo = 'TERCERO' ORDER BY 1"
+LISTA_3_TERCEROS = "SELECT id, descripcion, atributo1, descripcion nombre FROM a_tipos WHERE tipo = 'TERCERO' ORDER BY 2"
+LISTA_4_TERCEROS = "SELECT concat(codigo,': ',descripcion) descripcion FROM a_tipos WHERE tipo = 'TERCERO' ORDER BY 1"
+UPD_9_SALIDAS = """UPDATE a_salidas
+SET fecha_solicitud = %s,
+    tipo_salida = %s,
+    tipo_beneficiario = %s,
+    beneficiario = %s,
+    beneficiario_nombre = %s,
+    monto = %s,
+    observaciones = %s,
+    tipo_doc = %s,
+    numero_doc = %s,
+    periodo = %s,
+    modified = CURRENT_TIMESTAMP,
+    webuser = %s,
+    estado = 'CONFIRMADO'
+WHERE id = %s """
+INS_9_SALIDAS = """ 
+INSERT INTO a_salidas 
+(fecha_solicitud, tipo_salida, tipo_beneficiario, beneficiario,beneficiario_nombre, monto, estado, observaciones, tipo_doc, numero_doc, periodo, webuser)
+VALUES (%s, %s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s)
+"""
+UPD_9_INGRESOS = """UPDATE a_ingresos
+SET fecha_solicitud = %s,
+    tipo_ingreso = %s,
+    tipo_tercero = %s,
+    tercero = %s,
+    monto = %s,
+    observaciones = %s,
+    tipo_doc = %s,
+    numero_doc = %s,
+    periodo = %s,
+    estado = 'CONFIRMADO',
+    modified = CURRENT_TIMESTAMP,
+    webuser = %s
+WHERE id = %s """
+INS_9_INGRESOS = """
+INSERT INTO a_ingresos 
+(fecha_solicitud, tipo_ingreso, tipo_tercero, tercero, monto, estado, observaciones, tipo_doc, numero_doc, periodo, webuser)
+VALUES (%s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s)
+"""

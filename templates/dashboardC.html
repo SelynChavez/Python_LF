@@ -27,7 +27,7 @@
     <div class="col-md-3">
         <div class="card stat-card bg-primary text-white">
             <div class="card-body">
-                <h6 class="card-subtitle mb-2">Estado del <a class="btn btn-warning" href="{{ url_for('stock') }}">Stock</a> - Galones Hoy</h6>
+                <h6 class="card-subtitle mb-2">Estado del <a class="btn btn-warning" href="{{ url_for('combustibles.stock') }}">Stock</a> - Galones Hoy</h6>
                 <h2 class="card-title">{{ "%.2f"|format(today_stats.total_gallons) }}</h2>
                 <i class="bi-droplet fs-1 opacity-50"></i>
             </div>
@@ -36,7 +36,7 @@
     <div class="col-md-3">
         <div class="card stat-card bg-success text-white">
             <div class="card-body">
-                <h6 class="card-subtitle mb-2">Total <a class="btn btn-warning" href="{{ url_for('cargar_turnos') }}">Ventas</a> Hoy</h6>
+                <h6 class="card-subtitle mb-2">Total <a class="btn btn-warning" href="{{ url_for('combustibles.cargar_turnos') }}">Ventas</a> Hoy</h6>
                 <h2 class="card-title">S/.{{ "%.2f"|format(today_stats.total_revenue) }}</h2>
                 <i class="bi-cash-coin fs-1 opacity-50"></i>
             </div>
@@ -45,7 +45,7 @@
     <div class="col-md-3">
         <div class="card stat-card bg-info text-white">
             <div class="card-body">
-                <h6 class="card-subtitle mb-2">Total <a class="btn btn-warning" href="{{ url_for('maquinas') }}">Máquinas</a> Activas</h6>
+                <h6 class="card-subtitle mb-2">Total <a class="btn btn-warning" href="{{ url_for('combustibles.maquinas') }}">Máquinas</a> Activas</h6>
                 <h2 class="card-title">{{ today_stats.active_machines }}</h2>
                 <i class="bi-hdd fs-1 opacity-50"></i>
             </div>
@@ -204,7 +204,7 @@
                                     <span class="badge bg-danger">CRITICO</span>
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('editar_turno', machine_id=machine.id) }}" 
+                                    <a href="{{ url_for('combustibles.editar_turno', machine_id=machine.id) }}" 
                                        class="btn btn-sm btn-warning">
                                         <i class="bi-fuel-pump"></i> Reabastecer
                                     </a>

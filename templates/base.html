@@ -14,7 +14,7 @@
     <!-- Navbar para usuarios autenticados -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+            <a class="navbar-brand" href="{{ url_for('dashboard.dashboard') }}">
                 <i class="bi bi-people-fill"></i> Situacion Financiera E.T. Las Flores
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -23,13 +23,13 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                        <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">
                             <i class="bi bi-menu-app"></i> Menu Principal
                         </a>
                     </li>
                     {% if session.user_rol == 'admin' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('listar_usuarios') }}">
+                        <a class="nav-link" href="{{ url_for('configuracion.listar_usuarios') }}">
                             <i class="bi bi-people"></i> Gestión de Usuarios
                         </a>
                     </li>
@@ -41,7 +41,7 @@
                         <ul class="dropdown-menu">
                             <li><span class="dropdown-item-text"><small>Rol: {{ session.user_rol }}</small></span></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
                         </ul>
                     </li>
                 </ul>

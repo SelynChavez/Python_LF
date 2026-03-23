@@ -1,0 +1,349 @@
+from flask import render_template, request, redirect, url_for, flash, session, jsonify
+from functools import wraps
+from flask import current_app
+from mysql.connector import Error
+from datetime import time
+import datetime
+from decimal import Decimal
+import mysql.connector
+import sqlconstants
+
+from .combustibles import bp as combustibles_bp
+
+def get_db_connection():
+    try:
+        from mysql import connector
+        connection = connector.connect(
+            host=current_app.config['MYSQL_HOST'],
+            user=current_app.config['MYSQL_USER'],
+            password=current_app.config['MYSQL_PASSWORD'],
+            database=current_app.config['MYSQL_DATABASE'],
+            port=current_app.config['MYSQL_PORT']
+        )
+        return connection
+    except Error as e:
+        print(f"Error al conectar a MySQL: {e}")
+        return None
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Por favor, inicie sesión para acceder a esta página.', 'warning')
+            return redirect(url_for('combustibles.dashboardC'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_rol' not in session or session['user_rol'] != 'ADMIN':
+            flash('Acceso denegado. Se requieren privilegios de administrador.', 'danger')
+            return redirect(url_for('combustibles.dashboardC'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def get_shift_name(current_time=None):
+    if current_time is None:
+        current_time = datetime.datetime.now().time()
+    if time(6, 0) <= current_time < time(14, 0):
+        return 'TURNO_2', '6AM - 2PM'
+    elif time(14, 0) <= current_time < time(23, 0):
+        return 'TURNO_3', '2PM - 11PM'
+    else:
+        return 'TURNO_1', '11PM - 6AM'
+
+
+@combustibles_bp.route('/dashboardC')
+def dashboardC():
+    now = datetime.datetime.now()
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.DASHB_COMB_TOTAL_HOY)
+        today_stats = cursor.fetchone()
+        cursor.execute(sqlconstants.DASHB_COMB_TURNOS_HOY)
+        shift_stats = cursor.fetchall()
+        cursor.execute(sqlconstants.DASHB_COMB_TOP_MAQUINAS)
+        top_machines = cursor.fetchall()
+        cursor.execute(sqlconstants.DASHB_COMB_STOCK_CRITICO)
+        low_stock = cursor.fetchall()
+        cursor.close()
+    return render_template('dashboardC.html',
+                          today_stats=today_stats,
+                          shift_stats=shift_stats,
+                          top_machines=top_machines,
+                          low_stock=low_stock,
+                          now=now)
+
+
+@combustibles_bp.route('/cargar_turnos', methods=['GET', 'POST'])
+def cargar_turnos():
+    usr = session['user_username']
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.LISTA_MAQUINAS_X_TURNOS)
+    machines = cursor.fetchall()
+    shifts = [
+        {'code': 'TURNO_1', 'name': '11PM - 6AM'},
+        {'code': 'TURNO_2', 'name': '6AM - 2PM'},
+        {'code': 'TURNO_3', 'name': '2PM - 11PM'}
+    ]
+    if request.method == 'POST':
+        shift_code = request.form['shift_code']
+        shift_date = request.form['shift_date']
+        success_count = 0
+        errors = []
+        for machine in machines:
+            machine_id = machine['id']
+            initial_key = f'initial_{machine_id}'
+            final_key = f'final_{machine_id}'
+            if initial_key in request.form and final_key in request.form:
+                try:
+                    initial_reading = Decimal(request.form[initial_key])
+                    final_reading = Decimal(request.form[final_key])
+                    if initial_reading == 0 and final_reading == 0:
+                        continue
+                    gallons_sold = final_reading - initial_reading
+                    if gallons_sold < 0:
+                        errors.append(f'Máquina {machine["machine_number"]}: Lectura final menor que inicial')
+                        continue
+                    cursor.execute(sqlconstants.PRECIO_U_COMB, (machine['fuel_type_id'],))
+                    fuel = cursor.fetchone()
+                    if gallons_sold > 0:
+                        cursor.execute(sqlconstants.INSERT_VTAS_COMBUSTIBLE, (machine_id, shift_code,
+                              next(s['name'] for s in shifts if s['code'] == shift_code), shift_date,
+                              initial_reading, final_reading, gallons_sold, gallons_sold * fuel['unit_price']))
+                        cursor.execute(sqlconstants.UPDATE_VTAS_COMB_MAQUINAS, (gallons_sold, final_reading, machine_id))
+                        success_count += 1
+                except Exception as e:
+                    errors.append(f'Máquina {machine["machine_number"]}: {str(e)}')
+        if success_count > 0:
+            connection.commit()
+            flash(f'{success_count} máquina(s) actualizada(s) exitosamente', 'success')
+        if errors:
+            for error in errors:
+                flash(error, 'warning')
+        return redirect(url_for('combustibles.cargar_turnos'))
+    cursor.close()
+    return render_template('cargar_turnos.html', machines=machines, shifts=shifts, today=datetime.datetime.now().strftime('%Y-%m-%d'), usr=usr)
+
+
+@combustibles_bp.route('/maquinas')
+def maquinas():
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.LISTA_MAQUINAS)
+    machines = cursor.fetchall()
+    cursor.execute(sqlconstants.LISTA_COMBUSTIBLE_TODOS)
+    fuels = cursor.fetchall()
+    cursor.close()
+    return render_template('maquinas.html', machines=machines, fuels=fuels)
+
+
+@combustibles_bp.route('/maquinas/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_maquina():
+    if request.method == 'POST':
+        machine_number = request.form['numero']
+        fuel_type_id = request.form['tipo_combustible']
+        initial_reading = request.form['lectura_inicial']
+        stock_capacity = request.form['capacidad_stock']
+        stock_available = request.form['disponible_stock']
+        ubicacion = request.form['ubicacion']
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        try:
+            cursor.execute(sqlconstants.INS_MAQUINAS, (machine_number, fuel_type_id, initial_reading, stock_capacity, stock_available, ubicacion))
+            connection.commit()
+            flash('Máquina agregada exitosamente', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Error: {err}', 'danger')
+        finally:
+            cursor.close()
+        return redirect(url_for('combustibles.maquinas'))
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM a_combustible')
+    fuels = cursor.fetchall()
+    cursor.close()
+    return render_template('crear_maquina.html', fuels=fuels)
+
+
+@combustibles_bp.route('/stock')
+def stock():
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.SEL_COMBUSTIBLE)
+    fuels = cursor.fetchall()
+    cursor.execute(sqlconstants.DASHB_COMB_STOCK_CRITICO)
+    machine_stock = cursor.fetchall()
+    cursor.close()
+    return render_template('stock.html', fuels=fuels, machine_stock=machine_stock)
+
+
+@combustibles_bp.route('/editar_turno/<int:machine_id>', methods=['GET', 'POST'])
+def editar_turno(machine_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.SEL_1_MAQUINA, (machine_id,))
+    machine = cursor.fetchone()
+    if request.method == 'POST':
+        shift_code, shift_name = get_shift_name()
+        initial_reading = Decimal(request.form['initial_reading'])
+        final_reading = Decimal(request.form['final_reading'])
+        shift_date = request.form['shift_date']
+        gallons_sold = final_reading - initial_reading
+        if gallons_sold < 0:
+            flash('La lectura final no puede ser menor que la inicial', 'danger')
+            return redirect(url_for('combustibles.editar_turno', machine_id=machine_id))
+        if gallons_sold > machine['stock_available']:
+            flash(f'Stock insuficiente. Disponible: {machine["stock_available"]} galones', 'danger')
+            return redirect(url_for('combustibles.editar_turno', machine_id=machine_id))
+        try:
+            cursor.execute(sqlconstants.INS_VENTAS_COMB, (machine_id, shift_code, shift_name, shift_date, initial_reading, final_reading, gallons_sold, gallons_sold * machine['unit_price']))
+            cursor.execute(sqlconstants.UPD_MAQUINAS_VTAS_COMB, (gallons_sold, final_reading, machine_id))
+            connection.commit()
+            cursor.execute(sqlconstants.UPD_COMBUSTIBLE_CTAS_COMB, (gallons_sold, machine['fuel_type_id']))
+            connection.commit()
+            flash(f'Turno registrado exitosamente. Galones vendidos: {gallons_sold}', 'success')
+        except mysql.connector.Error as err:
+            connection.rollback()
+            flash(f'Error: {err}', 'danger')
+        finally:
+            cursor.close()
+        return redirect(url_for('combustibles.maquinas'))
+    cursor.execute(sqlconstants.LISTA_TURNOS_MAQUINA_COMB, (machine_id,))
+    today_shifts = cursor.fetchall()
+    cursor.close()
+    shift_code, shift_name = get_shift_name()
+    return render_template('editar_turno.html',
+                          machine=machine,
+                          today_shifts=today_shifts,
+                          current_shift={'code': shift_code, 'name': shift_name},
+                          today=datetime.datetime.now().strftime('%Y-%m-%d'))
+
+
+@combustibles_bp.route('/reg_combustible', methods=['GET'])
+def reg_combustible():
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute('SELECT * FROM a_combustible ORDER BY id DESC')
+        combustibles = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        total1 = 0
+        total2 = 0
+        total3 = 0
+        for x0 in combustibles:
+            total1 += 1
+            total2 += float(x0['precio_unitario'])
+            if (float(x0['stock_actual']) < float(x0['stock_minimo'])):
+                total3 += 1
+        total2f = total2 / total1
+        return render_template('reg_combustible.html', combustibles=combustibles, total1=total1, total2=total2f, total3=total3)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
+@combustibles_bp.route('/api/combustibles/<int:id>', methods=['GET'])
+def get_combustible(id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute(sqlconstants.SELECT_1_COMBUSTIBLE, (id,))
+        combustible = cursor.fetchone()
+        cursor.close()
+        connection.close()
+        return jsonify(combustible)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
+@combustibles_bp.route('/api/combustibles', methods=['POST'])
+def create_combustible():
+    data = request.json
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor()
+    try:
+        cursor.execute(sqlconstants.INS_1_COMBUSTIBLE, (
+            data['nombre'],
+            data['descripcion'],
+            data['precio_unitario'],
+            data.get('stock_actual'),
+            data.get('stock_minimo')
+        ))
+        connection.commit()
+        new_id = cursor.lastrowid
+        return jsonify({
+            'id': new_id,
+            'message': 'Registro creado exitosamente'
+        }), 201
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
+@combustibles_bp.route('/api/combustibles/<int:id>', methods=['PUT'])
+def update_combustible(id):
+    data = request.json
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor()
+    try:
+        cursor.execute(sqlconstants.UPD_1_COMBUSTIBLE, (
+            data['nombre'],
+            data['descripcion'],
+            data['precio_unitario'],
+            data.get('stock_actual'),
+            data.get('stock_minimo'),
+            id
+        ))
+        connection.commit()
+        if cursor.rowcount > 0:
+            return jsonify({'message': 'Registro actualizado exitosamente'})
+        return jsonify({'error': 'Registro no encontrado'}), 404
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
+@combustibles_bp.route('/api/combustibles/<int:id>', methods=['DELETE'])
+def delete_combustible(id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor()
+    try:
+        cursor.execute(sqlconstants.DEL_1_COMBUSTIBLE, (id,))
+        connection.commit()
+        if cursor.rowcount > 0:
+            return jsonify({'message': 'Registro eliminado exitosamente'})
+        return jsonify({'error': 'Registro no encontrado'}), 404
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()

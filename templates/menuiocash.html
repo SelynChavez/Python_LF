@@ -20,7 +20,7 @@
             </div>
             <h3>Registro de Gastos/Salidas</h3>
             <p>Gestionar toda salida de dinero de caja hoy</p>
-            <a href="{{ url_for('reg_salidas') }}" class="btn btn-primary">
+            <a href="{{ url_for('io_cash.reg_salidas') }}" class="btn btn-primary">
                 <i class="bi bi-eye"></i> Registrar Salidas
             </a>
         </div>
@@ -33,7 +33,7 @@
             </div>
             <h3>Listar Gastos/Salidas</h3>
             <p>Ver, anular o asociar PDF a gastos/salidas</p>
-            <a href="{{ url_for('salidas') if session.user_rol == 'ADMIN' else '#' }}" 
+            <a href="{{ url_for('io_cash.salidas') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                 <i class="bi bi-eye"></i> Listar Salidas
             </a>
@@ -47,7 +47,7 @@
             </div>
             <h3>Ingresos</h3>
             <p>Gestion de Ingresos de dinero varios</p>
-            <a href="{{ url_for('reg_ingresos') if session.user_rol == 'ADMIN' else '#' }}" 
+            <a href="{{ url_for('io_cash.reg_ingresos') if session.user_rol == 'ADMIN' else '#' }}" 
                class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
                 <i class="bi bi-eye"></i> Registrar Ingresos
             </a>

@@ -20,7 +20,7 @@ $(document).ready(function() {
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1><i class="bi-hdd"></i> Máquinas de Despacho</h1>
-    <a href="{{ url_for('crear_maquina') }}" class="btn btn-primary">
+    <a href="{{ url_for('combustibles.crear_maquina') }}" class="btn btn-primary">
         <i class="bi-plus-circle"></i> Nueva Máquina
     </a>
 </div>
@@ -40,7 +40,7 @@ $(document).ready(function() {
                 </div>
             </div>
             <div class="col-md-6 text-end">
-                <a href="{{ url_for('dashboardC') }}" class="btn btn-secondary">
+                <a href="{{ url_for('combustibles.dashboardC') }}" class="btn btn-secondary">
                     <i class="bi bi-arrow-left"></i> Volver al dashboard
                 </a>
             </div>
@@ -99,7 +99,7 @@ $(document).ready(function() {
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ url_for('editar_turno', machine_id=machine.id) }}" 
+                                <a href="{{ url_for('combustibles.editar_turno', machine_id=machine.id) }}" 
                                    class="btn btn-outline-primary" 
                                    title="Registrar turno">
                                     <i class="bi-pencil"></i>

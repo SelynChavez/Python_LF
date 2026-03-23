@@ -23,7 +23,7 @@ $(document).ready(function() {
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0"><i class="bi bi-people"></i> Gestión de Cuentas Contables</h4>
             </div>
-            <form method="POST" action="{{ url_for('cuentas_contables') }}">
+            <form method="POST" action="{{ url_for('contabilidad.cuentas_contables') }}">
                 <div class="card-body">
                     <!-- Barra de búsqueda -->
                     <div class="row mb-4">
@@ -39,12 +39,12 @@ $(document).ready(function() {
                             </button>
                         </div>                    
                         <div class="col-md-2 text-end">
-                            <a href="{{ url_for('generar_reporte_plan_contable') }}" class="btn btn-secondary">
+                            <a href="{{ url_for('reportes.generar_reporte_plan_contable') }}" class="btn btn-secondary">
                                 <i class="bi bi-file-pdf"></i> Reporte
                             </a>
                         </div>
                         <div class="col-md-2 text-end">
-                            <a href="{{ url_for('configuracion') }}" class="btn btn-secondary">
+                            <a href="{{ url_for('dashboard.configuracion') }}" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left"></i> Volver al Menu
                             </a>
                         </div>
@@ -78,11 +78,11 @@ $(document).ready(function() {
                                     <td>{{ cta.auxiliar }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ url_for('editar_cuenta', id=cta.id) }}" 
+                                            <a href="{{ url_for('contabilidad.editar_cuenta', id=cta.id) }}" 
                                             class="btn btn-sm btn-warning" title="Editar">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <a href="{{ url_for('eliminar_cuenta', id=cta.id) }}" 
+                                            <a href="{{ url_for('contabilidad.eliminar_cuenta', id=cta.id) }}" 
                                             class="btn btn-sm btn-danger btn-eliminar" 
                                             data-nombre="{{ cta.nombre }}"
                                             title="Eliminar">
