@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Compras de Combustible{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-cart3"></i> Compras de Combustible</h4>
+                <div>
+                    <a href="{{ url_for('compras_comb.nueva_compra') }}" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Nueva Compra
+                    </a>
+                    &nbsp;
+                    <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha</th>
+                                <th>Número</th>
+                                <th>Proveedor</th>
+                                <th>Tipo</th>
+                                <th>Moneda</th>
+                                <th class="text-end">Total</th>
+                                <th>Usuario</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in compras %}
+                            <tr>
+                                <td>{{ c.id }}</td>
+                                <td>{{ c.fecha }}</td>
+                                <td>{{ c.numero }}</td>
+                                <td>{{ c.nombre_proveedor }}</td>
+                                <td>{{ c.tipo }}</td>
+                                <td>{{ c.moneda }}</td>
+                                <td class="text-end"><b>{{ c.total }}</b></td>
+                                <td>{{ c.webuser }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" disabled title="Ver">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">No hay compras registradas</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

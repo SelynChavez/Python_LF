@@ -28,7 +28,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="monto1" class="form-label">Monto Fijo Aporte (Mt#1)</label>
-                            <input type="number" class="form-control" id="monto1" name="monto1" min="0.00" max="999.99" 
+                            <input type="number" class="form-control" id="monto1" name="monto1" min="0.00" step="0.01" max="999.99" 
                                    value="{{ tipo.monto1 if tipo else '' }}" maxlength="6">
                         </div>
                         <div class="col-md-6 mb-3">

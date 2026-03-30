@@ -35,10 +35,11 @@ def hash_password(password):
 
 # Registrar Blueprints
 from routes import (
-    auth_bp, contabilidad_bp, configuracion_bp, 
+    auth_bp, contabilidad_bp, configuracion_bp,
     reportes_bp, io_cash_bp, combustibles_bp,
     productos_bp, dashboard_bp, aportes_bp,
-    prestamos_bp, retiros_bp, recibos_bp
+    prestamos_bp, retiros_bp, recibos_bp,
+    compras_comb_bp
 )
 
 app.register_blueprint(auth_bp)
@@ -53,6 +54,7 @@ app.register_blueprint(aportes_bp)
 app.register_blueprint(prestamos_bp)
 app.register_blueprint(retiros_bp)
 app.register_blueprint(recibos_bp)
+app.register_blueprint(compras_comb_bp)
 
 # ==================== RUTAS DE API ====================
 @app.route('/api/usuarios')

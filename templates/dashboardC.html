@@ -54,7 +54,7 @@
     <div class="col-md-3">
         <div class="card stat-card bg-secondary text-white">
             <div class="card-body">
-                <h6 class="card-subtitle mb-2">Turno Actual</strong></h6>
+                <h6 class="card-subtitle mb-2">Turno Actual - <a class="btn btn-warning" href="{{ url_for('compras_comb.lista_compras') }}">Compras</a> </strong></h6>
                 <h3 class="card-title">
                     {% set current_shift = namespace(name='') %}
                     {% set current_time = now.strftime('%H:%M') %}

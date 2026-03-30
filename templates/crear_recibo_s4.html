@@ -32,6 +32,21 @@
                             <input type="text" class="form-control" id="com" name="com" value="{{com}}" maxlength="99">
                         </div>
                     </div>
+
+                    <!-- Suma Total de Aportes -->
+                    <div class="row mb-3">
+                        <div class="col-md-4 offset-md-8">
+                            <div class="card bg-light">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong>Total Aportes:</strong>
+                                        <span id="totalAportes" class="h5 mb-0 text-success">S/ 0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="row">
                         <!-- Tabla Lista -->
                         <div class="table-responsive">
@@ -55,7 +70,7 @@
                                         <td>
                                             <div class="input-group">
                                                 <span class="input-group-text">S/</span>
-                                                <input type="number" class="form-control" id="{{ ii.codigo }}" name="{{ ii.codigo }}" value="{{ ii.monto }}" min="0" max="9999.99" step="0.01" maxlength="7">
+                                                <input type="number" class="form-control monto-aporte" id="{{ ii.codigo }}" name="{{ ii.codigo }}" value="{{ ii.monto }}" min="0" max="9999.99" step="0.01" maxlength="7" onchange="calcularTotalAportes()" onkeyup="calcularTotalAportes()">
                                             </div>
                                         </td>
                                         <td>{{ ii.prestamo }}</td>
@@ -64,13 +79,13 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
-                        </div>        
+                        </div>
                     </div>
                     <div class="mt-4">
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-check-circle"></i> {{but}}
                         </button>
-                        <a href="{{ url_for('aportes.aportes_s4') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('aportes.aportes_series') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>
@@ -79,4 +94,28 @@
         </div>
     </div>
 </div>
+
+<script>
+function calcularTotalAportes() {
+    const montos = document.querySelectorAll('.monto-aporte');
+    let total = 0;
+    montos.forEach(input => {
+        total += parseFloat(input.value) || 0;
+    });
+    const totalElement = document.getElementById('totalAportes');
+    totalElement.textContent = 'S/ ' + total.toFixed(2);
+    totalElement.style.transform = 'scale(1.1)';
+    setTimeout(() => { totalElement.style.transform = 'scale(1)'; }, 200);
+}
+document.addEventListener('DOMContentLoaded', function() { calcularTotalAportes(); });
+document.querySelectorAll('.monto-aporte').forEach(input => {
+    input.addEventListener('paste', function() { setTimeout(calcularTotalAportes, 10); });
+});
+</script>
+
+<style>
+    .monto-aporte:focus { border-color: #28a745; box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25); }
+    #totalAportes { transition: all 0.3s ease; display: inline-block; }
+    .bg-light { background-color: #f8f9fa !important; border-left: 4px solid #28a745; }
+</style>
 {% endblock %}

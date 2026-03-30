@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Nueva Compra de Combustible{% endblock %}
+{% block content %}
+<form method="POST" action="{{ url_for('compras_comb.nueva_compra') }}" id="formCompra">
+
+<!-- Card 1: Datos del Proveedor y Documento -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-building"></i> Datos del Proveedor y Documento</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="ruc" class="form-label">RUC Proveedor</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="ruc" name="ruc" maxlength="20" required>
+                            <button type="button" class="btn btn-outline-secondary" onclick="buscarProveedor()">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="nombre_proveedor" class="form-label">Proveedor</label>
+                        <input type="text" class="form-control" id="nombre_proveedor" readonly placeholder="(buscar por RUC)">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <a href="{{ url_for('configuracion.guardar_proveedor', id=0) }}" class="btn btn-outline-success" target="_blank">
+                            <i class="bi bi-person-plus"></i> Crear Proveedor
+                        </a>
+                    </div>
+                    <div class="col-md-3" id="divWarningProveedor" style="display:none;">
+                        <div class="alert alert-warning mt-2 mb-0 py-2">
+                            <i class="bi bi-exclamation-triangle"></i> Proveedor no encontrado
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="fecha" class="form-label">Fecha Emisión</label>
+                        <input type="date" class="form-control" id="fecha" name="fecha" required
+                               value="{{ now_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="numero" class="form-label">Número Documento</label>
+                        <input type="text" class="form-control" id="numero" name="numero"
+                               placeholder="F001-00001234" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="tipo" class="form-label">Tipo</label>
+                        <select class="form-select" id="tipo" name="tipo" required>
+                            <option value="FACTURA">FACTURA ELECTRONICA</option>
+                            <option value="NOTA DE CREDITO">NOTA DE CREDITO</option>
+                            <option value="NOTA DE DEBITO">NOTA DE DEBITO</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <label for="moneda" class="form-label">Moneda</label>
+                        <select class="form-select" id="moneda" name="moneda">
+                            <option value="PEN">PEN (Soles)</option>
+                            <option value="USD">USD (Dólares)</option>
+                            <option value="EUR">EUR (Euros)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="condicion" class="form-label">Condición de Pago</label>
+                        <select class="form-select" id="condicion" name="condicion">
+                            <option value="CONTADO">CONTADO</option>
+                            <option value="CREDITO">CREDITO</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <input type="text" class="form-control" id="observaciones" name="observaciones" maxlength="100">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Card 2: Detalle de Productos -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Detalle de Productos</h5>
+                <button type="button" class="btn btn-primary btn-sm" onclick="agregarFila()">
+                    <i class="bi bi-plus-circle"></i> Agregar Item
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm" id="tablaItems">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Descripción</th>
+                                <th style="width:100px">Cantidad</th>
+                                <th style="width:80px">U/M</th>
+                                <th style="width:120px">Precio Unit.</th>
+                                <th style="width:120px">Subtotal</th>
+                                <th>Máquina</th>
+                                <th style="width:60px">Quitar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoItems">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Card 3: Totales -->
+<div class="row mb-3">
+    <div class="col-md-6 offset-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calculator"></i> Totales</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <label class="col-sm-5 col-form-label text-end">Subtotal</label>
+                    <div class="col-sm-7">
+                        <input type="text" class="form-control text-end" id="txt_subtotal" name="subtotal_display" readonly value="0.00">
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <label class="col-sm-5 col-form-label text-end">IGV 18%</label>
+                    <div class="col-sm-7">
+                        <input type="text" class="form-control text-end" id="txt_igv" readonly value="0.00">
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <label class="col-sm-5 col-form-label text-end">Descuentos</label>
+                    <div class="col-sm-7">
+                        <input type="number" class="form-control text-end" id="descuentos" name="descuentos"
+                               step="0.01" min="0" value="0.00" onchange="calcularTotales()">
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <label class="col-sm-5 col-form-label text-end">Adicionales</label>
+                    <div class="col-sm-7">
+                        <input type="number" class="form-control text-end" id="adicionales" name="adicionales"
+                               step="0.01" min="0" value="0.00" onchange="calcularTotales()">
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <label class="col-sm-5 col-form-label text-end fw-bold fs-5">TOTAL</label>
+                    <div class="col-sm-7">
+                        <input type="text" class="form-control text-end fw-bold fs-5" id="txt_total" readonly value="0.00">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones -->
+<div class="row mb-4">
+    <div class="col-12 d-flex gap-2 justify-content-end">
+        <a href="{{ url_for('compras_comb.lista_compras') }}" class="btn btn-secondary">
+            <i class="bi bi-x-circle"></i> Cancelar
+        </a>
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-save"></i> Guardar Compra
+        </button>
+    </div>
+</div>
+
+</form>
+
+<!-- Fila template (oculta) -->
+<table style="display:none;"><tbody id="fila_template">
+    <tr class="fila-item" data-index="__IDX__">
+        <td>
+            <select class="form-select form-select-sm" name="item_producto[]" onchange="seleccionarProducto(this)">
+                <option value="">-- Seleccionar --</option>
+                {% for c in combustibles %}
+                <option value="{{ c.nombre }}" data-precio="{{ c.precio_unitario }}">{{ c.nombre }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm" name="item_descripcion[]">
+        </td>
+        <td>
+            <input type="number" class="form-control form-control-sm input-cantidad" name="item_cantidad[]"
+                   step="0.01" min="0" value="0" onchange="calcularFila(this.closest('tr'))">
+        </td>
+        <td>
+            <select class="form-select form-select-sm" name="item_uom[]">
+                <option value="GAL">GAL</option>
+                <option value="LT">LT</option>
+                <option value="GLN">GLN</option>
+            </select>
+        </td>
+        <td>
+            <input type="number" class="form-control form-control-sm input-precio" name="item_precio[]"
+                   step="0.00001" min="0" value="0" onchange="calcularFila(this.closest('tr'))">
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm input-subtotal text-end" name="item_subtotal[]" readonly value="0.00">
+        </td>
+        <td>
+            <select class="form-select form-select-sm" name="item_maquina[]">
+                <option value="">-- Ninguna --</option>
+                {% for m in maquinas %}
+                <option value="{{ m.id }}">{{ m.machine_number }}{% if m.fuel_name %} ({{ m.fuel_name }}){% endif %}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarFila(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    </tr>
+</tbody></table>
+
+<script>
+let filaIndex = 0;
+
+function buscarProveedor() {
+    const ruc = document.getElementById('ruc').value.trim();
+    if (!ruc) {
+        return;
+    }
+    document.getElementById('divWarningProveedor').style.display = 'none';
+    document.getElementById('nombre_proveedor').value = 'Buscando...';
+    fetch('/api/proveedor_ruc/' + ruc)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('nombre_proveedor').value = '';
+                document.getElementById('divWarningProveedor').style.display = 'block';
+            } else {
+                document.getElementById('nombre_proveedor').value = data.nombre;
+                document.getElementById('divWarningProveedor').style.display = 'none';
+            }
+        })
+        .catch(() => {
+            document.getElementById('nombre_proveedor').value = '';
+            document.getElementById('divWarningProveedor').style.display = 'block';
+        });
+}
+
+function agregarFila() {
+    const template = document.getElementById('fila_template');
+    const clone = template.querySelector('tr').cloneNode(true);
+    clone.setAttribute('data-index', filaIndex);
+    filaIndex++;
+    document.getElementById('cuerpoItems').appendChild(clone);
+}
+
+function eliminarFila(btn) {
+    btn.closest('tr').remove();
+    calcularTotales();
+}
+
+function seleccionarProducto(sel) {
+    const row = sel.closest('tr');
+    const opt = sel.options[sel.selectedIndex];
+    const precio = opt.getAttribute('data-precio') || 0;
+    row.querySelector('.input-precio').value = parseFloat(precio).toFixed(5);
+    calcularFila(row);
+}
+
+function calcularFila(row) {
+    const cant = parseFloat(row.querySelector('.input-cantidad').value) || 0;
+    const prec = parseFloat(row.querySelector('.input-precio').value) || 0;
+    const sub = cant * prec;
+    row.querySelector('.input-subtotal').value = sub.toFixed(2);
+    calcularTotales();
+}
+
+function calcularTotales() {
+    let subtotal = 0;
+    document.querySelectorAll('.input-subtotal').forEach(function(el) {
+        subtotal += parseFloat(el.value) || 0;
+    });
+    const igv = subtotal * 0.18;
+    const descuentos = parseFloat(document.getElementById('descuentos').value) || 0;
+    const adicionales = parseFloat(document.getElementById('adicionales').value) || 0;
+    const total = subtotal + igv - descuentos + adicionales;
+    document.getElementById('txt_subtotal').value = subtotal.toFixed(2);
+    document.getElementById('txt_igv').value = igv.toFixed(2);
+    document.getElementById('txt_total').value = total.toFixed(2);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    agregarFila();
+    const today = new Date().toISOString().split('T')[0];
+    const fechaInput = document.getElementById('fecha');
+    if (!fechaInput.value) {
+        fechaInput.value = today;
+    }
+});
+</script>
+{% endblock %}

@@ -27,6 +27,53 @@ def admin_required(f):
     return decorated_function
 
 
+SERIE_COLORS = {
+    '3': 'rgb(245, 247, 241)',
+    '4': 'rgb(243, 215, 235)',
+    '5': '#dce8f7',
+    '6': '#f9eac9',
+}
+
+@aportes_bp.route('/aportes_series', methods=['GET', 'POST'])
+@login_required
+def aportes_series():
+    total = 0
+    line0 = 0
+    recs = []
+    serie = '3'
+    color = SERIE_COLORS['3']
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
+        p3 = request.form.get('p3')
+        serie = request.form.get('serie', '3')
+        color = SERIE_COLORS.get(serie, SERIE_COLORS['3'])
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            query = sqlconstants.REP_S2_APORTES
+            query = query.replace("$serie$", serie)
+            query = query.replace("$p1$", str(p1))
+            query = query.replace("$p2$", str(p2))
+            query = query.replace("$p3$", str(p3))
+            cursor.execute(query)
+            recibos = cursor.fetchall()
+            cursor.close()
+            connection.close()
+            for reg in recibos:
+                line0 += 1
+                reg['d0'] = str(line0)
+                total += float(reg['d7'])
+            return render_template('aportes_series.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3, serie=serie, color=color)
+        else:
+            flash('Error de conexión a la base de datos.', 'danger')
+            return redirect(url_for('dashboard.menurecibos'))
+    else:
+        px = datetime.datetime.now().strftime('%Y-%m-%d')
+        flash('Listo para consultar.', 'success')
+        return render_template('aportes_series.html', p1=px, p2=px, p3=0, recibos=recs, total=total, serie=serie, color=color)
+
+
 @aportes_bp.route('/aportes_s6', methods=['GET', 'POST'])
 @login_required
 def aportes_s6():
@@ -208,7 +255,7 @@ def aportes_s2():
     else:
         px = datetime.datetime.now().strftime('%Y-%m-%d')
         flash('Listo para consultar.', 'success')
-        return render_template('aportes_s2.html', p1=px, p2=px, p3=0, recibos=recs, total=total)
+        return render_template('aportes_s2.html', p1=px, p2=px, p3=0, recibos=recs, total=total, subtotal=0, totaligv=0)
 
 
 @aportes_bp.route('/aportes', methods=['GET', 'POST'])

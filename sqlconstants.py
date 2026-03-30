@@ -330,7 +330,17 @@ SET fecha_solicitud = %s,
     webuser = %s
 WHERE id = %s """
 INS_9_INGRESOS = """
-INSERT INTO a_ingresos 
+INSERT INTO a_ingresos
 (fecha_solicitud, tipo_ingreso, tipo_tercero, tercero, monto, estado, observaciones, tipo_doc, numero_doc, periodo, webuser)
 VALUES (%s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s)
 """
+
+# Compras de Combustible
+LISTA_COMPRAS_COMB = """SELECT c.id, c.ruc, COALESCE(p.nombre, c.ruc) nombre_proveedor, c.fecha, c.numero, c.tipo, c.total, c.moneda, c.webuser, c.created_at FROM a_compras_comb c LEFT JOIN a_proveedores p ON c.ruc = p.ruc ORDER BY c.id DESC LIMIT 200"""
+INS_COMPRA_COMB = "INSERT INTO a_compras_comb (ruc, fecha, numero, subtotal, igv, descuentos, adicionales, total, moneda, tipo, observaciones, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+INS_COMPRA_COMB_DET = "INSERT INTO a_compras_comb_detalles (factura_id, producto, descripcion, cantidad, uom, precio, subtotal, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+UPD_COMB_STOCK_COMPRA = """UPDATE a_combustible SET precio_promedio = CASE WHEN (stock_actual + %s) > 0 THEN ((stock_actual * COALESCE(precio_promedio, precio_unitario)) + (%s * %s)) / (stock_actual + %s) ELSE %s END, stock_actual = stock_actual + %s WHERE nombre = %s"""
+UPD_MAQUINA_STOCK_COMPRA = "UPDATE a_maquinas SET disponible_stock = disponible_stock + %s WHERE id = %s"
+SEL_PROVEEDOR_POR_RUC = "SELECT id, nombre, ruc FROM a_proveedores WHERE ruc = %s AND active = 'S' LIMIT 1"
+LISTA_COMB_PARA_COMPRA = "SELECT id, nombre, precio_unitario FROM a_combustible ORDER BY nombre"
+LISTA_MAQUINAS_COMPRA = "SELECT m.id, m.numero machine_number, COALESCE(c.nombre,'') fuel_name FROM a_maquinas m LEFT JOIN a_combustible c ON m.tipo_combustible = c.id ORDER BY m.numero"

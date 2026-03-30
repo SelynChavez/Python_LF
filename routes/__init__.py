@@ -10,18 +10,20 @@ from .aportes import aportes_bp
 from .prestamos import prestamos_bp
 from .retiros import retiros_bp
 from .recibos import recibos_bp
+from .compras_comb import compras_comb_bp
 
 __all__ = [
-    'auth_bp', 
-    'contabilidad_bp', 
-    'configuracion_bp', 
-    'reportes_bp', 
-    'io_cash_bp', 
-    'combustibles_bp', 
-    'productos_bp', 
+    'auth_bp',
+    'contabilidad_bp',
+    'configuracion_bp',
+    'reportes_bp',
+    'io_cash_bp',
+    'combustibles_bp',
+    'productos_bp',
     'dashboard_bp',
     'aportes_bp',
     'prestamos_bp',
     'retiros_bp',
-    'recibos_bp'
+    'recibos_bp',
+    'compras_comb_bp'
 ]
