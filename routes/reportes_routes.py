@@ -349,21 +349,9 @@ class ReciboTicket(FPDF):
         self.line(5, self.get_y(), self.width - 5, self.get_y())
         self.ln(1)
         self.set_font('Courier', 'B', 8)
-        if (data['serie'] == '2'):
-            subtotal = total
-            totaligv = float(subtotal) * 0.18
-            total = float(subtotal) + float(totaligv)
-            self.cell(40, 4, 'SUBTOTAL:______', 0, 0, 'R')
-            self.cell(15, 4, f"S/. {subtotal:.2f}", 0, 1, 'R')
-            self.cell(40, 4, 'IGV:______', 0, 0, 'R')
-            self.cell(15, 4, f"S/. {totaligv:.2f}", 0, 1, 'R')
-            self.cell(40, 4, 'SUBTOTAL:______', 0, 0, 'R')
-            self.cell(15, 4, f"S/. {total:.2f}", 0, 1, 'R')
-            self.ln(6)
-        else:
-            self.cell(40, 8, 'TOTAL PAGADO:______', 0, 0, 'R')
-            self.cell(15, 8, f"S/. {total:.2f}", 0, 1, 'R')
-            self.ln(6)
+        self.cell(40, 8, 'TOTAL PAGADO:______', 0, 0, 'R')
+        self.cell(15, 8, f"S/. {total:.2f}", 0, 1, 'R')
+        self.ln(6)
         self.set_font('Arial', 'I', 8)
         self.cell(0, 5, '_________________________', 0, 1, 'C')
         self.cell(0, 5, 'Firma y Sello', 0, 1, 'C')
@@ -374,8 +362,6 @@ def generar_recibo(tipo_doc, serie, numero_doc, codigo_padron, nombre_socio, fec
     pdf = ReciboTicket()
     pdf.add_page()
     igv = 'N'
-    if serie == '2':
-        igv = 'S'
     datos = {
         'serie': serie,
         'titulo': tipo_doc,

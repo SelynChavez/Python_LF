@@ -20,7 +20,7 @@ WHERE serie='$serie$' and v.fecha>=date('$p1$') and v.fecha<=date('$p2$') and (v
 ORDER BY v.fecha, v.padron, v.id  
 """
 REP_S2_APORTES = """
-SELECT t01.*, concat(d7i,'') d7, concat(round((d7i*0.18),2),'') d12, concat(round(d7i+(d7i*0.18),2),'') d13 FROM (
+SELECT t01.*, concat(d7i,'') d7, concat(round(d7i,2),'') d13 FROM (
 SELECT CONCAT((CASE WHEN serie='2' THEN 'BE0' ELSE 'RP0' END),serie,'-',LPAD(numero,6,'0')) d1,  dateDMY(fecha) d2,  dateDMY(giro) d3,
   if(fecha>giro,'ATRAZADO',if(fecha<giro,'ADELANTO','NORMAL')) d4,
   (SELECT CONCAT(p.id,':',p.placa,':',s.nombre) FROM a_padrones p, a_socios s WHERE p.socio=s.id AND v.padron=p.id) d6,
@@ -119,6 +119,8 @@ INSERT_CORREL_X = "INSERT INTO a_corrrec_$serie$ VALUES (null,'X',now())"
 INSERT_RECIBO_X = "INSERT INTO a_recibos (serie, numero, fecha, giro, padron, comentarios, active, modified, webuser, igv) VALUES (%s, %s, now(), %s, %s, %s, %s, now(), %s, %s)"
 UPDATE_RECIBO_X = "UPDATE a_recibos SET active='S' WHERE id='$recibo$'"
 INSERT_DETREC_X = "INSERT INTO a_recibos_detalle (aporte, recibo, monto, prestamo, tipodeuda, modified, webuser) VALUES ('$apo$', '$rec$', '$mnt$', '$pre$', '$tip$', now(), '$usr$')"
+INSERT_RECIBO_IMPORT = "INSERT INTO a_recibos (serie, numero, fecha, giro, padron, comentarios, active, modified, webuser, igv) VALUES (%s, %s, %s, %s, %s, %s, 'S', now(), %s, 'N')"
+INSERT_DETREC_IMPORT = "INSERT INTO a_recibos_detalle (aporte, recibo, monto, prestamo, tipodeuda, modified, webuser) VALUES (%s, %s, %s, '0', '', now(), %s)"
 SELECT_RECIBO_X = "SELECT r.*,nombPadronSocio(r.padron) nombre, concat(fecha) fec, concat(giro) gir FROM a_recibos r WHERE r.id='$pX$'"
 SELECT_DETALLEX = "SELECT rd.*,tt.codigo,tt.descripcion FROM a_recibos_detalle rd, a_tipos tt WHERE recibo='$pX$' AND tt.tipo='APORTE' AND tt.codigo=rd.aporte ORDER BY rd.id"
 DETALLE_SERIE_1 = """SELECT * FROM (SELECT t.codigo,t.descripcion,

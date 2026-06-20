@@ -431,7 +431,7 @@ def crear_recibo_s2():
                     curs0r.close()
                     cursor = connection.cursor()
                     query = sqlconstants.INSERT_RECIBO_X
-                    cursor.execute(query, (ser, num, fec, pad, com, act, session['user_username'], 'S')) 
+                    cursor.execute(query, (ser, num, fec, pad, com, act, session['user_username'], 'N'))
                     lid = cursor.lastrowid
                     connection.commit()
                     act = '*'

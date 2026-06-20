@@ -6,12 +6,30 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Gestión de Boletas Electronicas #2 por Bus</h4> &nbsp;&nbsp;
-                <a href="{{ url_for('recibos.crear_recibo_s2') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nueva Boleta </a>
+                <div class="d-print-none">
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Imprimir
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImportar">
+                        <i class="bi bi-upload"></i> Importar CSV
+                    </button>
+                    <a href="{{ url_for('recibos.crear_recibo_s2') }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nueva Boleta </a>
+                </div>
             </div>
             <div class="card-body">
+                <!-- Encabezado solo para impresión -->
+                <div class="d-none d-print-block mb-3">
+                    <h4 class="mb-1">Boletas Electrónicas Serie 002</h4>
+                    <p class="mb-0">
+                        <strong>Desde:</strong> {{ p1 }} &nbsp;&nbsp;
+                        <strong>Hasta:</strong> {{ p2 }} &nbsp;&nbsp;
+                        <strong>Padrón:</strong> {{ 'Todos' if p3 in [0, '0', None, ''] else p3 }}
+                    </p>
+                </div>
+
                 <form method="POST" action="{{ url_for('aportes.aportes_s2') }}">
                     <!-- Barra de búsqueda -->
-                    <div class="row mb-4">
+                    <div class="row mb-4 d-print-none">
                         <div class="col-md-2 mb-3">
                             <label for="p1" class="form-label">Fecha Inicial</label>
                             <input type="date" class="form-control" id="p1" name="p1" value="{{p1}}" required>
@@ -48,12 +66,11 @@
                                     <th>Tipo</th>
                                     <th>Emitido A.</th>
                                     <th>SubTotal</th>
-                                    <th>IGV</th>
                                     <th>Total</th>
                                     <th>Act?</th>
                                     <th>Caja</th>
                                     <th>IdCtrl</th>
-                                    <th>Acciones</th>
+                                    <th class="d-print-none">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -64,9 +81,8 @@
                                     <td>{{ r3.d2 }}</td>
                                     <td>{{ r3.d3 }}</td>
                                     <td>{{ r3.d4 }}</td>
-                                    <td><strong>{{ r3.d6 }}</strong></td>
+                                    <td style="white-space:nowrap;font-size:0.75rem;" title="{{ r3.d6 }}"><strong>{{ r3.d6[:30] }}</strong></td>
                                     <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ r3.d7 }}</b></td>
-                                    <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ r3.d12 }}</b></td>
                                     <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ r3.d13 }}</b></td>
                                     <td>
                                         <span class="badge {{ 'badge-activo' if r3.d8 == 'S' else 'badge-inactivo' }}">
@@ -75,7 +91,7 @@
                                     </td> 
                                     <td>{{ r3.d9 }}</td>
                                     <td>{{ r3.d10 }}</td>
-                                    <td>
+                                    <td class="d-print-none">
                                         <div class="btn-group btn-group-sm">
                                             <a href="{{ url_for('imprimir_recibo', l_id=r3.d10 ) }}"  target="_blank"
                                                class="btn btn-outline-primary" 
@@ -89,7 +105,6 @@
                             </tbody>
                             <tfoot><td colspan="6"></td>
                                 <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ "{:,.2f}".format(subtotal) }}</b></td>
-                                <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ "{:,.2f}".format(totaligv) }}</b></td>
                                 <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ "{:,.2f}".format(total) }}</b></td>
                                 <td></td></tfoot>
                         </table>
@@ -99,4 +114,47 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Importar CSV -->
+<div class="modal fade" id="modalImportar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('aportes.importar_s2') }}" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-upload"></i> Importar Boletas (Aporte Especial)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-2">
+                        Se crearán boletas serie 2 de tipo <b>AP.ESPECIAL</b>.
+                        Formato CSV separado por <b>;</b> con columnas:
+                        <code>PADRON;PLACA;NOMBRE;FECHA;IMPORTE;GIRO</code> (fechas en formato DD/MM/AAAA).
+                    </p>
+                    <div class="mb-2">
+                        <label for="csv_file" class="form-label">Archivo CSV *</label>
+                        <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload"></i> Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    nav.navbar, footer { display: none !important; }
+    .card { box-shadow: none !important; border: none !important; }
+    .card-body { padding: 0 !important; }
+    .table { font-size: 0.7rem; }
+    .table td, .table th { padding: 2px 4px !important; }
+    a[href]::after { content: none !important; }
+    .container { width: 100% !important; max-width: 100% !important; }
+}
+</style>
 {% endblock %}

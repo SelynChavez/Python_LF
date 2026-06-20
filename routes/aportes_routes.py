@@ -222,7 +222,6 @@ def aportes_s3():
 @login_required
 def aportes_s2():
     total = 0
-    totaligv = 0
     subtotal = 0
     line0 = 0
     recs = []
@@ -246,16 +245,104 @@ def aportes_s2():
                 line0 += 1
                 reg['d0'] = str(line0)
                 subtotal += float(reg['d7'])
-                totaligv += round(float(reg['d12']),1)
                 total += round(float(reg['d13']),2)
-            return render_template('aportes_s2.html', recibos=recibos, total=total, totaligv=totaligv, subtotal=subtotal, p1=p1, p2=p2, p3=p3)
+            return render_template('aportes_s2.html', recibos=recibos, total=total, subtotal=subtotal, p1=p1, p2=p2, p3=p3)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
             return redirect(url_for('dashboard.menurecibos'))
     else:
         px = datetime.datetime.now().strftime('%Y-%m-%d')
         flash('Listo para consultar.', 'success')
-        return render_template('aportes_s2.html', p1=px, p2=px, p3=0, recibos=recs, total=total, subtotal=0, totaligv=0)
+        return render_template('aportes_s2.html', p1=px, p2=px, p3=0, recibos=recs, total=total, subtotal=0)
+
+
+@aportes_bp.route('/aportes_s2/importar', methods=['POST'])
+@login_required
+def importar_s2():
+    import csv, io
+    APORTE = 'AP.ESPECIAL'
+    WEBUSER = 'AFIESTAS'
+    COMENTARIO = '**Importado'
+    SERIE = '2'
+
+    archivo = request.files.get('csv_file')
+    if not archivo or archivo.filename == '':
+        flash('Debe seleccionar un archivo CSV.', 'danger')
+        return redirect(url_for('aportes.aportes_s2'))
+
+    raw = archivo.read()
+    try:
+        contenido = raw.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        contenido = raw.decode('latin-1')
+
+    lector = csv.reader(io.StringIO(contenido), delimiter=';')
+    filas = [f for f in lector if any((c or '').strip() for c in f)]
+    if filas and 'PAD' in (filas[0][0] or '').upper():
+        filas = filas[1:]  # descartar encabezado
+
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('aportes.aportes_s2'))
+
+    def parse_fecha(valor):
+        for fmt in ('%d/%m/%Y', '%d/%m/%y'):
+            try:
+                return datetime.datetime.strptime(valor, fmt).strftime('%Y-%m-%d')
+            except ValueError:
+                continue
+        raise ValueError(f"fecha inválida '{valor}'")
+
+    creados = 0
+    errores = []
+    cursor = connection.cursor()
+    for idx, fila in enumerate(filas, start=1):
+        if len(fila) < 6:
+            errores.append(f'Fila {idx}: formato inválido (se esperan 6 columnas).')
+            continue
+        padron = (fila[0] or '').strip()
+        importe = (fila[4] or '').strip().replace(',', '')
+        fecha_str = (fila[3] or '').strip()
+        giro_str = (fila[5] or '').strip()
+        try:
+            padron_id = int(padron)
+            monto = float(importe)
+            fecha = parse_fecha(fecha_str)
+            giro = parse_fecha(giro_str)
+        except (ValueError, TypeError) as e:
+            errores.append(f'Fila {idx} (padron {padron}): datos inválidos ({e}).')
+            continue
+        try:
+            quer0 = sqlconstants.INSERT_CORREL_X.replace('$serie$', SERIE)
+            cursor.execute(quer0)
+            numero = cursor.lastrowid
+            cursor.execute(sqlconstants.INSERT_RECIBO_IMPORT,
+                           (SERIE, numero, fecha, giro, padron_id, COMENTARIO, WEBUSER))
+            recibo_id = cursor.lastrowid
+            cursor.execute(sqlconstants.INSERT_DETREC_IMPORT,
+                           (APORTE, recibo_id, monto, WEBUSER))
+            connection.commit()
+            creados += 1
+        except Error as e:
+            connection.rollback()
+            if 'Duplicate entry' in str(e):
+                errores.append(f'Fila {idx} (padron {padron}): ya existe una boleta para esa fecha de giro.')
+            else:
+                errores.append(f'Fila {idx} (padron {padron}): {str(e)}')
+    cursor.close()
+    connection.close()
+
+    if creados:
+        flash(f'{creados} boleta(s) importada(s) correctamente.', 'success')
+    if errores:
+        for err in errores[:20]:
+            flash(err, 'warning')
+        if len(errores) > 20:
+            flash(f'... y {len(errores) - 20} error(es) más.', 'warning')
+    if not creados and not errores:
+        flash('El archivo no contenía filas para importar.', 'warning')
+    return redirect(url_for('aportes.aportes_s2'))
 
 
 @aportes_bp.route('/aportes', methods=['GET', 'POST'])
