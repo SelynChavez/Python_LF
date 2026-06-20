@@ -164,14 +164,20 @@ ORDER BY gallons DESC
 LIMIT 5
 '''
 DASHB_COMB_STOCK_CRITICO = """
-SELECT m.id, m.numero as machine_number, f.nombre as fuel_type, f.nombre as fuel_name, m.disponible_stock stock_available,
-    m.capacidad_stock stock_capacity, ROUND((m.disponible_stock/ m.capacidad_stock) * 100, 2) as percentage,
-    CASE 
-      WHEN (m.disponible_stock / m.capacidad_stock) < 0.2 THEN 'CRITICO'
-      WHEN (m.disponible_stock / m.capacidad_stock) < 0.4 THEN 'BAJO'
+SELECT f.id, f.nombre as fuel_name, f.nombre as fuel_type,
+    f.stock_actual stock_available, f.stock_minimo stock_min,
+    ROUND(CASE WHEN f.stock_minimo > 0 THEN (f.stock_actual / f.stock_minimo) * 100 ELSE 100 END, 2) as percentage,
+    CASE
+      WHEN f.stock_minimo > 0 AND f.stock_actual <= f.stock_minimo THEN 'CRITICO'
+      WHEN f.stock_minimo > 0 AND f.stock_actual <= f.stock_minimo * 1.5 THEN 'BAJO'
       ELSE 'NORMAL'
     END as status
-FROM a_maquinas m LEFT JOIN a_combustible f ON m.tipo_combustible = f.id ORDER BY percentage ASC
+FROM a_combustible f
+WHERE f.id IN (
+    SELECT DISTINCT m.tipo_combustible
+    FROM a_ventas_comb v JOIN a_maquinas m ON v.maquina = m.id
+)
+ORDER BY f.stock_actual ASC
 """
 LISTA_TURNOS_MAQUINA_COMB = '''
     SELECT id, maquina machine_id,turno shift_code,nombre shift_name,fecha shift_date,lectura_inicial initial_reading,lectura_final final_reading,
@@ -179,21 +185,34 @@ LISTA_TURNOS_MAQUINA_COMB = '''
     FROM a_ventas_comb WHERE maquina = %s AND DATE(fecha) = CURDATE() ORDER BY fecha DESC
 '''
 LISTA_MAQUINAS_X_TURNOS = """
-SELECT m.id, m.numero machine_number, m.ubicacion, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, 
-       m.lectura_actual current_reading, capacidad_stock stock_capacity, disponible_stock stock_available, 
-       estado status, m.modified created_at, f.nombre as fuel_name 
+SELECT m.id, m.numero machine_number, m.ubicacion, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading,
+       m.lectura_actual current_reading, capacidad_stock stock_capacity,
+       f.stock_actual stock_available, f.stock_minimo stock_min,
+       estado status, m.modified created_at, f.nombre as fuel_name
 FROM a_maquinas m LEFT JOIN a_combustible f ON m.tipo_combustible = f.id ORDER BY m.numero
 """
 INSERT_VTAS_COMBUSTIBLE = '''
-INSERT INTO a_ventas_comb (maquina,turno,nombre,fecha,lectura_inicial,lectura_final,galones_vendidos,total_precio)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+INSERT INTO a_ventas_comb (maquina,turno,nombre,fecha,lectura_inicial,lectura_final,galones_vendidos,total_precio,webuser)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 '''
-UPDATE_VTAS_COMB_MAQUINAS = "UPDATE a_maquinas SET disponible_stock = disponible_stock - %s, lectura_actual = %s WHERE id = %s"
+LISTA_VENTAS_X_USUARIO = '''
+SELECT v.id, v.turno, v.nombre, v.fecha, v.lectura_inicial, v.lectura_final,
+       v.galones_vendidos, v.total_precio, v.modified,
+       m.numero AS machine_number, m.ubicacion
+FROM a_ventas_comb v
+LEFT JOIN a_maquinas m ON v.maquina = m.id
+WHERE v.webuser = %s
+ORDER BY v.fecha DESC, v.id DESC
+LIMIT %s OFFSET %s
+'''
+COUNT_VENTAS_X_USUARIO = "SELECT COUNT(*) AS total FROM a_ventas_comb WHERE webuser = %s"
+UPDATE_VTAS_COMB_MAQUINAS = "UPDATE a_maquinas SET lectura_actual = %s WHERE id = %s"
+UPDATE_STOCK_COMBUSTIBLE_VTA = "UPDATE a_combustible SET stock_actual = stock_actual - %s WHERE id = %s"
 LISTA_MAQUINAS = '''
-SELECT m.id, m.numero machine_number, ubicacion, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
-        capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at,
-        f.nombre as fuel_name, f.precio_unitario unit_price, 
-        COALESCE(SUM(s.galones_vendidos), 0) as total_gallons_today, m.disponible_stock as current_stock
+SELECT m.id, m.numero machine_number, ubicacion, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading,
+        capacidad_stock stock_capacity, f.stock_actual stock_available, f.stock_minimo stock_min, estado status, m.modified created_at,
+        f.nombre as fuel_name, f.precio_unitario unit_price,
+        COALESCE(SUM(s.galones_vendidos), 0) as total_gallons_today, f.stock_actual as current_stock
 FROM a_maquinas m
 LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
 LEFT JOIN a_ventas_comb s ON m.id = s.maquina AND DATE(s.fecha) = CURDATE()

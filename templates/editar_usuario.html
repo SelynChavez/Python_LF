@@ -50,8 +50,13 @@ $(document).ready(function() {
                         <div class="col-md-6 mb-3">
                             <label for="rol" class="form-label">Rol *</label>
                             <select class="form-select" id="rol" name="rol" required>
-                                <option value="ADMIN" {{ 'selected' if usuario.roles == 'ADMIN' }}>Administrador</option>
-                                <option value="USER"  {{ 'selected' if usuario.roles == 'USER'  }}>Usuario Regular</option>
+                                <option value="USER"     {{ 'selected' if usuario.roles == 'USER'     }}>Usuario Regular</option>
+                                <option value="ADMIN"    {{ 'selected' if usuario.roles == 'ADMIN'    }}>Administrador</option>
+                                <option value="GRIFERO"  {{ 'selected' if usuario.roles == 'GRIFERO'  }}>Grifero</option>
+                                <option value="SOCIO"    {{ 'selected' if usuario.roles == 'SOCIO'    }}>Socio</option>
+                                <option value="DESPACHO" {{ 'selected' if usuario.roles == 'DESPACHO' }}>Despacho</option>
+                                <option value="CONTADOR" {{ 'selected' if usuario.roles == 'CONTADOR' }}>Contador</option>
+                                <option value="OPERADOR" {{ 'selected' if usuario.roles == 'OPERADOR' }}>Operador</option>
                             </select>
                         </div>
                     </div>

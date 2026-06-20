@@ -113,8 +113,9 @@ def cargar_turnos():
                     if gallons_sold > 0:
                         cursor.execute(sqlconstants.INSERT_VTAS_COMBUSTIBLE, (machine_id, shift_code,
                               next(s['name'] for s in shifts if s['code'] == shift_code), shift_date,
-                              initial_reading, final_reading, gallons_sold, gallons_sold * fuel['unit_price']))
-                        cursor.execute(sqlconstants.UPDATE_VTAS_COMB_MAQUINAS, (gallons_sold, final_reading, machine_id))
+                              initial_reading, final_reading, gallons_sold, gallons_sold * fuel['unit_price'], usr))
+                        cursor.execute(sqlconstants.UPDATE_VTAS_COMB_MAQUINAS, (final_reading, machine_id))
+                        cursor.execute(sqlconstants.UPDATE_STOCK_COMBUSTIBLE_VTA, (gallons_sold, machine['fuel_type_id']))
                         success_count += 1
                 except Exception as e:
                     errors.append(f'Máquina {machine["machine_number"]}: {str(e)}')
@@ -125,8 +126,27 @@ def cargar_turnos():
             for error in errors:
                 flash(error, 'warning')
         return redirect(url_for('combustibles.cargar_turnos'))
+
+    # Ventas del usuario autenticado (más reciente a más antiguo), paginadas de 5 en 5
+    per_page = 5
+    try:
+        page = int(request.args.get('page', 1))
+    except (TypeError, ValueError):
+        page = 1
+    if page < 1:
+        page = 1
+    cursor.execute(sqlconstants.COUNT_VENTAS_X_USUARIO, (usr,))
+    total_ventas = cursor.fetchone()['total']
+    total_pages = max(1, (total_ventas + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * per_page
+    cursor.execute(sqlconstants.LISTA_VENTAS_X_USUARIO, (usr, per_page, offset))
+    ventas = cursor.fetchall()
     cursor.close()
-    return render_template('cargar_turnos.html', machines=machines, shifts=shifts, today=datetime.datetime.now().strftime('%Y-%m-%d'), usr=usr)
+    return render_template('cargar_turnos.html', machines=machines, shifts=shifts,
+                           today=datetime.datetime.now().strftime('%Y-%m-%d'), usr=usr,
+                           ventas=ventas, page=page, total_pages=total_pages, total_ventas=total_ventas)
 
 
 @combustibles_bp.route('/maquinas')

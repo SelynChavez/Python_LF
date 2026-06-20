@@ -56,6 +56,21 @@ app.register_blueprint(retiros_bp)
 app.register_blueprint(recibos_bp)
 app.register_blueprint(compras_comb_bp)
 
+# ==================== CONTROL DE ACCESO POR ROL ====================
+# El rol GRIFERO solo puede acceder a la pantalla de Registrar Turno.
+GRIFERO_ALLOWED_ENDPOINTS = {
+    'combustibles.cargar_turnos',
+    'auth.login',
+    'auth.logout',
+    'static',
+}
+
+@app.before_request
+def restringir_grifero():
+    if session.get('user_rol') == 'GRIFERO':
+        if request.endpoint not in GRIFERO_ALLOWED_ENDPOINTS:
+            return redirect(url_for('combustibles.cargar_turnos'))
+
 # ==================== RUTAS DE API ====================
 @app.route('/api/usuarios')
 def api_usuarios():

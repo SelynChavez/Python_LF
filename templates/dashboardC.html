@@ -176,35 +176,34 @@
                     <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th>Máquina</th>
                                 <th>Combustible</th>
                                 <th>Stock Actual</th>
-                                <th>Capacidad</th>
-                                <th>% Restante</th>
+                                <th>Stock Mínimo</th>
+                                <th>Nivel</th>
                                 <th>Estado</th>
                                 <th>Acción</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for machine in low_stock %}
+                            {% for fuel in low_stock %}
                             <tr>
-                                <td>{{ machine.machine_number }}</td>
-                                <td>{{ machine.fuel_name }}</td>
-                                <td>{{ "%.1f"|format(machine.stock_available) }} gal</td>
-                                <td>{{ "%.1f"|format(machine.stock_capacity) }} gal</td>
+                                <td>{{ fuel.fuel_name }}</td>
+                                <td>{{ "%.1f"|format(fuel.stock_available) }} gal</td>
+                                <td>{{ "%.1f"|format(fuel.stock_min) }} gal</td>
+                                {% set lvl_color = 'bg-danger' if fuel.status == 'CRITICO' else ('bg-warning' if fuel.status == 'BAJO' else 'bg-success') %}
                                 <td>
                                     <div class="progress" style="height: 10px;">
-                                        <div class="progress-bar bg-danger" 
-                                             style="width: {{ machine.percentage }}%">
+                                        <div class="progress-bar {{ lvl_color }}"
+                                             style="width: {{ [fuel.percentage, 100]|min }}%">
                                         </div>
                                     </div>
-                                    <small>{{ machine.percentage }}%</small>
+                                    <small>{{ fuel.percentage }}%</small>
                                 </td>
                                 <td>
-                                    <span class="badge bg-danger">CRITICO</span>
+                                    <span class="badge {{ lvl_color }}">{{ fuel.status }}</span>
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('combustibles.editar_turno', machine_id=machine.id) }}" 
+                                    <a href="{{ url_for('compras_comb.nueva_compra') }}"
                                        class="btn btn-sm btn-warning">
                                         <i class="bi-fuel-pump"></i> Reabastecer
                                     </a>

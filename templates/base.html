@@ -22,11 +22,19 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    {% if session.user_rol == 'GRIFERO' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('combustibles.cargar_turnos') }}">
+                            <i class="bi bi-arrow-clockwise"></i> Registrar Turno
+                        </a>
+                    </li>
+                    {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">
                             <i class="bi bi-menu-app"></i> Menu Principal
                         </a>
                     </li>
+                    {% endif %}
                     {% if session.user_rol == 'admin' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('configuracion.listar_usuarios') }}">
