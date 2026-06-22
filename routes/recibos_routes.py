@@ -15,10 +15,10 @@ RECIBOS_DIR = 'recibos_'
 # Titulo que se imprime en la cabecera del PDF segun la serie
 TITULOS_SERIE = {
     '1': 'RECIBO DE INGRESOS',
-    '2': 'BOLETA ELECTRONICA',
+    '2': 'Recibo Cot.x Padron',
     '3': 'RECIBO ACCESO Y CAPITAL',
     '4': 'RECIBO ATU COMBUSTIBLE',
-    '5': 'RECIBO POR OBRAS',
+    '5': 'Recibo Cobranza de Comb.',
     '6': 'RECIBO DE DESPACHO',
 }
 
@@ -31,6 +31,20 @@ def login_required(f):
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
+
+
+def _saldo_cobro_comb(connection, pad):
+    """Saldo pendiente de combustible del padrón: ventas - cobros (serie 5, COBRO.COMB)."""
+    try:
+        cur = connection.cursor()
+        cur.execute(sqlconstants.SALDO_COBRO_COMB, (pad, pad))
+        row = cur.fetchone()
+        cur.close()
+        saldo = float(row[0]) if row and row[0] is not None else 0.0
+        return round(saldo, 2)
+    except Exception as e:
+        print(f"Error al calcular saldo COBRO.COMB: {e}")
+        return 0.0
 
 
 def _generar_pdf_recibo(ser, num, pad, nom, fec, items):
@@ -187,6 +201,11 @@ def crear_recibo_s5():
             cursor.execute(consulta)
             items = cursor.fetchall()
             cursor.close()
+            # Saldo pendiente de combustible del padrón; se precarga en el aporte COBRO.COMB.
+            saldo_comb = _saldo_cobro_comb(connection, pad)
+            for it in items:
+                if it['codigo'] == 'COBRO.COMB':
+                    it['monto'] = saldo_comb
             if act == '-':
                 try:
                     curs0r = connection.cursor()
@@ -197,14 +216,14 @@ def crear_recibo_s5():
                     curs0r.close()
                     cursor = connection.cursor()
                     query = sqlconstants.INSERT_RECIBO_X
-                    cursor.execute(query, (ser, num, fec, pad, com, act, session['user_username'], 'N')) 
+                    cursor.execute(query, (ser, num, fec, pad, com, act, session['user_username'], 'N'))
                     lid = cursor.lastrowid
                     connection.commit()
                     act = '*'
                     nom = get_nombre_padron(pad)
                     connection.close()
                     flash('Continuar con detalles.', 'success')
-                    return render_template('crear_recibo_s5.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num)
+                    return render_template('crear_recibo_s5.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num, saldo=saldo_comb)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('1.El recibo serie/fecha/padron ya existe.', 'danger')

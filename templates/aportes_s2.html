@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}ETLF - Boleta Electronica Serie 002{% endblock %}
+{% block title %}ETLF - Recibo Cot.x Padron{% endblock %}
 {% block content %}
 <div class="row">
     <div class="col-12 mb-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Gestión de Boletas Electronicas #2 por Bus</h4> &nbsp;&nbsp;
+                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Recibo Cot.x Padron</h4> &nbsp;&nbsp;
                 <div class="d-print-none">
                     <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
                         <i class="bi bi-printer"></i> Imprimir
@@ -19,7 +19,7 @@
             <div class="card-body">
                 <!-- Encabezado solo para impresión -->
                 <div class="d-none d-print-block mb-3">
-                    <h4 class="mb-1">Boletas Electrónicas Serie 002</h4>
+                    <h4 class="mb-1">Recibo Cot.x Padron (Serie 002)</h4>
                     <p class="mb-0">
                         <strong>Desde:</strong> {{ p1 }} &nbsp;&nbsp;
                         <strong>Hasta:</strong> {{ p2 }} &nbsp;&nbsp;

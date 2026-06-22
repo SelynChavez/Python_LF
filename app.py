@@ -62,6 +62,11 @@ GRIFERO_ALLOWED_ENDPOINTS = {
     'combustibles.cargar_turnos',
     'combustibles.ventas_combustible',
     'combustibles.eliminar_venta_combustible',
+    'recibos.crear_recibo_s5',
+    'recibos.imprimir_recibo',
+    'recibos.ver_recibo_pdf',
+    'imprimir_recibo',
+    'aportes.aportes_series',
     'auth.login',
     'auth.logout',
     'static',
@@ -139,7 +144,9 @@ def imprimir_recibo(l_id):
             if (recibo['serie']=='1'):
                 titulo = 'RECIBO DE INGRESO'
             if (recibo['serie']=='2'):
-                titulo = 'BOLETA ELECTRONICA'
+                titulo = 'Recibo Cot.x Padron'
+            if (recibo['serie']=='5'):
+                titulo = 'Recibo Cobranza de Comb.'
             archivo = generar_recibo(titulo, recibo['serie'], recibo['numero'], recibo['padron'], recibo['nombre'], fec, gir, items)
             print(f"Recibo guardado en: {os.path.abspath(archivo)}")
             try:

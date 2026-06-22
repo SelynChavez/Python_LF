@@ -4,8 +4,9 @@
 <div class="row">
     <div class="col-12 mb-4">
         <div class="card">
+            {% set titulos_serie = {'3': 'Recibos Acceso y Capital', '4': 'Recibos ATU Combustible', '5': 'Recibo Cobranza de Comb.', '6': 'Recibos Despacho'} %}
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Gestión de Recibos de Serie 00{{ serie }} por Padron</h4> &nbsp;&nbsp;
+                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> {{ titulos_serie.get(serie, 'Gestión de Recibos de Serie 00' ~ serie) }}</h4> &nbsp;&nbsp;
                 <a href="{{ url_for('recibos.crear_recibo_s' ~ serie) }}" class="btn btn-success"> <i class="bi bi-printer"></i> Nuevo Recibo </a>
             </div>
             <div class="card-body">
@@ -17,7 +18,7 @@
                             <select class="form-select" id="serie" name="serie" required>
                                 <option value="3" {% if serie == '3' %}selected{% endif %}>3:Acceso y Capital</option>
                                 <option value="4" {% if serie == '4' %}selected{% endif %}>4:ATU/Combustible</option>
-                                <option value="5" {% if serie == '5' %}selected{% endif %}>5:Obras</option>
+                                <option value="5" {% if serie == '5' %}selected{% endif %}>5:Cobranza de Comb.</option>
                                 <option value="6" {% if serie == '6' %}selected{% endif %}>6:Despacho</option>
                             </select>
                         </div>

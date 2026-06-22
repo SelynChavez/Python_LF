@@ -421,3 +421,13 @@ FROM a_ventas_comb_padron v ORDER BY v.fecha DESC, v.id DESC
 SELECT_VENTA_COMB_PADRON = "SELECT id, webuser FROM a_ventas_comb_padron WHERE id = %s"
 DELETE_VENTA_COMB_PADRON = "DELETE FROM a_ventas_comb_padron WHERE id = %s"
 LISTA_USUARIOS_ACTIVOS = "SELECT username, fullname, roles FROM applicationuser WHERE status = 'ACTIVE' ORDER BY fullname"
+
+# Saldo pendiente de combustible de un padrón (para Recibo Cobranza de Comb. - Serie 5):
+#   total ventas de combustible (a_ventas_comb_padron) - total cobrado (aporte COBRO.COMB en recibos serie 5 activos)
+SALDO_COBRO_COMB = """
+SELECT
+  COALESCE((SELECT SUM(monto) FROM a_ventas_comb_padron WHERE padron = %s), 0) -
+  COALESCE((SELECT SUM(rd.monto) FROM a_recibos r
+            JOIN a_recibos_detalle rd ON rd.recibo = r.id
+            WHERE r.serie = '5' AND r.active = 'S' AND r.padron = %s AND rd.aporte = 'COBRO.COMB'), 0) AS saldo
+"""
