@@ -65,9 +65,11 @@ def reportes():
 
 @reportes_bp.route('/rep_saldos_comb')
 @login_required
-@admin_required
 def rep_saldos_comb():
     """Reporte de saldos de deuda de combustible por padrón."""
+    if session.get('user_rol') not in ('ADMIN', 'GRIFERO', 'CAJA'):
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
     saldos = []
     total = 0.0
     connection = get_db_connection()

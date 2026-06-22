@@ -68,6 +68,7 @@ GRIFERO_ALLOWED_ENDPOINTS = {
     'imprimir_recibo',
     'aportes.aportes_s5',
     'aportes.aportes_series',
+    'reportes.rep_saldos_comb',
     'auth.login',
     'auth.logout',
     'static',
