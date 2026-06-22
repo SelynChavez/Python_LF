@@ -396,19 +396,26 @@ CREATE TABLE IF NOT EXISTS a_ventas_comb_padron (
     padron INT NOT NULL,
     monto DECIMAL(12,2) NOT NULL,
     observacion VARCHAR(255) DEFAULT NULL,
+    forma_pago VARCHAR(10) NOT NULL DEFAULT 'Contado',
     webuser VARCHAR(50) NOT NULL,
     created DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_vcp_webuser (webuser),
     INDEX idx_vcp_fecha (fecha)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 """
-INSERT_VENTA_COMB_PADRON = "INSERT INTO a_ventas_comb_padron (fecha, padron, monto, observacion, webuser) VALUES (%s, %s, %s, %s, %s)"
+# Migración idempotente: agrega la columna forma_pago si la tabla ya existía sin ella.
+COLCHECK_VCP_FORMA_PAGO = """
+SELECT COUNT(*) AS c FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'a_ventas_comb_padron' AND COLUMN_NAME = 'forma_pago'
+"""
+ALTER_VCP_ADD_FORMA_PAGO = "ALTER TABLE a_ventas_comb_padron ADD COLUMN forma_pago VARCHAR(10) NOT NULL DEFAULT 'Contado' AFTER observacion"
+INSERT_VENTA_COMB_PADRON = "INSERT INTO a_ventas_comb_padron (fecha, padron, monto, observacion, forma_pago, webuser) VALUES (%s, %s, %s, %s, %s, %s)"
 LISTA_VENTAS_COMB_PADRON_USR = """
-SELECT v.id, v.fecha, v.padron, nombPadronSocio(v.padron) nombre, v.monto, v.observacion, v.webuser, v.created
+SELECT v.id, v.fecha, v.padron, nombPadronSocio(v.padron) nombre, v.monto, v.observacion, v.forma_pago, v.webuser, v.created
 FROM a_ventas_comb_padron v WHERE v.webuser = %s ORDER BY v.fecha DESC, v.id DESC
 """
 LISTA_VENTAS_COMB_PADRON_ALL = """
-SELECT v.id, v.fecha, v.padron, nombPadronSocio(v.padron) nombre, v.monto, v.observacion, v.webuser, v.created
+SELECT v.id, v.fecha, v.padron, nombPadronSocio(v.padron) nombre, v.monto, v.observacion, v.forma_pago, v.webuser, v.created
 FROM a_ventas_comb_padron v ORDER BY v.fecha DESC, v.id DESC
 """
 SELECT_VENTA_COMB_PADRON = "SELECT id, webuser FROM a_ventas_comb_padron WHERE id = %s"

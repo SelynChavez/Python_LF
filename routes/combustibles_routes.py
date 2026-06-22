@@ -182,14 +182,21 @@ def ventas_combustible():
                         else url_for('combustibles.cargar_turnos'))
 
     cursor = connection.cursor(dictionary=True)
-    # Asegurar que la tabla exista (idempotente).
+    # Asegurar que la tabla y la columna forma_pago existan (idempotente).
     cursor.execute(sqlconstants.CREATE_VENTAS_COMB_PADRON)
+    cursor.execute(sqlconstants.COLCHECK_VCP_FORMA_PAGO)
+    if cursor.fetchone()['c'] == 0:
+        cursor.execute(sqlconstants.ALTER_VCP_ADD_FORMA_PAGO)
 
     if request.method == 'POST':
         fecha = request.form.get('fecha')
         padron = request.form.get('padron')
         monto = request.form.get('monto')
         observacion = (request.form.get('observacion') or '').strip()
+        # Forma de pago: solo se aceptan 'Contado' o 'Credito'.
+        forma_pago = request.form.get('forma_pago')
+        if forma_pago not in ('Contado', 'Credito'):
+            forma_pago = 'Contado'
         # El admin puede asignar la venta a otro usuario; el grifero solo a sí mismo.
         webuser = (request.form.get('webuser') or usr) if is_admin else usr
 
@@ -198,7 +205,7 @@ def ventas_combustible():
         else:
             try:
                 cursor.execute(sqlconstants.INSERT_VENTA_COMB_PADRON,
-                               (fecha, int(padron), float(monto), observacion[:255], webuser))
+                               (fecha, int(padron), float(monto), observacion[:255], forma_pago, webuser))
                 connection.commit()
                 flash('Venta de combustible registrada.', 'success')
                 cursor.close()
