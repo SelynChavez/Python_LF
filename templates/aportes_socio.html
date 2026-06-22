@@ -80,6 +80,12 @@
                                                title="Imprimir Recibo">
                                                 <i class="bi-eye"></i>
                                             </a>
+                                            {% if session.get('user_rol') == 'ADMIN' and r3.d8 == 'S' %}
+                                            <button type="button" class="btn btn-outline-danger" title="Anular Recibo"
+                                                    onclick="anularRecibo(this, '{{ r3.d10 }}')">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -95,4 +101,27 @@
         </div>
     </div>
 </div>
+
+<script>
+function anularRecibo(btn, id) {
+    if (!confirm('¿Está seguro de ANULAR el recibo (IdCtrl ' + id + ')?\n\nEsta acción no se puede deshacer.')) return;
+    fetch("{{ url_for('aportes.anular_recibo') }}", {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        if (data.success) {
+            alert('Recibo anulado correctamente.');
+            var f = btn.closest('form');
+            if (f) { f.submit(); } else { location.reload(); }
+        } else {
+            alert('Error al anular: ' + (data.error || 'desconocido'));
+        }
+    })
+    .catch(function (e) { console.error(e); alert('Error al anular el recibo.'); });
+}
+</script>
+
 {% endblock %}

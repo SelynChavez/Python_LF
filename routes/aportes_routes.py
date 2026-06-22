@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash, session
+from flask import render_template, request, redirect, url_for, flash, session, jsonify
 from functools import wraps
 from flask import current_app
 from mysql.connector import Error
@@ -33,6 +33,63 @@ SERIE_COLORS = {
     '5': '#dce8f7',
     '6': '#f9eac9',
 }
+
+
+@aportes_bp.route('/anular_recibo', methods=['POST'])
+@login_required
+@admin_required
+def anular_recibo():
+    """Anula un recibo (active='N'). Revierte los saldos de prestamos afectados.
+
+    Recibe JSON {id: <id_recibo>} y devuelve JSON {success: bool, error?: str}.
+    """
+    data = request.get_json(silent=True) or {}
+    lid = data.get('id')
+    if not lid:
+        return jsonify({'success': False, 'error': 'No se indicó el recibo a anular.'}), 400
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'success': False, 'error': 'Error de conexión a la base de datos.'}), 500
+
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT id, active FROM a_recibos WHERE id=%s", (lid,))
+        recibo = cursor.fetchone()
+        if not recibo:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'error': 'Recibo no encontrado.'}), 404
+        if recibo['active'] != 'S':
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'error': 'El recibo ya está anulado.'}), 400
+
+        # Revertir el saldo pendiente de los préstamos afectados por el detalle.
+        cursor.execute(
+            "SELECT prestamo, monto FROM a_recibos_detalle WHERE recibo=%s AND prestamo > 0",
+            (lid,))
+        detalles = cursor.fetchall()
+
+        upd = connection.cursor()
+        for d in detalles:
+            upd.execute(
+                "UPDATE a_prestamos SET saldo_pendiente = saldo_pendiente + %s WHERE id=%s",
+                (d['monto'], d['prestamo']))
+
+        upd.execute("UPDATE a_recibos SET active='N', modified=now() WHERE id=%s", (lid,))
+        connection.commit()
+        cursor.close()
+        upd.close()
+        connection.close()
+        return jsonify({'success': True})
+    except Error as e:
+        connection.rollback()
+        try:
+            connection.close()
+        except Exception:
+            pass
+        return jsonify({'success': False, 'error': str(e)})
 
 @aportes_bp.route('/aportes_series', methods=['GET', 'POST'])
 @login_required

@@ -193,6 +193,18 @@ SELECT m.id, m.numero machine_number, m.ubicacion, tipo_combustible fuel_type_id
        estado status, m.modified created_at, f.nombre as fuel_name
 FROM a_maquinas m LEFT JOIN a_combustible f ON m.tipo_combustible = f.id ORDER BY m.numero
 """
+STOCK_POR_MAQUINA = """
+SELECT m.id, m.numero machine_number, f.nombre fuel_name,
+       f.stock_actual stock_available, m.capacidad_stock stock_capacity,
+       ROUND(CASE WHEN m.capacidad_stock > 0 THEN (f.stock_actual / m.capacidad_stock) * 100 ELSE 0 END, 2) percentage,
+       CASE
+         WHEN f.stock_minimo > 0 AND f.stock_actual <= f.stock_minimo THEN 'CRITICO'
+         WHEN f.stock_minimo > 0 AND f.stock_actual <= f.stock_minimo * 1.5 THEN 'BAJO'
+         ELSE 'NORMAL'
+       END status
+FROM a_maquinas m LEFT JOIN a_combustible f ON m.tipo_combustible = f.id
+ORDER BY m.numero
+"""
 INSERT_VTAS_COMBUSTIBLE = '''
 INSERT INTO a_ventas_comb (maquina,turno,nombre,fecha,lectura_inicial,lectura_final,galones_vendidos,total_precio,webuser)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -208,6 +220,16 @@ ORDER BY v.fecha DESC, v.id DESC
 LIMIT %s OFFSET %s
 '''
 COUNT_VENTAS_X_USUARIO = "SELECT COUNT(*) AS total FROM a_ventas_comb WHERE webuser = %s"
+LISTA_VENTAS_TODAS = '''
+SELECT v.id, v.turno, v.nombre, v.fecha, v.lectura_inicial, v.lectura_final,
+       v.galones_vendidos, v.total_precio, v.modified, v.webuser,
+       m.numero AS machine_number, m.ubicacion
+FROM a_ventas_comb v
+LEFT JOIN a_maquinas m ON v.maquina = m.id
+ORDER BY v.fecha DESC, v.id DESC
+LIMIT 10
+'''
+COUNT_VENTAS_TODAS = "SELECT COUNT(*) AS total FROM a_ventas_comb"
 UPDATE_VTAS_COMB_MAQUINAS = "UPDATE a_maquinas SET lectura_actual = %s WHERE id = %s"
 UPDATE_STOCK_COMBUSTIBLE_VTA = "UPDATE a_combustible SET stock_actual = stock_actual - %s WHERE id = %s"
 LISTA_MAQUINAS = '''
@@ -365,3 +387,30 @@ UPD_MAQUINA_STOCK_COMPRA = "UPDATE a_maquinas SET disponible_stock = disponible_
 SEL_PROVEEDOR_POR_RUC = "SELECT id, nombre, ruc FROM a_proveedores WHERE ruc = %s AND active = 'S' LIMIT 1"
 LISTA_COMB_PARA_COMPRA = "SELECT id, nombre, precio_unitario FROM a_combustible ORDER BY nombre"
 LISTA_MAQUINAS_COMPRA = "SELECT m.id, m.numero machine_number, COALESCE(c.nombre,'') fuel_name FROM a_maquinas m LEFT JOIN a_combustible c ON m.tipo_combustible = c.id ORDER BY m.numero"
+
+# ===== Ventas de Combustible por Padron =====
+CREATE_VENTAS_COMB_PADRON = """
+CREATE TABLE IF NOT EXISTS a_ventas_comb_padron (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    padron INT NOT NULL,
+    monto DECIMAL(12,2) NOT NULL,
+    observacion VARCHAR(255) DEFAULT NULL,
+    webuser VARCHAR(50) NOT NULL,
+    created DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_vcp_webuser (webuser),
+    INDEX idx_vcp_fecha (fecha)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+"""
+INSERT_VENTA_COMB_PADRON = "INSERT INTO a_ventas_comb_padron (fecha, padron, monto, observacion, webuser) VALUES (%s, %s, %s, %s, %s)"
+LISTA_VENTAS_COMB_PADRON_USR = """
+SELECT v.id, v.fecha, v.padron, nombPadronSocio(v.padron) nombre, v.monto, v.observacion, v.webuser, v.created
+FROM a_ventas_comb_padron v WHERE v.webuser = %s ORDER BY v.fecha DESC, v.id DESC
+"""
+LISTA_VENTAS_COMB_PADRON_ALL = """
+SELECT v.id, v.fecha, v.padron, nombPadronSocio(v.padron) nombre, v.monto, v.observacion, v.webuser, v.created
+FROM a_ventas_comb_padron v ORDER BY v.fecha DESC, v.id DESC
+"""
+SELECT_VENTA_COMB_PADRON = "SELECT id, webuser FROM a_ventas_comb_padron WHERE id = %s"
+DELETE_VENTA_COMB_PADRON = "DELETE FROM a_ventas_comb_padron WHERE id = %s"
+LISTA_USUARIOS_ACTIVOS = "SELECT username, fullname, roles FROM applicationuser WHERE status = 'ACTIVE' ORDER BY fullname"

@@ -60,6 +60,8 @@ app.register_blueprint(compras_comb_bp)
 # El rol GRIFERO solo puede acceder a la pantalla de Registrar Turno.
 GRIFERO_ALLOWED_ENDPOINTS = {
     'combustibles.cargar_turnos',
+    'combustibles.ventas_combustible',
+    'combustibles.eliminar_venta_combustible',
     'auth.login',
     'auth.logout',
     'static',

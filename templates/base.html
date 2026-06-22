@@ -35,6 +35,13 @@
                         </a>
                     </li>
                     {% endif %}
+                    {% if session.user_rol in ['GRIFERO', 'ADMIN'] %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('combustibles.ventas_combustible') }}">
+                            <i class="bi bi-fuel-pump"></i> Ventas de Combustible
+                        </a>
+                    </li>
+                    {% endif %}
                     {% if session.user_rol == 'admin' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('configuracion.listar_usuarios') }}">

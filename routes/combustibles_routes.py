@@ -127,26 +127,147 @@ def cargar_turnos():
                 flash(error, 'warning')
         return redirect(url_for('combustibles.cargar_turnos'))
 
-    # Ventas del usuario autenticado (más reciente a más antiguo), paginadas de 5 en 5
-    per_page = 5
-    try:
-        page = int(request.args.get('page', 1))
-    except (TypeError, ValueError):
-        page = 1
-    if page < 1:
-        page = 1
-    cursor.execute(sqlconstants.COUNT_VENTAS_X_USUARIO, (usr,))
-    total_ventas = cursor.fetchone()['total']
-    total_pages = max(1, (total_ventas + per_page - 1) // per_page)
-    if page > total_pages:
-        page = total_pages
-    offset = (page - 1) * per_page
-    cursor.execute(sqlconstants.LISTA_VENTAS_X_USUARIO, (usr, per_page, offset))
-    ventas = cursor.fetchall()
+    is_admin = (session.get('user_rol') == 'ADMIN')
+    if is_admin:
+        # El administrador ve las últimas 10 ventas de cualquier usuario/rol.
+        cursor.execute(sqlconstants.COUNT_VENTAS_TODAS)
+        total_ventas = cursor.fetchone()['total']
+        cursor.execute(sqlconstants.LISTA_VENTAS_TODAS)
+        ventas = cursor.fetchall()
+        page, total_pages = 1, 1
+    else:
+        # El grifero ve solo sus ventas, paginadas de 5 en 5.
+        per_page = 5
+        try:
+            page = int(request.args.get('page', 1))
+        except (TypeError, ValueError):
+            page = 1
+        if page < 1:
+            page = 1
+        cursor.execute(sqlconstants.COUNT_VENTAS_X_USUARIO, (usr,))
+        total_ventas = cursor.fetchone()['total']
+        total_pages = max(1, (total_ventas + per_page - 1) // per_page)
+        if page > total_pages:
+            page = total_pages
+        offset = (page - 1) * per_page
+        cursor.execute(sqlconstants.LISTA_VENTAS_X_USUARIO, (usr, per_page, offset))
+        ventas = cursor.fetchall()
     cursor.close()
     return render_template('cargar_turnos.html', machines=machines, shifts=shifts,
                            today=datetime.datetime.now().strftime('%Y-%m-%d'), usr=usr,
-                           ventas=ventas, page=page, total_pages=total_pages, total_ventas=total_ventas)
+                           ventas=ventas, page=page, total_pages=total_pages,
+                           total_ventas=total_ventas, is_admin=is_admin)
+
+
+@combustibles_bp.route('/ventas_combustible', methods=['GET', 'POST'])
+@login_required
+def ventas_combustible():
+    """Registro y consulta de ventas de combustible por padrón.
+
+    - GRIFERO: registra a su propio nombre y solo ve/elimina sus registros.
+    - ADMIN: puede elegir el usuario (selector) y ve todos los registros.
+    """
+    rol = session.get('user_rol')
+    usr = session['user_username']
+    is_admin = (rol == 'ADMIN')
+
+    if rol not in ('GRIFERO', 'ADMIN'):
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('combustibles.dashboardC') if is_admin
+                        else url_for('combustibles.cargar_turnos'))
+
+    cursor = connection.cursor(dictionary=True)
+    # Asegurar que la tabla exista (idempotente).
+    cursor.execute(sqlconstants.CREATE_VENTAS_COMB_PADRON)
+
+    if request.method == 'POST':
+        fecha = request.form.get('fecha')
+        padron = request.form.get('padron')
+        monto = request.form.get('monto')
+        observacion = (request.form.get('observacion') or '').strip()
+        # El admin puede asignar la venta a otro usuario; el grifero solo a sí mismo.
+        webuser = (request.form.get('webuser') or usr) if is_admin else usr
+
+        if not fecha or not padron or not monto:
+            flash('Complete fecha, padrón y monto.', 'danger')
+        else:
+            try:
+                cursor.execute(sqlconstants.INSERT_VENTA_COMB_PADRON,
+                               (fecha, int(padron), float(monto), observacion[:255], webuser))
+                connection.commit()
+                flash('Venta de combustible registrada.', 'success')
+                cursor.close()
+                connection.close()
+                return redirect(url_for('combustibles.ventas_combustible'))
+            except (Error, ValueError) as e:
+                connection.rollback()
+                flash(f'Error al registrar la venta: {e}', 'danger')
+
+    if is_admin:
+        cursor.execute(sqlconstants.LISTA_VENTAS_COMB_PADRON_ALL)
+    else:
+        cursor.execute(sqlconstants.LISTA_VENTAS_COMB_PADRON_USR, (usr,))
+    ventas = cursor.fetchall()
+
+    usuarios = []
+    if is_admin:
+        cursor.execute(sqlconstants.LISTA_USUARIOS_ACTIVOS)
+        usuarios = cursor.fetchall()
+
+    total = sum(float(v['monto']) for v in ventas)
+    cursor.close()
+    connection.close()
+    return render_template('ventas_combustible.html', ventas=ventas, usuarios=usuarios,
+                           is_admin=is_admin, usr=usr, total=total,
+                           today=datetime.datetime.now().strftime('%Y-%m-%d'))
+
+
+@combustibles_bp.route('/ventas_combustible/eliminar/<int:venta_id>', methods=['POST'])
+@login_required
+def eliminar_venta_combustible(venta_id):
+    """Elimina físicamente una venta. El grifero solo puede eliminar las suyas."""
+    rol = session.get('user_rol')
+    usr = session['user_username']
+    is_admin = (rol == 'ADMIN')
+
+    if rol not in ('GRIFERO', 'ADMIN'):
+        return jsonify({'success': False, 'error': 'Acceso denegado.'}), 403
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'success': False, 'error': 'Error de conexión a la base de datos.'}), 500
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.CREATE_VENTAS_COMB_PADRON)
+        cursor.execute(sqlconstants.SELECT_VENTA_COMB_PADRON, (venta_id,))
+        venta = cursor.fetchone()
+        if not venta:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'error': 'Registro no encontrado.'}), 404
+        if not is_admin and venta['webuser'] != usr:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'error': 'Solo puede eliminar sus propios registros.'}), 403
+        upd = connection.cursor()
+        upd.execute(sqlconstants.DELETE_VENTA_COMB_PADRON, (venta_id,))
+        connection.commit()
+        upd.close()
+        cursor.close()
+        connection.close()
+        return jsonify({'success': True})
+    except Error as e:
+        connection.rollback()
+        try:
+            connection.close()
+        except Exception:
+            pass
+        return jsonify({'success': False, 'error': str(e)})
 
 
 @combustibles_bp.route('/maquinas')
@@ -197,7 +318,7 @@ def stock():
     cursor = connection.cursor(dictionary=True)
     cursor.execute(sqlconstants.SEL_COMBUSTIBLE)
     fuels = cursor.fetchall()
-    cursor.execute(sqlconstants.DASHB_COMB_STOCK_CRITICO)
+    cursor.execute(sqlconstants.STOCK_POR_MAQUINA)
     machine_stock = cursor.fetchall()
     cursor.close()
     return render_template('stock.html', fuels=fuels, machine_stock=machine_stock)

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Ventas de Combustible{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-fuel-pump"></i> Ventas de Combustible</h4>
+                <div class="d-print-none">
+                    {% if session.user_rol == 'GRIFERO' %}
+                    <a href="{{ url_for('combustibles.cargar_turnos') }}" class="btn btn-light btn-sm">
+                        <i class="bi bi-arrow-left"></i> Volver a Turnos
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('combustibles.dashboardC') }}" class="btn btn-light btn-sm">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Formulario de registro -->
+                <form method="POST" action="{{ url_for('combustibles.ventas_combustible') }}" class="d-print-none">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="fecha" class="form-label">Fecha *</label>
+                            <input type="date" class="form-control" id="fecha" name="fecha" value="{{ today }}" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="padron" class="form-label">Padrón *</label>
+                            <input type="number" class="form-control" id="padron" name="padron" min="1" max="9999" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="monto" class="form-label">Monto (S/) *</label>
+                            <input type="number" class="form-control" id="monto" name="monto" min="0" step="0.01" required>
+                        </div>
+                        {% if is_admin %}
+                        <div class="col-md-3">
+                            <label for="webuser" class="form-label">Usuario *</label>
+                            <select class="form-select" id="webuser" name="webuser" required>
+                                <option value="">Seleccione usuario...</option>
+                                {% for u in usuarios %}
+                                <option value="{{ u.username }}">{{ u.fullname }} ({{ u.roles }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="observacion" class="form-label">Observación</label>
+                            <input type="text" class="form-control" id="observacion" name="observacion" maxlength="255" placeholder="Opcional">
+                        </div>
+                        {% else %}
+                        <div class="col-md-5">
+                            <label for="observacion" class="form-label">Observación</label>
+                            <input type="text" class="form-control" id="observacion" name="observacion" maxlength="255" placeholder="Opcional">
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Registrar Venta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Listado: Mis Ventas Realizadas -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i>
+                    {% if is_admin %}Ventas Realizadas{% else %}Mis Ventas Realizadas{% endif %}
+                    <span class="badge bg-secondary ms-2">{{ ventas|length }}</span>
+                </h5>
+                <button type="button" class="btn btn-outline-secondary btn-sm d-print-none" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Imprimir
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Encabezado solo para impresión -->
+                <div class="d-none d-print-block mb-3">
+                    <h4 class="mb-1">Ventas de Combustible</h4>
+                    <p class="mb-0">
+                        {% if not is_admin %}<strong>Usuario:</strong> {{ usr }}{% endif %}
+                    </p>
+                </div>
+
+                {% if ventas %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha</th>
+                                <th>Padrón</th>
+                                <th>Socio</th>
+                                <th class="text-end">Monto</th>
+                                <th>Observación</th>
+                                {% if is_admin %}<th>Usuario</th>{% endif %}
+                                <th class="d-print-none text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in ventas %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ v.fecha.strftime('%d-%m-%Y') if v.fecha else '' }}</td>
+                                <td>{{ v.padron }}</td>
+                                <td style="font-size:0.85rem;">{{ v.nombre }}</td>
+                                <td class="text-end"><b>S/ {{ "%.2f"|format(v.monto) }}</b></td>
+                                <td style="font-size:0.85rem;">{{ v.observacion or '' }}</td>
+                                {% if is_admin %}<td>{{ v.webuser }}</td>{% endif %}
+                                <td class="d-print-none text-center">
+                                    {% if is_admin or v.webuser == usr %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            title="Eliminar registro"
+                                            onclick="eliminarVenta(this, '{{ v.id }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="4" class="text-end">TOTAL</th>
+                                <th class="text-end">S/ {{ "%.2f"|format(total) }}</th>
+                                <th colspan="{{ 3 if is_admin else 2 }}"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Aún no hay ventas registradas.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function eliminarVenta(btn, id) {
+    if (!confirm('¿Está seguro de ELIMINAR esta venta de combustible?\n\nEsta acción es física y no se puede deshacer.')) return;
+    fetch("{{ url_for('combustibles.eliminar_venta_combustible', venta_id=0) }}".replace('/0', '/' + id), {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        if (data.success) {
+            alert('Registro eliminado correctamente.');
+            location.reload();
+        } else {
+            alert('Error al eliminar: ' + (data.error || 'desconocido'));
+        }
+    })
+    .catch(function (e) { console.error(e); alert('Error al eliminar el registro.'); });
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    nav.navbar, footer { display: none !important; }
+    .card { box-shadow: none !important; border: none !important; }
+    .card-body { padding: 0 !important; }
+    .table { font-size: 0.8rem; }
+    .table td, .table th { padding: 2px 4px !important; }
+    .container { width: 100% !important; max-width: 100% !important; }
+}
+</style>
+{% endblock %}
