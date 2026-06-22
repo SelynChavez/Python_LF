@@ -452,3 +452,53 @@ LEFT JOIN (SELECT r.padron, SUM(rd.monto) cobrado FROM a_recibos r
            WHERE r.serie = '5' AND r.active = 'S' AND rd.aporte = 'COBRO.COMB' GROUP BY r.padron) c ON c.padron = pad.padron
 ORDER BY saldo DESC, pad.padron
 """
+
+# Reportes flexibles con múltiples series y tipos de fecha
+REP_FLEX_RECIBOS_PADRON = """
+SELECT CONCAT(
+  CASE
+    WHEN v.serie='1' THEN 'RI0'
+    WHEN v.serie='2' THEN 'BE0'
+    ELSE 'RP0'
+  END,
+  v.serie,'-',LPAD(v.numero,6,'0')) d1,
+  dateDMY(v.fecha) d2,
+  dateDMY(v.giro) d3,
+  IF(v.fecha>v.giro,'ATRAZADO',IF(v.fecha<v.giro,'ADELANTO','NORMAL')) d4,
+  (SELECT CONCAT(p.id,':',p.placa,':',s.nombre) FROM a_padrones p, a_socios s WHERE p.socio=s.id AND v.padron=p.id) d6,
+  CONCAT(ROUND((SELECT SUM(monto) FROM a_recibos_detalle d WHERE d.recibo=v.id),2),'') d7,
+  v.active d8,
+  UPPER(SUBSTR(v.webuser,1,10)) d9,
+  CONCAT(v.id) d10,
+  CONCAT(v.padron) d11,
+  '0' d0,
+  v.serie d12
+FROM a_recibos v
+WHERE v.serie IN ($serie$)
+  AND (CASE WHEN '$tipo_fecha$'='giro' THEN v.giro ELSE v.fecha END) >= date('$p1$')
+  AND (CASE WHEN '$tipo_fecha$'='giro' THEN v.giro ELSE v.fecha END) <= date('$p2$')
+  AND (v.padron='$p3$' OR '0'='$p3$')
+  AND v.active='S'
+ORDER BY v.fecha, v.padron, v.id
+"""
+
+REP_FLEX_RECIBOS_APORTES = """
+SELECT
+  CONCAT('RI-',v.serie,'-',LPAD(v.numero,6,'0')) d1,
+  dateDMY(CASE WHEN '$tipo_fecha$'='giro' THEN v.giro ELSE v.fecha END) d2,
+  IF(v.padron IS NULL,LPAD(v.socio,4,'0'),LPAD(v.padron,4,'0')) d3,
+  (SELECT CONCAT(p.id,':',p.placa,':',s.nombre) FROM a_padrones p, a_socios s WHERE p.socio=s.id AND v.padron=p.id) d4,
+  IF(v.fecha>v.giro,'ATRAZADO',IF(v.fecha<v.giro,'ADELANTADO','NORMAL')) d5,
+  IFNULL(IF(v.serie='7',CONCAT(v.moneda,' T.C=',v.tc),'S/.'),'') d6,
+  CONCAT(ROUND(IF(v.serie='7',IF(v.moneda='DOLARES',vd.monto*IFNULL(v.tc,1),vd.monto),IFNULL(vd.monto,0)),2),'') d7,
+  vd.aporte d8
+FROM a_recibos_detalle vd, a_recibos v
+WHERE v.serie IN ($serie$)
+  AND v.id=vd.recibo
+  AND (CASE WHEN '$tipo_fecha$'='giro' THEN v.giro ELSE v.fecha END) >= date('$p1$')
+  AND (CASE WHEN '$tipo_fecha$'='giro' THEN v.giro ELSE v.fecha END) <= date('$p2$')
+  AND ((v.socio IS NOT NULL AND ('$p3$'='0' OR v.socio='$p3$')) OR (v.padron IS NOT NULL AND ('$p3$'='0' OR v.padron='$p3$')))
+  AND ((vd.aporte = '$p4$') OR 'TODOS'='$p4$')
+  AND v.active='S'
+ORDER BY d2 DESC, d1 DESC
+"""

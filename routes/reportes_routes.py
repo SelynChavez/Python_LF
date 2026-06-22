@@ -121,6 +121,49 @@ def rep2recibos():
     return render_template('rep2recibos.html', tipos=tipos, p1=p1, p2=p2, p3=p3)
 
 
+@reportes_bp.route('/rep_recibos_padron')
+@login_required
+def rep_recibos_padron():
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "0"
+    serie = "1"
+    tipo_fecha = "fecha"
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
+        p3 = request.form.get('p3', "0")
+        serie = request.form.get('serie', "1")
+        tipo_fecha = request.form.get('tipo_fecha', 'fecha')
+    return render_template('rep_recibos_padron.html', p1=p1, p2=p2, p3=p3, serie=serie, tipo_fecha=tipo_fecha)
+
+
+@reportes_bp.route('/rep_recibos_aportes')
+@login_required
+def rep_recibos_aportes():
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "0"
+    serie = "1"
+    tipo_fecha = "fecha"
+    tipos = []
+    query = sqlconstants.DROPLIST_APORTES
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(query)
+        tipos = cursor.fetchall()
+        cursor.close()
+        connection.close()
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
+        p3 = request.form.get('p3', "0")
+        serie = request.form.get('serie', "1")
+        tipo_fecha = request.form.get('tipo_fecha', 'fecha')
+    return render_template('rep_recibos_aportes.html', tipos=tipos, p1=p1, p2=p2, p3=p3, serie=serie, tipo_fecha=tipo_fecha)
+
+
 def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, p6):
     pdf.set_font("Arial", 'B', 10)
     hora1 = str(datetime.datetime.now())[0:19] + "  -  Pag. # " + str(pdf.page_no()+sum4)
@@ -140,7 +183,7 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
     pdf.cell(0, 4, f"::{subtitulo}::", 0, 1, 'C')
     pdf.ln()
     pdf.set_font("Arial", 'B', 9)
-    if (cod=='REP1APORTES'):
+    if (cod in ('REP1APORTES', 'REP_FLEX_PAD')):
         pdf.cell(18, 5, "Nro.Rec", 1)
         pdf.cell(18, 5, "Registro", 1)
         pdf.cell(18, 5, "Girado..", 1)
@@ -150,7 +193,7 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
         pdf.cell(15, 5, "Act?", 1)
         pdf.cell(18, 5, "Usuario", 1)
         pdf.cell(15, 5, "IdCtrl", 1)
-    elif(cod=='REP2APORTES'):
+    elif(cod in ('REP2APORTES', 'REP_FLEX_APO')):
         pdf.cell(18, 5, "Nro.Rec.", 1)
         pdf.cell(18, 5, "Registro", 1)
         pdf.cell(18, 5, "Girado", 1)
@@ -169,7 +212,7 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
     pdf.ln()
 
 
-def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
+def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, serie="1", tipo_fecha="fecha"):
     buffer = BytesIO()
     pdf = FPDF()
     pdf.add_page()
@@ -180,8 +223,17 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
     query = sqlconstants.REP1APORTES
     if (cod=="REP2APORTES"):
         query = sqlconstants.REP2APORTES
-    if (cod=="REP-PCGE"):
+    elif (cod=="REP-PCGE"):
         query = sqlconstants.REP0PCGE
+    elif (cod=="REP_FLEX_PAD"):
+        query = sqlconstants.REP_FLEX_RECIBOS_PADRON
+    elif (cod=="REP_FLEX_APO"):
+        query = sqlconstants.REP_FLEX_RECIBOS_APORTES
+
+    # Convertir serie a formato SQL IN()
+    serie_map = {'1': "'1'", '2': "'2'", '3-5': "'3','4','5'", '6': "'6'"}
+    serie_sql = serie_map.get(serie, "'1'")
+
     connection = get_db_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
@@ -191,6 +243,8 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
         query = query.replace("$p4$", p4)
         query = query.replace("$p5$", p5)
         query = query.replace("$p6$", p6)
+        query = query.replace("$serie$", serie_sql)
+        query = query.replace("$tipo_fecha$", tipo_fecha)
         cursor.execute(query)
         datos = cursor.fetchall()
         cursor.close()
@@ -204,7 +258,7 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
     for dato in datos:
         lin += 1
         rgt += 1
-        if cod=='REP1APORTES':
+        if cod in ('REP1APORTES', 'REP_FLEX_PAD'):
             pdf.cell(18, 5, dato["d1"], 1)
             pdf.cell(18, 5, dato["d2"], 1)
             pdf.cell(18, 5, dato["d3"], 1)
@@ -216,7 +270,7 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6):
             pdf.cell(18, 5, dato["d9"], 1)
             pdf.cell(15, 5, dato["d10"], 1)
             to1 += float(dato["d7"])
-        elif(cod=='REP2APORTES'):
+        elif(cod in ('REP2APORTES', 'REP_FLEX_APO')):
             pdf.cell(18, 5, dato["d1"], 1)
             pdf.cell(18, 5, dato["d2"], 1)
             pdf.cell(18, 5, dato["d3"], 1)
@@ -265,9 +319,15 @@ def generar_reporte():
         p4 = request.form.get('p4', '')
         p5 = request.form.get('p5', '')
         p6 = request.form.get('p6', '')
+        serie = request.form.get('serie', '1')
+        tipo_fecha = request.form.get('tipo_fecha', 'fecha')
+
         print("p3:"+p3)
         print("p4:"+p4)
-        pdf_buffer = generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6)
+        print("serie:"+serie)
+        print("tipo_fecha:"+tipo_fecha)
+
+        pdf_buffer = generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, serie, tipo_fecha)
         pdf_base64 = base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
         return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod=cod)
     except Exception as e:

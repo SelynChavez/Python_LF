@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte - Recibos por Fechas y Aportes {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-file-earmark-pdf"></i> Reporte de Recibos por Fechas y Aportes</h4>
+            </div>
+            <div class="card-body">
+                <form id="formReporte" action="/generar_reporte" method="POST" target="_blank">
+                    <input type="hidden" id="cod" name="cod" value="REP_FLEX_APO">
+                    <input type="hidden" id="titulo" name="titulo" value="Reporte de Recibos por Fechas y Aportes">
+                    <input type="hidden" id="subtitulo" name="subtitulo" value="Desde $p1$ a $p2$ - Padron: $p3$ - Serie: $p4$">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="serie" class="form-label">Serie</label>
+                            <select class="form-select" id="serie" name="serie" required>
+                                <option value="1">1 - Aportes</option>
+                                <option value="2">2 - Cotización</option>
+                                <option value="3-5">3,4,5 - Cobranza de Combustible</option>
+                                <option value="6">6 - Otros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tipo_fecha" class="form-label">Tipo de Fecha</label>
+                            <select class="form-select" id="tipo_fecha" name="tipo_fecha" required>
+                                <option value="fecha">Fecha de Registro</option>
+                                <option value="giro">Fecha de Giro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="p1" class="form-label">Fecha Desde</label>
+                            <input type="date" class="form-control" id="p1" name="p1" value="{{ p1 }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p2" class="form-label">Fecha Hasta</label>
+                            <input type="date" class="form-control" id="p2" name="p2" value="{{ p2 }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="p3" class="form-label">Padron</label>
+                            <input type="number" class="form-control" id="p3" name="p3" placeholder="0 = Todos" value="{{ p3 }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p4" class="form-label">Tipo de Aporte</label>
+                            <select class="form-select" id="p4" name="p4" required>
+                                <option value="TODOS">Todos los Aportes</option>
+                                {% for tipo in tipos %}
+                                    <option value="{{ tipo['d1'] }}">{{ tipo['d2'] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle"></i> Deja el campo Padron vacío o con 0 para incluir todos los padrones.
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary me-md-2">
+                            <i class="bi bi-file-earmark-pdf"></i> Generar PDF
+                        </button>
+                        <a href="{{ url_for('reportes.reportes') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
