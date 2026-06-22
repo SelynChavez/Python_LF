@@ -98,9 +98,11 @@
                             <i class="bi bi-printer"></i> Imprimir Recibo
                         </a>
                         {% endif %}
+                        {% if session.user_rol != 'GRIFERO' %}
                         <a href="{{ url_for('aportes.aportes_s5') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
+                        {% endif %}
                     </div>
                 </form>
             </div>

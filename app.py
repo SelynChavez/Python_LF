@@ -66,6 +66,7 @@ GRIFERO_ALLOWED_ENDPOINTS = {
     'recibos.imprimir_recibo',
     'recibos.ver_recibo_pdf',
     'imprimir_recibo',
+    'aportes.aportes_s5',
     'aportes.aportes_series',
     'auth.login',
     'auth.logout',
