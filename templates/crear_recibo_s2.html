@@ -85,6 +85,11 @@
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-check-circle"></i> {{but}}
                         </button>
+                        {% if pdf_file %}
+                        <a href="{{ url_for('recibos.imprimir_recibo', filename=pdf_file) }}" target="_blank" class="btn btn-info" id="btnImprimir">
+                            <i class="bi bi-printer"></i> Imprimir Recibo
+                        </a>
+                        {% endif %}
                         <a href="{{ url_for('aportes.aportes_s2') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>

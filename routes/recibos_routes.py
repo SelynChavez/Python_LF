@@ -1,12 +1,27 @@
-from flask import render_template, request, redirect, url_for, flash, session
+from flask import render_template, request, redirect, url_for, flash, session, send_file
 from functools import wraps
 from mysql.connector import Error
 from decimal import Decimal
 import datetime
+import os
 import sqlconstants
 from utils.database import get_db_connection, get_nombre_padron
 
 from .recibos import recibos_bp
+
+# Carpeta donde se guardan los PDF de los recibos generados
+RECIBOS_DIR = 'recibos_'
+
+# Titulo que se imprime en la cabecera del PDF segun la serie
+TITULOS_SERIE = {
+    '1': 'RECIBO DE INGRESOS',
+    '2': 'BOLETA ELECTRONICA',
+    '3': 'RECIBO ACCESO Y CAPITAL',
+    '4': 'RECIBO ATU COMBUSTIBLE',
+    '5': 'RECIBO POR OBRAS',
+    '6': 'RECIBO DE DESPACHO',
+}
+
 
 def login_required(f):
     @wraps(f)
@@ -16,6 +31,40 @@ def login_required(f):
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
+
+
+def _generar_pdf_recibo(ser, num, pad, nom, fec, items):
+    """Genera el PDF del recibo y devuelve solo el nombre del archivo (basename).
+
+    Devuelve None si ocurre un error, para no interrumpir el registro del recibo.
+    """
+    try:
+        from .reportes_routes import generar_recibo
+        fecha_reg = datetime.datetime.now().strftime('%Y-%m-%d')
+        titulo = TITULOS_SERIE.get(str(ser), 'RECIBO')
+        ruta = generar_recibo(titulo, str(ser), num, pad, nom, fecha_reg, fec, items)
+        return os.path.basename(ruta)
+    except Exception as e:
+        print(f"Error al generar PDF del recibo: {e}")
+        return None
+
+
+@recibos_bp.route('/pdf/<path:filename>')
+@login_required
+def ver_recibo_pdf(filename):
+    """Sirve el PDF del recibo en linea (para visualizarlo/imprimirlo)."""
+    ruta = os.path.abspath(os.path.join(RECIBOS_DIR, os.path.basename(filename)))
+    if os.path.exists(ruta):
+        return send_file(ruta, mimetype='application/pdf')
+    flash('Recibo no encontrado.', 'danger')
+    return redirect(url_for('recibos.crear_recibo_s2'))
+
+
+@recibos_bp.route('/imprimir/<path:filename>')
+@login_required
+def imprimir_recibo(filename):
+    """Pagina que carga el PDF y lanza el dialogo de impresion del navegador."""
+    return render_template('imprimir_recibo.html', filename=os.path.basename(filename))
 
 
 @recibos_bp.route('/crear_s6', methods=['GET', 'POST'])
@@ -81,8 +130,8 @@ def crear_recibo_s6():
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
+                        i0['monto'] = Decimal(str(mnt0))
                         if mnt and mnt0 > 0:
-                            i0['monto'] = Decimal(mnt0)
                             query = sqlconstants.INSERT_DETREC_X
                             query = query.replace("$apo$", i0['codigo'])
                             query = query.replace("$rec$", lid)
@@ -98,8 +147,9 @@ def crear_recibo_s6():
                     connection.commit()
                     cursor.close()
                     connection.close()
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
                     flash('Recibo registrado.', 'success')
-                    return render_template('crear_recibo_s6.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
+                    return render_template('crear_recibo_s6.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('El recibo serie/fecha/padron ya existe.', 'danger')
@@ -175,8 +225,8 @@ def crear_recibo_s5():
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
+                        i0['monto'] = Decimal(str(mnt0))
                         if mnt and mnt0 > 0:
-                            i0['monto'] = Decimal(mnt0)
                             query = sqlconstants.INSERT_DETREC_X
                             query = query.replace("$apo$", i0['codigo'])
                             query = query.replace("$rec$", lid)
@@ -192,8 +242,9 @@ def crear_recibo_s5():
                     connection.commit()
                     cursor.close()
                     connection.close()
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
                     flash('Recibo registrado.', 'success')
-                    return render_template('crear_recibo_s5.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
+                    return render_template('crear_recibo_s5.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('El recibo serie/fecha/padron ya existe.', 'danger')
@@ -270,8 +321,8 @@ def crear_recibo_s4():
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
+                        i0['monto'] = Decimal(str(mnt0))
                         if mnt and mnt0 > 0:
-                            i0['monto'] = Decimal(mnt0)
                             query = sqlconstants.INSERT_DETREC_X
                             query = query.replace("$apo$", i0['codigo'])
                             query = query.replace("$rec$", lid)
@@ -287,8 +338,9 @@ def crear_recibo_s4():
                     connection.commit()
                     cursor.close()
                     connection.close()
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
                     flash('Recibo registrado.', 'success')
-                    return render_template('crear_recibo_s4.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
+                    return render_template('crear_recibo_s4.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('El recibo serie/fecha/padron ya existe.', 'danger')
@@ -365,8 +417,8 @@ def crear_recibo_s3():
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
+                        i0['monto'] = Decimal(str(mnt0))
                         if mnt and mnt0 > 0:
-                            i0['monto'] = Decimal(mnt0)
                             query = sqlconstants.INSERT_DETREC_X
                             query = query.replace("$apo$", i0['codigo'])
                             query = query.replace("$rec$", lid)
@@ -382,8 +434,9 @@ def crear_recibo_s3():
                     connection.commit()
                     cursor.close()
                     connection.close()
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
                     flash('Recibo registrado.', 'success')
-                    return render_template('crear_recibo_s3.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
+                    return render_template('crear_recibo_s3.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('El recibo serie/fecha/padron ya existe.', 'danger')
@@ -459,8 +512,8 @@ def crear_recibo_s2():
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
+                        i0['monto'] = Decimal(str(mnt0))
                         if mnt and mnt0 > 0:
-                            i0['monto'] = Decimal(mnt0)
                             query = sqlconstants.INSERT_DETREC_X
                             query = query.replace("$apo$", i0['codigo'])
                             query = query.replace("$rec$", lid)
@@ -476,8 +529,9 @@ def crear_recibo_s2():
                     connection.commit()
                     cursor.close()
                     connection.close()
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
                     flash('Recibo registrado.', 'success')
-                    return render_template('crear_recibo_s2.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
+                    return render_template('crear_recibo_s2.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('El recibo serie/fecha/padron ya existe', 'danger')
@@ -562,8 +616,8 @@ def crear_recibo():
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
+                        i0['monto'] = Decimal(str(mnt0))
                         if mnt and mnt0 > 0:
-                            i0['monto'] = Decimal(mnt0)
                             query = sqlconstants.INSERT_DETREC_X
                             query = query.replace("$apo$", i0['codigo'])
                             query = query.replace("$rec$", lid)
@@ -586,8 +640,9 @@ def crear_recibo():
                     connection.commit()
                     cursor.close()
                     connection.close()
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
                     flash('Recibo registrado.', 'success')
-                    return render_template('crear_recibo.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar')
+                    return render_template('crear_recibo.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
                     if 'Duplicate entry' in str(e):
                         flash('El recibo serie/fecha/padron ya existe.', 'danger')
