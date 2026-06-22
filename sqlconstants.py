@@ -423,11 +423,32 @@ DELETE_VENTA_COMB_PADRON = "DELETE FROM a_ventas_comb_padron WHERE id = %s"
 LISTA_USUARIOS_ACTIVOS = "SELECT username, fullname, roles FROM applicationuser WHERE status = 'ACTIVE' ORDER BY fullname"
 
 # Saldo pendiente de combustible de un padrón (para Recibo Cobranza de Comb. - Serie 5):
-#   total ventas de combustible (a_ventas_comb_padron) - total cobrado (aporte COBRO.COMB en recibos serie 5 activos)
+#   ventas de combustible a CREDITO (a_ventas_comb_padron) - total cobrado (aporte COBRO.COMB en recibos serie 5 activos)
 SALDO_COBRO_COMB = """
 SELECT
-  COALESCE((SELECT SUM(monto) FROM a_ventas_comb_padron WHERE padron = %s), 0) -
+  COALESCE((SELECT SUM(monto) FROM a_ventas_comb_padron WHERE padron = %s AND forma_pago = 'Credito'), 0) -
   COALESCE((SELECT SUM(rd.monto) FROM a_recibos r
             JOIN a_recibos_detalle rd ON rd.recibo = r.id
             WHERE r.serie = '5' AND r.active = 'S' AND r.padron = %s AND rd.aporte = 'COBRO.COMB'), 0) AS saldo
+"""
+
+# Reporte de saldos de deuda de combustible por padrón (misma lógica que SALDO_COBRO_COMB).
+REP_SALDOS_COMB = """
+SELECT pad.padron,
+       nombPadronSocio(pad.padron) nombre,
+       ROUND(COALESCE(v.ventas, 0), 2) ventas,
+       ROUND(COALESCE(c.cobrado, 0), 2) cobrado,
+       ROUND(COALESCE(v.ventas, 0) - COALESCE(c.cobrado, 0), 2) saldo
+FROM (
+    SELECT padron FROM a_ventas_comb_padron WHERE forma_pago = 'Credito'
+    UNION
+    SELECT r.padron FROM a_recibos r JOIN a_recibos_detalle rd ON rd.recibo = r.id
+    WHERE r.serie = '5' AND r.active = 'S' AND rd.aporte = 'COBRO.COMB'
+) pad
+LEFT JOIN (SELECT padron, SUM(monto) ventas FROM a_ventas_comb_padron
+           WHERE forma_pago = 'Credito' GROUP BY padron) v ON v.padron = pad.padron
+LEFT JOIN (SELECT r.padron, SUM(rd.monto) cobrado FROM a_recibos r
+           JOIN a_recibos_detalle rd ON rd.recibo = r.id
+           WHERE r.serie = '5' AND r.active = 'S' AND rd.aporte = 'COBRO.COMB' GROUP BY r.padron) c ON c.padron = pad.padron
+ORDER BY saldo DESC, pad.padron
 """

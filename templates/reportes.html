@@ -34,6 +34,16 @@
 
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
+            <p><b>Saldos de Deuda de Combustible por Padrón</b></p>
+            <a href="{{ url_for('reportes.rep_saldos_comb') if session.user_rol == 'ADMIN' else '#' }}"
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-fuel-pump"></i> Saldos Combustible
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
             <p>Reporte multiple de los Prestamos</p>
             <button class="btn btn-secondary" disabled>
                 <i class="bi bi-tools"></i> Próximamente
@@ -41,5 +51,5 @@
         </div>
     </div>
 
-
+</div>
 {% endblock %}

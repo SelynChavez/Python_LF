@@ -63,6 +63,27 @@ def reportes():
     return render_template('reportes.html')
 
 
+@reportes_bp.route('/rep_saldos_comb')
+@login_required
+@admin_required
+def rep_saldos_comb():
+    """Reporte de saldos de deuda de combustible por padrón."""
+    saldos = []
+    total = 0.0
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.REP_SALDOS_COMB)
+        saldos = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        total = sum(float(s['saldo']) for s in saldos)
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')
+    return render_template('rep_saldos_comb.html', saldos=saldos, total=total,
+                           hoy=datetime.datetime.now().strftime('%d-%m-%Y %H:%M'))
+
+
 @reportes_bp.route('/rep1recibos')
 def rep1recibos():
     p1 = datetime.datetime.now().strftime('%Y-%m-%d')
