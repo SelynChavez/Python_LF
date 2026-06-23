@@ -166,14 +166,15 @@ def rep_ventas_comb():
 
 def generar_pdf_saldos_comb(pdf, titulo, subtitulo):
     buffer = BytesIO()
-    pdf.set_left_margin(5)
+    pdf.set_left_margin(15)
     pdf.set_right_margin(5)
 
     # Cabecera
     pdf.set_font("Arial", 'B', 10)
     hora = str(datetime.datetime.now())[0:19]
     usr = session['user_username']
-    pdf.cell(0, 8, f"E.T. Las Flores :: {titulo} :: {usr} :: {hora}", 0, 1, 'R')
+    pag = pdf.page_no()
+    pdf.cell(0, 8, f"E.T. Las Flores :: {usr} :: {hora} :: Pag. {pag}", 0, 1, 'L')
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 6, titulo, 0, 1, 'C')
     pdf.ln()
@@ -182,17 +183,17 @@ def generar_pdf_saldos_comb(pdf, titulo, subtitulo):
     pdf.set_font("Arial", 'B', 10)
     subtitulo_clean = subtitulo.replace("−", "-")
     pdf.cell(0, 4, f"::{subtitulo_clean}::", 0, 1, 'C')
-    pdf.ln()
+    pdf.ln(12)
 
     # Encabezados
     pdf.set_font("Arial", 'B', 9)
     pdf.set_fill_color(200, 200, 200)
-    pdf.cell(12, 5, "#", 1, 0, 'C', True)
-    pdf.cell(15, 5, "Padron", 1, 0, 'C', True)
-    pdf.cell(45, 5, "Socio", 1, 0, 'L', True)
-    pdf.cell(28, 5, "Ventas Cred", 1, 0, 'R', True)
-    pdf.cell(28, 5, "Cobrado", 1, 0, 'R', True)
-    pdf.cell(35, 5, "Saldo Pendiente", 1, 1, 'R', True)
+    pdf.cell(10, 5, "#", 1, 0, 'C', True)
+    pdf.cell(12, 5, "Padron", 1, 0, 'C', True)
+    pdf.cell(75, 5, "Socio", 1, 0, 'L', True)
+    pdf.cell(25, 5, "Ventas Cred", 1, 0, 'R', True)
+    pdf.cell(25, 5, "Cobrado", 1, 0, 'R', True)
+    pdf.cell(28, 5, "Saldo Pendiente", 1, 1, 'R', True)
 
     connection = get_db_connection()
     if not connection:
@@ -210,28 +211,46 @@ def generar_pdf_saldos_comb(pdf, titulo, subtitulo):
     lin = 0
     for idx, saldo in enumerate(saldos, 1):
         lin += 1
-        nombre = saldo['nombre'][:35] if saldo['nombre'] else ""
+        nombre = saldo['nombre'][:50] if saldo['nombre'] else ""
 
-        pdf.cell(12, 5, str(idx), 1, 0, 'C')
-        pdf.cell(15, 5, str(saldo['padron']), 1, 0, 'C')
-        pdf.cell(45, 5, nombre, 1, 0, 'L')
-        pdf.cell(28, 5, f"S/. {float(saldo['ventas']):.2f}", 1, 0, 'R')
-        pdf.cell(28, 5, f"S/. {float(saldo['cobrado']):.2f}", 1, 0, 'R')
-        pdf.cell(35, 5, f"S/. {float(saldo['saldo']):.2f}", 1, 1, 'R')
+        pdf.cell(10, 5, str(idx), 1, 0, 'C')
+        pdf.cell(12, 5, str(saldo['padron']), 1, 0, 'C')
+        pdf.cell(75, 5, nombre, 1, 0, 'L')
+        pdf.cell(25, 5, f"S/. {float(saldo['ventas']):.2f}", 1, 0, 'R')
+        pdf.cell(25, 5, f"S/. {float(saldo['cobrado']):.2f}", 1, 0, 'R')
+        pdf.cell(28, 5, f"S/. {float(saldo['saldo']):.2f}", 1, 1, 'R')
 
         total_general += float(saldo['saldo'])
 
         if lin == 35:
-            pdf.ln(2)
+            pdf.add_page()
+            pdf.set_left_margin(15)
+            pdf.set_right_margin(5)
+
+            # Cabecera para nueva página
+            pdf.set_font("Arial", 'B', 10)
+            hora = str(datetime.datetime.now())[0:19]
+            usr = session['user_username']
+            pag = pdf.page_no()
+            pdf.cell(0, 8, f"E.T. Las Flores :: {usr} :: {hora} :: Pag. {pag}", 0, 1, 'L')
+            pdf.set_font("Arial", 'B', 16)
+            pdf.cell(0, 6, titulo, 0, 1, 'C')
+            pdf.ln()
+
+            pdf.set_font("Arial", 'B', 10)
+            subtitulo_clean = subtitulo.replace("−", "-")
+            pdf.cell(0, 4, f"::{subtitulo_clean}::", 0, 1, 'C')
+            pdf.ln(12)
+
             lin = 0
             pdf.set_font("Arial", 'B', 9)
             pdf.set_fill_color(200, 200, 200)
-            pdf.cell(12, 5, "#", 1, 0, 'C', True)
-            pdf.cell(15, 5, "Padron", 1, 0, 'C', True)
-            pdf.cell(45, 5, "Socio", 1, 0, 'L', True)
-            pdf.cell(28, 5, "Ventas Cred", 1, 0, 'R', True)
-            pdf.cell(28, 5, "Cobrado", 1, 0, 'R', True)
-            pdf.cell(35, 5, "Saldo Pendiente", 1, 1, 'R', True)
+            pdf.cell(10, 5, "#", 1, 0, 'C', True)
+            pdf.cell(12, 5, "Padron", 1, 0, 'C', True)
+            pdf.cell(75, 5, "Socio", 1, 0, 'L', True)
+            pdf.cell(25, 5, "Ventas Cred", 1, 0, 'R', True)
+            pdf.cell(25, 5, "Cobrado", 1, 0, 'R', True)
+            pdf.cell(28, 5, "Saldo Pendiente", 1, 1, 'R', True)
             pdf.set_font("Arial", '', 8)
 
     # Total general
@@ -248,14 +267,15 @@ def generar_pdf_saldos_comb(pdf, titulo, subtitulo):
 
 def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo):
     buffer = BytesIO()
-    pdf.set_left_margin(5)
+    pdf.set_left_margin(15)
     pdf.set_right_margin(5)
 
     # Cabecera
     pdf.set_font("Arial", 'B', 10)
     hora = str(datetime.datetime.now())[0:19]
     usr = session['user_username']
-    pdf.cell(0, 8, f"E.T. Las Flores :: {titulo} :: {usr} :: {hora}", 0, 1, 'R')
+    pag = pdf.page_no()
+    pdf.cell(0, 8, f"E.T. Las Flores :: {usr} :: {hora} :: Pag. {pag}", 0, 1, 'L')
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 6, titulo, 0, 1, 'C')
     pdf.ln()
@@ -268,17 +288,17 @@ def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo):
     subtitulo = subtitulo.replace("$p4$", p4)
     subtitulo_clean = subtitulo.replace("−", "-")
     pdf.cell(0, 4, f"::{subtitulo_clean}::", 0, 1, 'C')
-    pdf.ln()
+    pdf.ln(12)
 
     # Encabezados
     pdf.set_font("Arial", 'B', 9)
     pdf.set_fill_color(200, 200, 200)
     pdf.cell(18, 5, "Fecha", 1, 0, 'C', True)
     pdf.cell(12, 5, "Padron", 1, 0, 'C', True)
-    pdf.cell(50, 5, "Nombre Padron", 1, 0, 'L', True)
-    pdf.cell(30, 5, "Forma Pago", 1, 0, 'C', True)
+    pdf.cell(70, 5, "Nombre Padron", 1, 0, 'L', True)
+    pdf.cell(25, 5, "Forma Pago", 1, 0, 'C', True)
     pdf.cell(20, 5, "Monto", 1, 0, 'R', True)
-    pdf.cell(35, 5, "Observacion", 1, 0, 'L', True)
+    pdf.cell(30, 5, "Observacion", 1, 0, 'L', True)
     pdf.cell(10, 5, "Usr", 1, 1, 'C', True)
 
     connection = get_db_connection()
@@ -312,31 +332,53 @@ def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo):
     for dato in datos:
         lin += 1
         fecha_str = dato['fecha'].strftime('%d-%m-%Y') if hasattr(dato['fecha'], 'strftime') else str(dato['fecha'])
-        nombre = dato['nombre_padron'][:20] if dato['nombre_padron'] else ""
+        nombre = dato['nombre_padron'][:35] if dato['nombre_padron'] else ""
         obs = (dato['observacion'][:15] if dato['observacion'] else "")
         usr_short = dato['webuser'][:6] if dato['webuser'] else ""
 
         pdf.cell(18, 4, fecha_str, 1, 0, 'C')
         pdf.cell(12, 4, str(dato['padron']), 1, 0, 'C')
-        pdf.cell(50, 4, nombre, 1, 0, 'L')
-        pdf.cell(30, 4, dato['forma_pago'], 1, 0, 'C')
+        pdf.cell(70, 4, nombre, 1, 0, 'L')
+        pdf.cell(25, 4, dato['forma_pago'], 1, 0, 'C')
         pdf.cell(20, 4, f"S/. {float(dato['monto']):.2f}", 1, 0, 'R')
-        pdf.cell(35, 4, obs, 1, 0, 'L')
+        pdf.cell(30, 4, obs, 1, 0, 'L')
         pdf.cell(10, 4, usr_short, 1, 1, 'C')
 
         total_general += float(dato['monto'])
 
         if lin == 40:
-            pdf.ln(2)
+            pdf.add_page()
+            pdf.set_left_margin(15)
+            pdf.set_right_margin(5)
+
+            # Cabecera para nueva página
+            pdf.set_font("Arial", 'B', 10)
+            hora = str(datetime.datetime.now())[0:19]
+            usr = session['user_username']
+            pag = pdf.page_no()
+            pdf.cell(0, 8, f"E.T. Las Flores :: {usr} :: {hora} :: Pag. {pag}", 0, 1, 'L')
+            pdf.set_font("Arial", 'B', 16)
+            pdf.cell(0, 6, titulo, 0, 1, 'C')
+            pdf.ln()
+
+            pdf.set_font("Arial", 'B', 10)
+            subtitulo_new = subtitulo.replace("$p1$", p1)
+            subtitulo_new = subtitulo_new.replace("$p2$", p2)
+            subtitulo_new = subtitulo_new.replace("$p3$", p3 if p3 != "0" else "Todos")
+            subtitulo_new = subtitulo_new.replace("$p4$", p4)
+            subtitulo_new = subtitulo_new.replace("−", "-")
+            pdf.cell(0, 4, f"::{subtitulo_new}::", 0, 1, 'C')
+            pdf.ln(12)
+
             lin = 0
             pdf.set_font("Arial", 'B', 9)
             pdf.set_fill_color(200, 200, 200)
             pdf.cell(18, 5, "Fecha", 1, 0, 'C', True)
             pdf.cell(12, 5, "Padron", 1, 0, 'C', True)
-            pdf.cell(50, 5, "Nombre Padron", 1, 0, 'L', True)
-            pdf.cell(30, 5, "Forma Pago", 1, 0, 'C', True)
+            pdf.cell(70, 5, "Nombre Padron", 1, 0, 'L', True)
+            pdf.cell(25, 5, "Forma Pago", 1, 0, 'C', True)
             pdf.cell(20, 5, "Monto", 1, 0, 'R', True)
-            pdf.cell(35, 5, "Observacion", 1, 0, 'L', True)
+            pdf.cell(30, 5, "Observacion", 1, 0, 'L', True)
             pdf.cell(10, 5, "Usr", 1, 1, 'C', True)
             pdf.set_font("Arial", '', 7)
 
