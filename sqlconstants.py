@@ -502,3 +502,38 @@ WHERE v.serie IN ($serie$)
   AND v.active='S'
 ORDER BY d2 DESC, d1 DESC
 """
+
+REP_VENTAS_COMB = """
+SELECT
+  v.id,
+  v.fecha,
+  v.padron,
+  COALESCE(nombPadronSocio(v.padron), CONCAT('Padron #', v.padron)) nombre_padron,
+  v.monto,
+  v.forma_pago,
+  v.observacion,
+  v.webuser,
+  v.created
+FROM a_ventas_comb_padron v
+WHERE v.fecha >= date('$p1$')
+  AND v.fecha <= date('$p2$')
+  AND (v.padron = '$p3$' OR '0' = '$p3$')
+  AND (v.forma_pago = '$p4$' OR 'TODOS' = '$p4$')
+ORDER BY v.fecha DESC, v.padron, v.id
+
+"""
+
+REP_VENTAS_COMB_TOTAL_DIA = """
+SELECT
+  v.fecha,
+  COALESCE(v.forma_pago, 'TOTAL') forma_pago,
+  ROUND(SUM(v.monto), 2) total_monto,
+  COUNT(*) cantidad
+FROM a_ventas_comb_padron v
+WHERE v.fecha >= date('$p1$')
+  AND v.fecha <= date('$p2$')
+  AND (v.padron = '$p3$' OR '0' = '$p3$')
+  AND (v.forma_pago = '$p4$' OR 'TODOS' = '$p4$')
+GROUP BY v.fecha, v.forma_pago
+ORDER BY v.fecha DESC, v.forma_pago
+"""

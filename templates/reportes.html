@@ -23,6 +23,7 @@
             </a>
         </div>
     </div>
+
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <p><b>Rep. Recibos por Fechas y Aportes</b></p>
@@ -36,28 +37,23 @@
 
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
-            <p><b>Saldos de Deuda de Combustible por Padrón</b></p>
-            <a href="{{ url_for('reportes.rep_saldos_comb') if session.user_rol == 'ADMIN' else '#' }}"
-               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
-                <i class="bi bi-fuel-pump"></i> Saldos Combustible
+            <p><b>Ventas de Combustible por Padrón</b></p>
+            <small class="text-muted">Con totales por día</small>
+            <a href="{{ url_for('reportes.rep_ventas_comb') if session.user_rol in ['ADMIN', 'GRIFERO'] else '#' }}"
+               class="btn btn-success {{ 'disabled' if session.user_rol not in ['ADMIN', 'GRIFERO'] }}">
+                <i class="bi bi-fuel-pump"></i> Ventas Combustible
             </a>
         </div>
     </div>
 
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
-            <p><b>Reportes Clásicos</b></p>
-            <small class="text-muted">Serie 1 únicamente</small>
-            <div class="btn-group" role="group">
-                <a href="{{ url_for('reportes.rep1recibos') if session.user_rol == 'ADMIN' else '#' }}"
-                   class="btn btn-outline-secondary btn-sm {{ 'disabled' if session.user_rol != 'ADMIN' }}">
-                    Rep #1
-                </a>
-                <a href="{{ url_for('reportes.rep2recibos') if session.user_rol == 'ADMIN' else '#' }}"
-                   class="btn btn-outline-secondary btn-sm {{ 'disabled' if session.user_rol != 'ADMIN' }}">
-                    Rep #2
-                </a>
-            </div>
+            <p><b>Saldos de Deuda de Combustible</b></p>
+            <small class="text-muted">Deuda pendiente por padrón</small>
+            <a href="{{ url_for('reportes.rep_saldos_comb') if session.user_rol in ['ADMIN', 'GRIFERO', 'CAJA'] else '#' }}"
+               class="btn btn-success {{ 'disabled' if session.user_rol not in ['ADMIN', 'GRIFERO', 'CAJA'] }}">
+                <i class="bi bi-fuel-pump"></i> Saldos Combustible
+            </a>
         </div>
     </div>
 

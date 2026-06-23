@@ -66,24 +66,11 @@ def reportes():
 @reportes_bp.route('/rep_saldos_comb')
 @login_required
 def rep_saldos_comb():
-    """Reporte de saldos de deuda de combustible por padrón."""
+    """Formulario para reporte de saldos de deuda de combustible por padrón."""
     if session.get('user_rol') not in ('ADMIN', 'GRIFERO', 'CAJA'):
         flash('Acceso denegado.', 'danger')
         return redirect(url_for('dashboard.dashboard'))
-    saldos = []
-    total = 0.0
-    connection = get_db_connection()
-    if connection:
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute(sqlconstants.REP_SALDOS_COMB)
-        saldos = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        total = sum(float(s['saldo']) for s in saldos)
-    else:
-        flash('Error de conexión a la base de datos.', 'danger')
-    return render_template('rep_saldos_comb.html', saldos=saldos, total=total,
-                           hoy=datetime.datetime.now().strftime('%d-%m-%Y %H:%M'))
+    return render_template('rep_saldos_comb.html')
 
 
 @reportes_bp.route('/rep1recibos')
@@ -164,6 +151,229 @@ def rep_recibos_aportes():
     return render_template('rep_recibos_aportes.html', tipos=tipos, p1=p1, p2=p2, p3=p3, serie=serie, tipo_fecha=tipo_fecha)
 
 
+@reportes_bp.route('/rep_ventas_comb')
+@login_required
+def rep_ventas_comb():
+    if session.get('user_rol') not in ('ADMIN', 'GRIFERO'):
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "0"
+    p4 = "TODOS"
+    return render_template('rep_ventas_comb.html', p1=p1, p2=p2, p3=p3, p4=p4)
+
+
+def generar_pdf_saldos_comb(pdf, titulo, subtitulo):
+    buffer = BytesIO()
+    pdf.set_left_margin(5)
+    pdf.set_right_margin(5)
+
+    # Cabecera
+    pdf.set_font("Arial", 'B', 10)
+    hora = str(datetime.datetime.now())[0:19]
+    usr = session['user_username']
+    pdf.cell(0, 8, f"E.T. Las Flores :: {titulo} :: {usr} :: {hora}", 0, 1, 'R')
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 6, titulo, 0, 1, 'C')
+    pdf.ln()
+
+    # Subtítulo
+    pdf.set_font("Arial", 'B', 10)
+    subtitulo_clean = subtitulo.replace("−", "-")
+    pdf.cell(0, 4, f"::{subtitulo_clean}::", 0, 1, 'C')
+    pdf.ln()
+
+    # Encabezados
+    pdf.set_font("Arial", 'B', 9)
+    pdf.set_fill_color(200, 200, 200)
+    pdf.cell(12, 5, "#", 1, 0, 'C', True)
+    pdf.cell(15, 5, "Padron", 1, 0, 'C', True)
+    pdf.cell(45, 5, "Socio", 1, 0, 'L', True)
+    pdf.cell(28, 5, "Ventas Cred", 1, 0, 'R', True)
+    pdf.cell(28, 5, "Cobrado", 1, 0, 'R', True)
+    pdf.cell(35, 5, "Saldo Pendiente", 1, 1, 'R', True)
+
+    connection = get_db_connection()
+    if not connection:
+        return None
+
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(sqlconstants.REP_SALDOS_COMB)
+    saldos = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    # Listar datos
+    pdf.set_font("Arial", '', 8)
+    total_general = 0
+    lin = 0
+    for idx, saldo in enumerate(saldos, 1):
+        lin += 1
+        nombre = saldo['nombre'][:35] if saldo['nombre'] else ""
+
+        pdf.cell(12, 5, str(idx), 1, 0, 'C')
+        pdf.cell(15, 5, str(saldo['padron']), 1, 0, 'C')
+        pdf.cell(45, 5, nombre, 1, 0, 'L')
+        pdf.cell(28, 5, f"S/. {float(saldo['ventas']):.2f}", 1, 0, 'R')
+        pdf.cell(28, 5, f"S/. {float(saldo['cobrado']):.2f}", 1, 0, 'R')
+        pdf.cell(35, 5, f"S/. {float(saldo['saldo']):.2f}", 1, 1, 'R')
+
+        total_general += float(saldo['saldo'])
+
+        if lin == 35:
+            pdf.ln(2)
+            lin = 0
+            pdf.set_font("Arial", 'B', 9)
+            pdf.set_fill_color(200, 200, 200)
+            pdf.cell(12, 5, "#", 1, 0, 'C', True)
+            pdf.cell(15, 5, "Padron", 1, 0, 'C', True)
+            pdf.cell(45, 5, "Socio", 1, 0, 'L', True)
+            pdf.cell(28, 5, "Ventas Cred", 1, 0, 'R', True)
+            pdf.cell(28, 5, "Cobrado", 1, 0, 'R', True)
+            pdf.cell(35, 5, "Saldo Pendiente", 1, 1, 'R', True)
+            pdf.set_font("Arial", '', 8)
+
+    # Total general
+    pdf.ln(2)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_fill_color(150, 200, 150)
+    pdf.cell(0, 8, f"#REGS: {len(saldos)} :: TOTAL SALDO PENDIENTE: S/. {total_general:.2f}", 0, 1, True)
+
+    pdf_output = pdf.output(dest='S').encode('latin-1')
+    buffer.write(pdf_output)
+    buffer.seek(0)
+    return buffer
+
+
+def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo):
+    buffer = BytesIO()
+    pdf.set_left_margin(5)
+    pdf.set_right_margin(5)
+
+    # Cabecera
+    pdf.set_font("Arial", 'B', 10)
+    hora = str(datetime.datetime.now())[0:19]
+    usr = session['user_username']
+    pdf.cell(0, 8, f"E.T. Las Flores :: {titulo} :: {usr} :: {hora}", 0, 1, 'R')
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 6, titulo, 0, 1, 'C')
+    pdf.ln()
+
+    # Subtítulo con filtros
+    pdf.set_font("Arial", 'B', 10)
+    subtitulo = subtitulo.replace("$p1$", p1)
+    subtitulo = subtitulo.replace("$p2$", p2)
+    subtitulo = subtitulo.replace("$p3$", p3 if p3 != "0" else "Todos")
+    subtitulo = subtitulo.replace("$p4$", p4)
+    subtitulo_clean = subtitulo.replace("−", "-")
+    pdf.cell(0, 4, f"::{subtitulo_clean}::", 0, 1, 'C')
+    pdf.ln()
+
+    # Encabezados
+    pdf.set_font("Arial", 'B', 9)
+    pdf.set_fill_color(200, 200, 200)
+    pdf.cell(18, 5, "Fecha", 1, 0, 'C', True)
+    pdf.cell(12, 5, "Padron", 1, 0, 'C', True)
+    pdf.cell(50, 5, "Nombre Padron", 1, 0, 'L', True)
+    pdf.cell(30, 5, "Forma Pago", 1, 0, 'C', True)
+    pdf.cell(20, 5, "Monto", 1, 0, 'R', True)
+    pdf.cell(35, 5, "Observacion", 1, 0, 'L', True)
+    pdf.cell(10, 5, "Usr", 1, 1, 'C', True)
+
+    connection = get_db_connection()
+    if not connection:
+        return None
+
+    cursor = connection.cursor(dictionary=True)
+    query = sqlconstants.REP_VENTAS_COMB
+    query = query.replace("$p1$", p1)
+    query = query.replace("$p2$", p2)
+    query = query.replace("$p3$", p3)
+    query = query.replace("$p4$", p4)
+    cursor.execute(query)
+    datos = cursor.fetchall()
+
+    # Datos por día para totales
+    query_dia = sqlconstants.REP_VENTAS_COMB_TOTAL_DIA
+    query_dia = query_dia.replace("$p1$", p1)
+    query_dia = query_dia.replace("$p2$", p2)
+    query_dia = query_dia.replace("$p3$", p3)
+    query_dia = query_dia.replace("$p4$", p4)
+    cursor.execute(query_dia)
+    datos_dia = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    # Listar datos detallados
+    pdf.set_font("Arial", '', 7)
+    total_general = 0
+    lin = 0
+    for dato in datos:
+        lin += 1
+        fecha_str = dato['fecha'].strftime('%d-%m-%Y') if hasattr(dato['fecha'], 'strftime') else str(dato['fecha'])
+        nombre = dato['nombre_padron'][:20] if dato['nombre_padron'] else ""
+        obs = (dato['observacion'][:15] if dato['observacion'] else "")
+        usr_short = dato['webuser'][:6] if dato['webuser'] else ""
+
+        pdf.cell(18, 4, fecha_str, 1, 0, 'C')
+        pdf.cell(12, 4, str(dato['padron']), 1, 0, 'C')
+        pdf.cell(50, 4, nombre, 1, 0, 'L')
+        pdf.cell(30, 4, dato['forma_pago'], 1, 0, 'C')
+        pdf.cell(20, 4, f"S/. {float(dato['monto']):.2f}", 1, 0, 'R')
+        pdf.cell(35, 4, obs, 1, 0, 'L')
+        pdf.cell(10, 4, usr_short, 1, 1, 'C')
+
+        total_general += float(dato['monto'])
+
+        if lin == 40:
+            pdf.ln(2)
+            lin = 0
+            pdf.set_font("Arial", 'B', 9)
+            pdf.set_fill_color(200, 200, 200)
+            pdf.cell(18, 5, "Fecha", 1, 0, 'C', True)
+            pdf.cell(12, 5, "Padron", 1, 0, 'C', True)
+            pdf.cell(50, 5, "Nombre Padron", 1, 0, 'L', True)
+            pdf.cell(30, 5, "Forma Pago", 1, 0, 'C', True)
+            pdf.cell(20, 5, "Monto", 1, 0, 'R', True)
+            pdf.cell(35, 5, "Observacion", 1, 0, 'L', True)
+            pdf.cell(10, 5, "Usr", 1, 1, 'C', True)
+            pdf.set_font("Arial", '', 7)
+
+    # Resumen por día
+    pdf.ln(3)
+    pdf.set_font("Arial", 'B', 9)
+    pdf.cell(0, 5, "RESUMEN DIARIO", 0, 1, 'L')
+    pdf.ln(1)
+
+    pdf.set_font("Arial", 'B', 8)
+    pdf.set_fill_color(220, 220, 200)
+    pdf.cell(25, 5, "Fecha", 1, 0, 'C', True)
+    pdf.cell(60, 5, "Forma Pago", 1, 0, 'L', True)
+    pdf.cell(35, 5, "Total", 1, 0, 'R', True)
+    pdf.cell(20, 5, "Cant", 1, 1, 'C', True)
+
+    pdf.set_font("Arial", '', 8)
+    fecha_anterior = None
+    for dato_dia in datos_dia:
+        fecha_str = dato_dia['fecha'].strftime('%d-%m-%Y') if hasattr(dato_dia['fecha'], 'strftime') else str(dato_dia['fecha'])
+        pdf.cell(25, 5, fecha_str, 1, 0, 'C')
+        pdf.cell(60, 5, dato_dia['forma_pago'], 1, 0, 'L')
+        pdf.cell(35, 5, f"S/. {float(dato_dia['total_monto']):.2f}", 1, 0, 'R')
+        pdf.cell(20, 5, str(dato_dia['cantidad']), 1, 1, 'C')
+
+    # Total general
+    pdf.ln(2)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_fill_color(150, 200, 150)
+    pdf.cell(0, 8, f"#REGS: {len(datos)} :: TOTAL GENERAL: S/. {total_general:.2f}", 0, 1, True)
+
+    pdf_output = pdf.output(dest='S').encode('latin-1')
+    buffer.write(pdf_output)
+    buffer.seek(0)
+    return buffer
+
+
 def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, p6):
     pdf.set_font("Arial", 'B', 10)
     hora1 = str(datetime.datetime.now())[0:19] + "  -  Pag. # " + str(pdf.page_no()+sum4)
@@ -180,6 +390,7 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
     subtitulo = subtitulo.replace("$p4$", p4)
     subtitulo = subtitulo.replace("$p5$", p5)
     subtitulo = subtitulo.replace("$p6$", p6)
+    subtitulo = subtitulo.replace("−", "-")
     pdf.cell(0, 4, f"::{subtitulo}::", 0, 1, 'C')
     pdf.ln()
     pdf.set_font("Arial", 'B', 9)
@@ -216,6 +427,12 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, serie="1
     buffer = BytesIO()
     pdf = FPDF()
     pdf.add_page()
+
+    if cod == "REP_VENTAS_COMB":
+        return generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo)
+    elif cod == "REP_SALDOS_COMB":
+        return generar_pdf_saldos_comb(pdf, titulo, subtitulo)
+
     pdf.set_left_margin(3.5)
     print('Comenzando Reporte.. CABECERA')
     generar_pdf_cabecera(pdf, cod, titulo, subtitulo, 0, p1, p2, p3, p4, p5, p6)
