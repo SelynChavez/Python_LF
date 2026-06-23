@@ -457,11 +457,11 @@ ORDER BY saldo DESC, pad.padron
 REP_FLEX_RECIBOS_PADRON = """
 SELECT CONCAT(
   CASE
-    WHEN v.serie='1' THEN 'RI0'
-    WHEN v.serie='2' THEN 'BE0'
-    ELSE 'RP0'
+    WHEN v.serie='1' THEN 'RI'
+    WHEN v.serie='2' THEN 'BE'
+    ELSE 'RP'
   END,
-  v.serie,'-',LPAD(v.numero,6,'0')) d1,
+  v.serie,'-',LPAD(v.numero,4,'0')) d1,
   dateDMY(v.fecha) d2,
   dateDMY(v.giro) d3,
   IF(v.fecha>v.giro,'ATRAZADO',IF(v.fecha<v.giro,'ADELANTO','NORMAL')) d4,
@@ -478,6 +478,7 @@ WHERE v.serie IN ($serie$)
   AND (CASE WHEN '$tipo_fecha$'='giro' THEN v.giro ELSE v.fecha END) >= date('$p1$')
   AND (CASE WHEN '$tipo_fecha$'='giro' THEN v.giro ELSE v.fecha END) <= date('$p2$')
   AND (v.padron='$p3$' OR '0'='$p3$')
+  AND (v.webuser='$p5$' OR '0'='$p5$')
   AND v.active='S'
 ORDER BY v.fecha, v.padron, v.id
 """

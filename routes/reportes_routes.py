@@ -114,15 +114,28 @@ def rep_recibos_padron():
     p1 = datetime.datetime.now().strftime('%Y-%m-%d')
     p2 = datetime.datetime.now().strftime('%Y-%m-%d')
     p3 = "0"
+    p5 = "0"
     serie = "1"
     tipo_fecha = "fecha"
+    usuarios = []
+
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_USUARIOS_ACTIVOS)
+        usuarios = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
     if request.method == 'POST':
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
         p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
         p3 = request.form.get('p3', "0")
+        p5 = request.form.get('p5', "0")
         serie = request.form.get('serie', "1")
         tipo_fecha = request.form.get('tipo_fecha', 'fecha')
-    return render_template('rep_recibos_padron.html', p1=p1, p2=p2, p3=p3, serie=serie, tipo_fecha=tipo_fecha)
+
+    return render_template('rep_recibos_padron.html', p1=p1, p2=p2, p3=p3, p5=p5, serie=serie, tipo_fecha=tipo_fecha, usuarios=usuarios)
 
 
 @reportes_bp.route('/rep_recibos_aportes')
@@ -416,7 +429,7 @@ def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo):
     return buffer
 
 
-def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, p6):
+def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, p6, serie="1"):
     pdf.set_font("Arial", 'B', 10)
     hora1 = str(datetime.datetime.now())[0:19] + "  -  Pag. # " + str(pdf.page_no()+sum4)
     usr = session['user_username']
@@ -430,8 +443,9 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
     subtitulo = subtitulo.replace("$p2$", p2)
     subtitulo = subtitulo.replace("$p3$", p3)
     subtitulo = subtitulo.replace("$p4$", p4)
-    subtitulo = subtitulo.replace("$p5$", p5)
+    subtitulo = subtitulo.replace("$p5$", p5 if p5 != "0" else "Todos")
     subtitulo = subtitulo.replace("$p6$", p6)
+    subtitulo = subtitulo.replace("$serie$", serie)
     subtitulo = subtitulo.replace("−", "-")
     pdf.cell(0, 4, f"::{subtitulo}::", 0, 1, 'C')
     pdf.ln()
@@ -443,7 +457,7 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
         pdf.cell(18, 5, "TpRec", 1)
         pdf.cell(60, 5, "Padron Socio", 1)
         pdf.cell(20, 5, "Aportado", 1)
-        pdf.cell(15, 5, "Act?", 1)
+        pdf.cell(8, 5, "Act?", 1)
         pdf.cell(18, 5, "Usuario", 1)
         pdf.cell(15, 5, "IdCtrl", 1)
     elif(cod in ('REP2APORTES', 'REP_FLEX_APO')):
@@ -475,9 +489,13 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, serie="1
     elif cod == "REP_SALDOS_COMB":
         return generar_pdf_saldos_comb(pdf, titulo, subtitulo)
 
-    pdf.set_left_margin(3.5)
+    # Configurar margen izquierdo
+    if cod in ('REP_FLEX_PAD', 'REP_FLEX_APO'):
+        pdf.set_left_margin(13.5)
+    else:
+        pdf.set_left_margin(3.5)
     print('Comenzando Reporte.. CABECERA')
-    generar_pdf_cabecera(pdf, cod, titulo, subtitulo, 0, p1, p2, p3, p4, p5, p6)
+    generar_pdf_cabecera(pdf, cod, titulo, subtitulo, 0, p1, p2, p3, p4, p5, p6, serie)
     print('Procesando Reporte..')
     query = sqlconstants.REP1APORTES
     if (cod=="REP2APORTES"):
@@ -490,7 +508,7 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, serie="1
         query = sqlconstants.REP_FLEX_RECIBOS_APORTES
 
     # Convertir serie a formato SQL IN()
-    serie_map = {'1': "'1'", '2': "'2'", '3-5': "'3','4','5'", '6': "'6'"}
+    serie_map = {'1': "'1'", '2': "'2'", '3-5': "'3','4','5'", '5': "'5'", '6': "'6'"}
     serie_sql = serie_map.get(serie, "'1'")
 
     connection = get_db_connection()
@@ -525,7 +543,7 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, serie="1
             d6 = dato["d6"]
             pdf.cell(60, 5, d6[:33], 1)
             pdf.cell(20, 5, dato["d7"], 1, 0, 'R')
-            pdf.cell(15, 5, dato["d8"], 1)
+            pdf.cell(8, 5, dato["d8"], 1)
             pdf.cell(18, 5, dato["d9"], 1)
             pdf.cell(15, 5, dato["d10"], 1)
             to1 += float(dato["d7"])
@@ -551,7 +569,7 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, serie="1
         if lin==47:
             pdf.ln(6)
             lin = 0
-            generar_pdf_cabecera(pdf, cod, titulo, subtitulo, 1, p1, p2, p3, p4, p5, p6)
+            generar_pdf_cabecera(pdf, cod, titulo, subtitulo, 1, p1, p2, p3, p4, p5, p6, serie)
             pdf.set_font("Arial", '', 8)
     print('Finalizando Reporte..')
     pdf.ln(2)
@@ -576,13 +594,14 @@ def generar_reporte():
         p2 = request.form.get('p2', '')
         p3 = request.form.get('p3', '')
         p4 = request.form.get('p4', '')
-        p5 = request.form.get('p5', '')
+        p5 = request.form.get('p5', '0')
         p6 = request.form.get('p6', '')
         serie = request.form.get('serie', '1')
         tipo_fecha = request.form.get('tipo_fecha', 'fecha')
 
         print("p3:"+p3)
         print("p4:"+p4)
+        print("p5:"+p5)
         print("serie:"+serie)
         print("tipo_fecha:"+tipo_fecha)
 

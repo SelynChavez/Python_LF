@@ -13,23 +13,31 @@
                 <form id="formReporte" action="/generar_reporte" method="POST" target="_blank">
                     <input type="hidden" id="cod" name="cod" value="REP_FLEX_PAD">
                     <input type="hidden" id="titulo" name="titulo" value="Reporte de Recibos por Fechas y Padron">
-                    <input type="hidden" id="subtitulo" name="subtitulo" value="Desde $p1$ a $p2$ - Padron: $p3$ - Serie: $p4$">
+                    <input type="hidden" id="subtitulo" name="subtitulo" value="Desde $p1$ a $p2$ - Padron: $p3$ - Serie: $serie$ - Usuario: $p5$">
 
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="serie" class="form-label">Serie</label>
                             <select class="form-select" id="serie" name="serie" required>
                                 <option value="1">1 - Aportes</option>
                                 <option value="2">2 - Cotización</option>
-                                <option value="3-5">3,4,5 - Cobranza de Combustible</option>
-                                <option value="6">6 - Otros</option>
+                                <option value="5">5 - Cobranza Comb</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="tipo_fecha" class="form-label">Tipo de Fecha</label>
                             <select class="form-select" id="tipo_fecha" name="tipo_fecha" required>
                                 <option value="fecha">Fecha de Registro</option>
                                 <option value="giro">Fecha de Giro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="p5" class="form-label">Usuario</label>
+                            <select class="form-select" id="p5" name="p5">
+                                <option value="0">Todos los Usuarios</option>
+                                {% for usuario in usuarios %}
+                                    <option value="{{ usuario['username'] }}">{{ usuario['fullname'] }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>
