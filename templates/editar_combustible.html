@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Editar Combustible{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-fuel-pump"></i> Editar Combustible</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('combustibles.editar_combustible', nombre=combustible.nombre) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="nombre" class="form-label">Nombre del Combustible</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre"
+                                   value="{{ combustible.nombre }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="precio_unitario" class="form-label">Precio Unitario (S/.)</label>
+                            <input type="number" class="form-control" id="precio_unitario" name="precio_unitario"
+                                   step="0.01" value="{{ "%.2f"|format(combustible.precio_unitario) }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ combustible.descripcion }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="stock_actual" class="form-label">Stock Actual (Galones)</label>
+                            <input type="number" class="form-control" id="stock_actual" name="stock_actual"
+                                   step="0.01" value="{{ "%.2f"|format(combustible.stock_actual) }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="stock_minimo" class="form-label">Stock Mínimo (Galones)</label>
+                            <input type="number" class="form-control" id="stock_minimo" name="stock_minimo"
+                                   step="0.01" value="{{ "%.2f"|format(combustible.stock_minimo) }}" required>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Información Actual:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Stock Actual: {{ "%.2f"|format(combustible.stock_actual) }} galones</li>
+                            <li>Stock Mínimo: {{ "%.2f"|format(combustible.stock_minimo) }} galones</li>
+                            <li>Precio Actual: S/. {{ "%.2f"|format(combustible.precio_unitario) }}</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('combustibles.dashboardC') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

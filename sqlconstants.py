@@ -538,3 +538,46 @@ WHERE v.fecha >= date('$p1$')
 GROUP BY v.fecha, v.forma_pago
 ORDER BY v.fecha DESC, v.forma_pago
 """
+
+# Tabla de precios históricos de compra de combustible
+CREATE_PRECIOS_HISTORICOS_COMB = """
+CREATE TABLE IF NOT EXISTS a_precios_historicos_comb (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    producto_nombre VARCHAR(100) NOT NULL,
+    fecha_compra DATE NOT NULL,
+    precio_unitario DECIMAL(10,5) NOT NULL,
+    cantidad DECIMAL(12,2) NOT NULL,
+    moneda VARCHAR(10) DEFAULT 'PEN',
+    factura_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_producto (producto_nombre),
+    INDEX idx_fecha (fecha_compra),
+    FOREIGN KEY (factura_id) REFERENCES a_compras_comb(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+"""
+
+INS_PRECIO_HISTORICO_COMB = """
+INSERT INTO a_precios_historicos_comb (producto_nombre, fecha_compra, precio_unitario, cantidad, moneda, factura_id)
+VALUES (%s, %s, %s, %s, %s, %s)
+"""
+
+GET_PRECIO_PROMEDIO_COMB = """
+SELECT 
+    producto_nombre,
+    SUM(cantidad) as total_cantidad,
+    ROUND(SUM(precio_unitario * cantidad) / SUM(cantidad), 5) as precio_promedio,
+    COUNT(*) as total_compras,
+    MAX(fecha_compra) as ultima_compra
+FROM a_precios_historicos_comb
+WHERE producto_nombre = %s AND moneda = %s
+GROUP BY producto_nombre, moneda
+"""
+
+
+# Agregar columna estado a compras_comb si no existe
+ALTER_COMPRAS_COMB_ADD_ESTADO = """
+ALTER TABLE a_compras_comb 
+ADD COLUMN IF NOT EXISTS estado VARCHAR(20) DEFAULT 'ACTIVO' 
+AFTER tipo
+"""
+

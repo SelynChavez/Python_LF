@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Detalle de Compra{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-receipt"></i> Detalle de Compra #{{ compra.id }}</h4>
+                <div>
+                    <a href="{{ url_for('compras_comb.lista_compras') }}" class="btn btn-secondary btn-sm">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Datos de la Compra -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Información del Documento</h6>
+                                <p class="mb-1"><strong>Número:</strong> {{ compra.numero }}</p>
+                                <p class="mb-1"><strong>Tipo:</strong>
+                                    {% if compra.estado == 'ANULADO' %}
+                                    <span class="badge bg-danger">{{ compra.tipo }} - ANULADO</span>
+                                    {% else %}
+                                    <span class="badge bg-primary">{{ compra.tipo }}</span>
+                                    {% endif %}
+                                </p>
+                                <p class="mb-1"><strong>Fecha Emisión:</strong> {{ compra.fecha }}</p>
+                                <p class="mb-1"><strong>Moneda:</strong> {{ compra.moneda }}</p>
+                                <p class="mb-0"><strong>Condición de Pago:</strong> {{ compra.condicion }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Información del Proveedor</h6>
+                                <p class="mb-1"><strong>Proveedor:</strong> {{ compra.nombre_proveedor }}</p>
+                                <p class="mb-1"><strong>RUC:</strong> {{ compra.ruc }}</p>
+                                <p class="mb-0"><strong>Registrado por:</strong> {{ compra.webuser }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles de Productos -->
+                <h5 class="mb-3">Detalle de Productos</h5>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Descripción</th>
+                                <th style="width:100px">Cantidad</th>
+                                <th style="width:80px">U/M</th>
+                                <th style="width:120px" class="text-end">Precio Unit.</th>
+                                <th style="width:120px" class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in detalles %}
+                            <tr>
+                                <td>{{ d.producto }}</td>
+                                <td>{{ d.descripcion }}</td>
+                                <td class="text-center">{{ "%.2f"|format(d.cantidad) }}</td>
+                                <td class="text-center">{{ d.uom }}</td>
+                                <td class="text-end">{{ "%.5f"|format(d.precio) }}</td>
+                                <td class="text-end"><strong>{{ "%.2f"|format(d.subtotal) }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Totales -->
+                <div class="row">
+                    <div class="col-md-6 offset-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <label class="col-sm-6 col-form-label text-end">Subtotal:</label>
+                                    <div class="col-sm-6">
+                                        <p class="text-end"><strong>{{ "%.2f"|format(compra.subtotal) }}</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <label class="col-sm-6 col-form-label text-end">IGV 18%:</label>
+                                    <div class="col-sm-6">
+                                        <p class="text-end"><strong>{{ "%.2f"|format(compra.igv) }}</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <label class="col-sm-6 col-form-label text-end">Descuentos:</label>
+                                    <div class="col-sm-6">
+                                        <p class="text-end"><strong>{{ "%.2f"|format(compra.descuentos) }}</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label class="col-sm-6 col-form-label text-end">Adicionales:</label>
+                                    <div class="col-sm-6">
+                                        <p class="text-end"><strong>{{ "%.2f"|format(compra.adicionales) }}</strong></p>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <label class="col-sm-6 col-form-label text-end fs-5"><strong>TOTAL:</strong></label>
+                                    <div class="col-sm-6">
+                                        <p class="text-end fs-5"><strong>{{ "%.2f"|format(compra.total) }}</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observaciones -->
+                {% if compra.observaciones %}
+                <div class="mt-4">
+                    <h6>Observaciones</h6>
+                    <p class="bg-light p-2 rounded">{{ compra.observaciones }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Botón Anular -->
+                {% if compra.estado != 'ANULADO' %}
+                <div class="mt-4">
+                    <button type="button" class="btn btn-danger" onclick="anularCompra({{ compra.id }})">
+                        <i class="bi bi-trash"></i> Anular Compra
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function anularCompra(id) {
+    if (confirm('¿Estás seguro de que deseas anular esta compra? El stock se reducirá y el precio promedio se ajustará.')) {
+        fetch(`/compras_comb/anular/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Compra anulada correctamente');
+                location.href = '{{ url_for("compras_comb.lista_compras") }}';
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo anular la compra'));
+            }
+        })
+        .catch(err => {
+            alert('Error: ' + err);
+        });
+    }
+}
+</script>
+{% endblock %}

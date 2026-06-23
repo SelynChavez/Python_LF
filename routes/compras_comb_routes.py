@@ -119,6 +119,10 @@ def nueva_compra():
                     item['cantidad'], item['cantidad'], item['precio'],
                     item['cantidad'], item['precio'], item['cantidad'], item['producto']
                 ))
+                # Guardar precio histórico
+                cursor.execute(sqlconstants.INS_PRECIO_HISTORICO_COMB, (
+                    item['producto'], fecha, item['precio'], item['cantidad'], moneda, factura_id
+                ))
                 if item['maquina_id']:
                     cursor.execute(sqlconstants.UPD_MAQUINA_STOCK_COMPRA, (
                         item['cantidad'], item['maquina_id']
@@ -135,6 +139,117 @@ def nueva_compra():
             conn.close()
 
     return render_template('compras_comb_form.html', combustibles=combustibles, maquinas=maquinas)
+
+
+@compras_comb_bp.route('/compras_comb/ver/<int:id>')
+@login_required
+def ver_compra(id):
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos', 'danger')
+        return redirect(url_for('compras_comb.lista_compras'))
+
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT c.*, p.nombre as nombre_proveedor
+            FROM a_compras_comb c
+            LEFT JOIN a_proveedores p ON c.ruc = p.ruc
+            WHERE c.id = %s
+        """, (id,))
+        compra = cursor.fetchone()
+
+        if not compra:
+            flash('Compra no encontrada', 'warning')
+            return redirect(url_for('compras_comb.lista_compras'))
+
+        cursor.execute("""
+            SELECT * FROM a_compras_comb_detalles WHERE factura_id = %s
+        """, (id,))
+        detalles = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+
+        return render_template('compra_detalle.html', compra=compra, detalles=detalles)
+    except Error as e:
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('compras_comb.lista_compras'))
+    finally:
+        cursor.close()
+        connection.close()
+
+
+@compras_comb_bp.route('/compras_comb/anular/<int:id>', methods=['POST'])
+@login_required
+def anular_compra(id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'success': False, 'message': 'Error de conexión a la base de datos'}), 500
+
+    cursor = connection.cursor(dictionary=True)
+    try:
+        # Obtener datos de la compra
+        cursor.execute("SELECT * FROM a_compras_comb WHERE id = %s", (id,))
+        compra = cursor.fetchone()
+
+        if not compra:
+            return jsonify({'success': False, 'message': 'Compra no encontrada'}), 404
+
+        if compra.get('estado') == 'ANULADO':
+            return jsonify({'success': False, 'message': 'Esta compra ya fue anulada'}), 400
+
+        # Obtener detalles de la compra
+        cursor.execute("SELECT * FROM a_compras_comb_detalles WHERE factura_id = %s", (id,))
+        detalles = cursor.fetchall()
+
+        # Revertir cambios en stock y precio promedio
+        for detalle in detalles:
+            producto = detalle['producto']
+            cantidad = detalle['cantidad']
+            precio = detalle['precio']
+
+            # Obtener stock actual y precio promedio actual
+            cursor.execute("""
+                SELECT stock_actual, COALESCE(precio_promedio, precio_unitario) as precio_promedio
+                FROM a_combustible WHERE nombre = %s
+            """, (producto,))
+            comb = cursor.fetchone()
+
+            if comb:
+                stock_actual = float(comb['stock_actual'])
+                precio_promedio_actual = float(comb['precio_promedio'])
+
+                # Calcular nuevo precio promedio
+                new_stock = max(0, stock_actual - cantidad)
+                if new_stock > 0:
+                    # Revertir el promedio: extraer el costo del producto anulado del total
+                    total_costo = precio_promedio_actual * stock_actual
+                    costo_anulado = precio * cantidad
+                    new_precio_promedio = (total_costo - costo_anulado) / new_stock if new_stock > 0 else precio
+                else:
+                    new_precio_promedio = precio
+
+                # Actualizar stock y precio promedio
+                cursor.execute("""
+                    UPDATE a_combustible
+                    SET stock_actual = %s, precio_promedio = %s
+                    WHERE nombre = %s
+                """, (new_stock, new_precio_promedio, producto))
+
+        # Marcar compra como anulada
+        cursor.execute("""
+            UPDATE a_compras_comb SET estado = 'ANULADO' WHERE id = %s
+        """, (id,))
+
+        connection.commit()
+        return jsonify({'success': True, 'message': 'Compra anulada correctamente'})
+    except Error as err:
+        connection.rollback()
+        return jsonify({'success': False, 'message': str(err)}), 500
+    finally:
+        cursor.close()
+        connection.close()
 
 
 @compras_comb_bp.route('/api/proveedor_ruc/<ruc>')

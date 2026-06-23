@@ -495,3 +495,53 @@ def delete_combustible(id):
     finally:
         cursor.close()
         connection.close()
+
+
+@combustibles_bp.route('/combustibles/editar/<nombre>', methods=['GET', 'POST'])
+@admin_required
+def editar_combustible(nombre):
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos', 'danger')
+        return redirect(url_for('combustibles.dashboardC'))
+
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM a_combustible WHERE nombre = %s", (nombre,))
+        combustible = cursor.fetchone()
+
+        if not combustible:
+            flash('Combustible no encontrado', 'warning')
+            return redirect(url_for('combustibles.dashboardC'))
+
+        if request.method == 'POST':
+            nuevo_nombre = request.form.get('nombre', '')
+            descripcion = request.form.get('descripcion', '')
+            precio = request.form.get('precio_unitario', 0)
+            stock_actual = request.form.get('stock_actual', 0)
+            stock_minimo = request.form.get('stock_minimo', 0)
+
+            try:
+                cursor.execute("""
+                    UPDATE a_combustible
+                    SET nombre = %s, descripcion = %s, precio_unitario = %s,
+                        stock_actual = %s, stock_minimo = %s, modified = NOW()
+                    WHERE nombre = %s
+                """, (nuevo_nombre, descripcion, precio, stock_actual, stock_minimo, nombre))
+
+                connection.commit()
+                flash('Combustible actualizado correctamente', 'success')
+                return redirect(url_for('combustibles.dashboardC'))
+            except Error as e:
+                connection.rollback()
+                flash(f'Error al actualizar: {str(e)}', 'danger')
+
+        cursor.close()
+        connection.close()
+        return render_template('editar_combustible.html', combustible=combustible)
+    except Error as e:
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('combustibles.dashboardC'))
+    finally:
+        cursor.close()
+        connection.close()
