@@ -13,7 +13,7 @@
                 <form id="formReporte" action="/generar_reporte" method="POST" target="_blank">
                     <input type="hidden" id="cod" name="cod" value="REP_VENTAS_COMB">
                     <input type="hidden" id="titulo" name="titulo" value="Reporte de Ventas de Combustible">
-                    <input type="hidden" id="subtitulo" name="subtitulo" value="Desde $p1$ a $p2$ - Padrón: $p3$ - Forma Pago: $p4$">
+                    <input type="hidden" id="subtitulo" name="subtitulo" value="Desde $p1$ a $p2$ - Padrón: $p3$ - Forma Pago: $p4$ - Usuario: $p5$">
 
                     <div class="row">
                         <div class="col-md-6">
@@ -37,6 +37,18 @@
                                 <option value="TODOS">Todas las Formas</option>
                                 <option value="Contado">Contado</option>
                                 <option value="Credito">Crédito</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="p5" class="form-label">Usuario</label>
+                            <select class="form-select" id="p5" name="p5">
+                                <option value="0">Todos los Usuarios</option>
+                                {% for usuario in usuarios %}
+                                <option value="{{ usuario.username }}">{{ usuario.fullname }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>

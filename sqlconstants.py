@@ -520,6 +520,7 @@ WHERE v.fecha >= date('$p1$')
   AND v.fecha <= date('$p2$')
   AND (v.padron = '$p3$' OR '0' = '$p3$')
   AND (v.forma_pago = '$p4$' OR 'TODOS' = '$p4$')
+  AND (v.webuser = '$p5$' OR '$p5$' = '0')
 ORDER BY v.fecha DESC, v.padron, v.id
 
 """
@@ -535,6 +536,7 @@ WHERE v.fecha >= date('$p1$')
   AND v.fecha <= date('$p2$')
   AND (v.padron = '$p3$' OR '0' = '$p3$')
   AND (v.forma_pago = '$p4$' OR 'TODOS' = '$p4$')
+  AND (v.webuser = '$p5$' OR '$p5$' = '0')
 GROUP BY v.fecha, v.forma_pago
 ORDER BY v.fecha DESC, v.forma_pago
 """

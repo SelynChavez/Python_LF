@@ -188,7 +188,18 @@ def rep_ventas_comb():
     p2 = datetime.datetime.now().strftime('%Y-%m-%d')
     p3 = "0"
     p4 = "TODOS"
-    return render_template('rep_ventas_comb.html', p1=p1, p2=p2, p3=p3, p4=p4)
+    p5 = "0"
+
+    connection = get_db_connection()
+    usuarios = []
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_USUARIOS_ACTIVOS)
+        usuarios = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+    return render_template('rep_ventas_comb.html', p1=p1, p2=p2, p3=p3, p4=p4, p5=p5, usuarios=usuarios)
 
 
 @reportes_bp.route('/rep_ventas_comb_maquina')
@@ -324,7 +335,7 @@ def generar_pdf_saldos_comb(pdf, titulo, subtitulo):
     return buffer
 
 
-def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo):
+def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, p5, titulo, subtitulo):
     buffer = BytesIO()
     pdf.set_left_margin(15)
     pdf.set_right_margin(5)
@@ -345,6 +356,7 @@ def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo):
     subtitulo = subtitulo.replace("$p2$", p2)
     subtitulo = subtitulo.replace("$p3$", p3 if p3 != "0" else "Todos")
     subtitulo = subtitulo.replace("$p4$", p4)
+    subtitulo = subtitulo.replace("$p5$", p5 if p5 != "0" else "Todos")
     subtitulo_clean = subtitulo.replace("−", "-")
     pdf.cell(0, 4, f"::{subtitulo_clean}::", 0, 1, 'C')
     pdf.ln(12)
@@ -370,6 +382,7 @@ def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo):
     query = query.replace("$p2$", p2)
     query = query.replace("$p3$", p3)
     query = query.replace("$p4$", p4)
+    query = query.replace("$p5$", p5)
     cursor.execute(query)
     datos = cursor.fetchall()
 
@@ -379,6 +392,7 @@ def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo):
     query_dia = query_dia.replace("$p2$", p2)
     query_dia = query_dia.replace("$p3$", p3)
     query_dia = query_dia.replace("$p4$", p4)
+    query_dia = query_dia.replace("$p5$", p5)
     cursor.execute(query_dia)
     datos_dia = cursor.fetchall()
     cursor.close()
@@ -693,7 +707,7 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, serie="1
     pdf.add_page()
 
     if cod == "REP_VENTAS_COMB":
-        return generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo)
+        return generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, p5, titulo, subtitulo)
     elif cod == "REP_SALDOS_COMB":
         return generar_pdf_saldos_comb(pdf, titulo, subtitulo)
 
