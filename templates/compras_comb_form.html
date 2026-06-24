@@ -183,7 +183,7 @@
             <select class="form-select form-select-sm" name="item_producto[]" onchange="seleccionarProducto(this)">
                 <option value="">-- Seleccionar --</option>
                 {% for c in combustibles %}
-                <option value="{{ c.nombre }}" data-precio="{{ c.precio_unitario }}">{{ c.nombre }}</option>
+                <option value="{{ c.nombre }}" data-precio="{{ c.precio_compra }}">{{ c.nombre }}</option>
                 {% endfor %}
             </select>
         </td>

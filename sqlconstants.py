@@ -385,7 +385,7 @@ INS_COMPRA_COMB_DET = "INSERT INTO a_compras_comb_detalles (factura_id, producto
 UPD_COMB_STOCK_COMPRA = """UPDATE a_combustible SET precio_promedio = CASE WHEN (stock_actual + %s) > 0 THEN ((stock_actual * COALESCE(precio_promedio, precio_unitario)) + (%s * %s)) / (stock_actual + %s) ELSE %s END, stock_actual = stock_actual + %s WHERE nombre = %s"""
 UPD_MAQUINA_STOCK_COMPRA = "UPDATE a_maquinas SET disponible_stock = disponible_stock + %s WHERE id = %s"
 SEL_PROVEEDOR_POR_RUC = "SELECT id, nombre, ruc FROM a_proveedores WHERE ruc = %s AND active = 'S' LIMIT 1"
-LISTA_COMB_PARA_COMPRA = "SELECT id, nombre, precio_unitario FROM a_combustible ORDER BY nombre"
+LISTA_COMB_PARA_COMPRA = "SELECT id, nombre, precio_compra FROM a_combustible ORDER BY nombre"
 LISTA_MAQUINAS_COMPRA = "SELECT m.id, m.numero machine_number, COALESCE(c.nombre,'') fuel_name FROM a_maquinas m LEFT JOIN a_combustible c ON m.tipo_combustible = c.id ORDER BY m.numero"
 
 # ===== Ventas de Combustible por Padron =====
