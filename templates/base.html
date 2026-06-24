@@ -48,6 +48,11 @@
                                     <i class="bi bi-fuel-pump"></i> Rep. Saldos Combustible
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item" href="/rep_ventas_comb_maquina">
+                                    <i class="bi bi-fuel-pump"></i> Rep. Ventas por Máquina
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     {% elif session.user_rol == 'CAJA' %}
@@ -64,6 +69,11 @@
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('aportes.aportes_s5') }}">
                                     <i class="bi bi-receipt"></i> Recibo Cobranza de Combustible
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('reportes.rep_recibos_padron') }}">
+                                    <i class="bi bi-file-earmark-pdf"></i> Rep. de Recibos por Fechas y Padron
                                 </a>
                             </li>
                             <li>

@@ -539,6 +539,27 @@ GROUP BY v.fecha, v.forma_pago
 ORDER BY v.fecha DESC, v.forma_pago
 """
 
+REP_VENTAS_COMB_MAQUINA = """
+SELECT
+  m.numero machine_number,
+  v.nombre,
+  m.ubicacion local,
+  v.fecha,
+  v.lectura_inicial,
+  v.lectura_final,
+  v.galones_vendidos,
+  v.total_precio,
+  v.webuser,
+  m.id machine_id
+FROM a_ventas_comb v
+LEFT JOIN a_maquinas m ON v.maquina = m.id
+WHERE v.fecha >= date('$p1$')
+  AND v.fecha <= date('$p2$')
+  AND (v.maquina = '$p3$' OR '0' = '$p3$')
+  AND (v.webuser = '$p5$' OR '0' = '$p5$')
+ORDER BY m.numero, v.fecha DESC, v.id DESC
+"""
+
 # Tabla de precios históricos de compra de combustible
 CREATE_PRECIOS_HISTORICOS_COMB = """
 CREATE TABLE IF NOT EXISTS a_precios_historicos_comb (

@@ -33,12 +33,17 @@
                         </div>
                         <div class="col-md-4">
                             <label for="p5" class="form-label">Usuario</label>
+                            {% if is_caja %}
+                            <input type="text" class="form-control" id="p5_display" value="{{ current_user_fullname }}" readonly>
+                            <input type="hidden" id="p5" name="p5" value="{{ current_user }}">
+                            {% else %}
                             <select class="form-select" id="p5" name="p5">
                                 <option value="0">Todos los Usuarios</option>
                                 {% for usuario in usuarios %}
                                     <option value="{{ usuario['username'] }}">{{ usuario['fullname'] }}</option>
                                 {% endfor %}
                             </select>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -60,17 +65,21 @@
                         </div>
                     </div>
 
+                    {% if not is_caja %}
                     <div class="alert alert-info" role="alert">
                         <i class="bi bi-info-circle"></i> Deja el campo Padron vacío o con 0 para incluir todos los padrones.
                     </div>
+                    {% endif %}
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <button type="submit" class="btn btn-primary me-md-2">
                             <i class="bi bi-file-earmark-pdf"></i> Generar PDF
                         </button>
+                        {% if not is_caja %}
                         <a href="{{ url_for('reportes.reportes') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
+                        {% endif %}
                     </div>
                 </form>
             </div>

@@ -74,11 +74,11 @@ GRIFERO_ALLOWED_ENDPOINTS = {
     'static',
 }
 
-@app.before_request
-def restringir_grifero():
-    if session.get('user_rol') == 'GRIFERO':
-        if request.endpoint not in GRIFERO_ALLOWED_ENDPOINTS:
-            return redirect(url_for('combustibles.cargar_turnos'))
+#@app.before_request
+#def restringir_grifero():
+#    if session.get('user_rol') == 'GRIFERO':
+#        if request.endpoint not in GRIFERO_ALLOWED_ENDPOINTS:
+#            return redirect(url_for('combustibles.cargar_turnos'))
 
 # ==================== RUTAS DE API ====================
 @app.route('/api/usuarios')

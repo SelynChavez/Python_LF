@@ -58,8 +58,10 @@ def admin_required(f):
 
 @reportes_bp.route('/reportes')
 @login_required
-@admin_required
 def reportes():
+    if session.get('user_rol') not in ('ADMIN', 'CAJA'):
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
     return render_template('reportes.html')
 
 
@@ -111,21 +113,30 @@ def rep2recibos():
 @reportes_bp.route('/rep_recibos_padron')
 @login_required
 def rep_recibos_padron():
+    is_caja = session.get('user_rol') == 'CAJA'
+    current_user = session.get('user_username', '')
+    current_user_fullname = session.get('user_fullname', current_user)
+
+    if session.get('user_rol') not in ('ADMIN', 'CAJA'):
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
     p1 = datetime.datetime.now().strftime('%Y-%m-%d')
     p2 = datetime.datetime.now().strftime('%Y-%m-%d')
     p3 = "0"
-    p5 = "0"
+    p5 = current_user if is_caja else "0"
     serie = "1"
     tipo_fecha = "fecha"
     usuarios = []
 
-    connection = get_db_connection()
-    if connection:
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute(sqlconstants.LISTA_USUARIOS_ACTIVOS)
-        usuarios = cursor.fetchall()
-        cursor.close()
-        connection.close()
+    if not is_caja:
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(sqlconstants.LISTA_USUARIOS_ACTIVOS)
+            usuarios = cursor.fetchall()
+            cursor.close()
+            connection.close()
 
     if request.method == 'POST':
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
@@ -135,7 +146,10 @@ def rep_recibos_padron():
         serie = request.form.get('serie', "1")
         tipo_fecha = request.form.get('tipo_fecha', 'fecha')
 
-    return render_template('rep_recibos_padron.html', p1=p1, p2=p2, p3=p3, p5=p5, serie=serie, tipo_fecha=tipo_fecha, usuarios=usuarios)
+        if is_caja:
+            p5 = current_user
+
+    return render_template('rep_recibos_padron.html', p1=p1, p2=p2, p3=p3, p5=p5, serie=serie, tipo_fecha=tipo_fecha, usuarios=usuarios, is_caja=is_caja, current_user=current_user, current_user_fullname=current_user_fullname)
 
 
 @reportes_bp.route('/rep_recibos_aportes')
@@ -175,6 +189,38 @@ def rep_ventas_comb():
     p3 = "0"
     p4 = "TODOS"
     return render_template('rep_ventas_comb.html', p1=p1, p2=p2, p3=p3, p4=p4)
+
+
+@reportes_bp.route('/rep_ventas_comb_maquina')
+@login_required
+def rep_ventas_comb_maquina():
+    if session.get('user_rol') not in ('ADMIN', 'GRIFERO', 'CAJA'):
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
+    is_caja_or_grifero = session.get('user_rol') in ('CAJA', 'GRIFERO')
+    current_user = session.get('user_username', '')
+
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "0"
+    p5 = current_user if is_caja_or_grifero else "0"
+
+    # Cargar máquinas y usuarios
+    maquinas = []
+    usuarios = []
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT id, numero FROM a_maquinas ORDER BY numero")
+        maquinas = cursor.fetchall()
+        if not is_caja_or_grifero:
+            cursor.execute(sqlconstants.LISTA_USUARIOS_ACTIVOS)
+            usuarios = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+    return render_template('rep_ventas_comb_maquina.html', p1=p1, p2=p2, p3=p3, p5=p5, maquinas=maquinas, usuarios=usuarios, is_caja_or_grifero=is_caja_or_grifero, current_user=current_user)
 
 
 def generar_pdf_saldos_comb(pdf, titulo, subtitulo):
@@ -429,6 +475,168 @@ def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, titulo, subtitulo):
     return buffer
 
 
+def generar_pdf_ventas_comb_maquina(p1, p2, p3, p5, titulo, subtitulo):
+    buffer = BytesIO()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_left_margin(10)
+    pdf.set_right_margin(5)
+
+    # Cabecera
+    pdf.set_font("Arial", 'B', 10)
+    hora = str(datetime.datetime.now())[0:19]
+    usr = session['user_username']
+    pag = pdf.page_no()
+    pdf.cell(0, 8, f"E.T. Las Flores :: {usr} :: {hora} :: Pag. {pag}", 0, 1, 'L')
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 6, titulo, 0, 1, 'C')
+    pdf.ln()
+
+    # Subtítulo con filtros
+    pdf.set_font("Arial", 'B', 10)
+    subtitulo = subtitulo.replace("$p1$", p1)
+    subtitulo = subtitulo.replace("$p2$", p2)
+    subtitulo = subtitulo.replace("$p3$", p3 if p3 != "0" else "Todas")
+    subtitulo = subtitulo.replace("$p5$", p5 if p5 != "0" else "Todos")
+    subtitulo_clean = subtitulo.replace("−", "-")
+    pdf.cell(0, 4, f"::{subtitulo_clean}::", 0, 1, 'C')
+    pdf.ln(8)
+
+    # Encabezados
+    pdf.set_font("Arial", 'B', 8)
+    pdf.set_fill_color(200, 200, 200)
+    pdf.cell(12, 5, "Maquina", 1, 0, 'C', True)
+    pdf.cell(18, 5, "Turno", 1, 0, 'L', True)
+    pdf.cell(20, 5, "Local", 1, 0, 'L', True)
+    pdf.cell(16, 5, "Fecha", 1, 0, 'C', True)
+    pdf.cell(12, 5, "L.Inicial", 1, 0, 'R', True)
+    pdf.cell(12, 5, "L.Final", 1, 0, 'R', True)
+    pdf.cell(13, 5, "Galones", 1, 0, 'R', True)
+    pdf.cell(17, 5, "Total S/.", 1, 0, 'R', True)
+    pdf.cell(15, 5, "Usuario", 1, 1, 'C', True)
+
+    connection = get_db_connection()
+    if not connection:
+        return buffer
+
+    cursor = connection.cursor(dictionary=True)
+    query = sqlconstants.REP_VENTAS_COMB_MAQUINA
+    query = query.replace("$p1$", p1)
+    query = query.replace("$p2$", p2)
+    query = query.replace("$p3$", p3)
+    query = query.replace("$p5$", p5)
+    cursor.execute(query)
+    datos = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    # Listar datos
+    pdf.set_font("Arial", '', 7)
+    total_general_galones = 0
+    total_general_soles = 0
+    maquina_actual = None
+    subtotal_maquina_galones = 0
+    subtotal_maquina_soles = 0
+    lin = 0
+
+    for dato in datos:
+        # Cambio de máquina
+        if maquina_actual != dato['machine_number']:
+            if maquina_actual is not None:
+                # Subtotal de máquina anterior
+                pdf.set_font("Arial", 'B', 8)
+                pdf.cell(90, 5, f"Subtotal Maquina {maquina_actual}:", 0, 0, 'R')
+                pdf.cell(13, 5, f"{subtotal_maquina_galones:.2f}", 0, 0, 'R')
+                pdf.cell(17, 5, f"S/. {subtotal_maquina_soles:.2f}", 0, 1, 'R')
+                pdf.ln(2)
+                lin += 2
+
+            maquina_actual = dato['machine_number']
+            subtotal_maquina_galones = 0
+            subtotal_maquina_soles = 0
+
+        lin += 1
+        fecha_str = dato['fecha'].strftime('%d-%m-%Y') if hasattr(dato['fecha'], 'strftime') else str(dato['fecha'])
+        nombre = dato['nombre'] if dato['nombre'] else ""
+        local = dato['local'] if dato['local'] else ""
+        usr_short = dato['webuser'][:12] if dato['webuser'] else ""
+
+        galones = float(dato['galones_vendidos']) if dato['galones_vendidos'] else 0
+        total_soles = float(dato['total_precio']) if dato['total_precio'] else 0
+
+        subtotal_maquina_galones += galones
+        subtotal_maquina_soles += total_soles
+        total_general_galones += galones
+        total_general_soles += total_soles
+
+        pdf.set_font("Arial", '', 7)
+        pdf.cell(12, 4, str(maquina_actual), 1, 0, 'C')
+        pdf.cell(18, 4, nombre[:18], 1, 0, 'L')
+        pdf.cell(20, 4, local[:12], 1, 0, 'L')
+        pdf.cell(16, 4, fecha_str, 1, 0, 'C')
+        pdf.cell(12, 4, f"{dato['lectura_inicial']:.0f}", 1, 0, 'R')
+        pdf.cell(12, 4, f"{dato['lectura_final']:.0f}", 1, 0, 'R')
+        pdf.cell(13, 4, f"{galones:.2f}", 1, 0, 'R')
+        pdf.cell(17, 4, f"S/. {total_soles:.2f}", 1, 0, 'R')
+        pdf.cell(15, 4, usr_short, 1, 1, 'C')
+
+        if lin == 40:
+            pdf.add_page()
+            pdf.set_left_margin(10)
+            pdf.set_right_margin(5)
+
+            # Cabecera para nueva página
+            pdf.set_font("Arial", 'B', 10)
+            hora = str(datetime.datetime.now())[0:19]
+            usr = session['user_username']
+            pag = pdf.page_no()
+            pdf.cell(0, 8, f"E.T. Las Flores :: {usr} :: {hora} :: Pag. {pag}", 0, 1, 'L')
+            pdf.set_font("Arial", 'B', 16)
+            pdf.cell(0, 6, titulo, 0, 1, 'C')
+            pdf.ln()
+
+            pdf.set_font("Arial", 'B', 10)
+            subtitulo_new = subtitulo.replace("$p1$", p1)
+            subtitulo_new = subtitulo_new.replace("$p2$", p2)
+            subtitulo_new = subtitulo_new.replace("$p3$", p3 if p3 != "0" else "Todas")
+            subtitulo_new = subtitulo_new.replace("$p5$", p5 if p5 != "0" else "Todos")
+            subtitulo_new = subtitulo_new.replace("−", "-")
+            pdf.cell(0, 4, f"::{subtitulo_new}::", 0, 1, 'C')
+            pdf.ln(8)
+
+            lin = 0
+            pdf.set_font("Arial", 'B', 8)
+            pdf.set_fill_color(200, 200, 200)
+            pdf.cell(12, 5, "Maquina", 1, 0, 'C', True)
+            pdf.cell(18, 5, "Turno", 1, 0, 'L', True)
+            pdf.cell(20, 5, "Local", 1, 0, 'L', True)
+            pdf.cell(16, 5, "Fecha", 1, 0, 'C', True)
+            pdf.cell(12, 5, "L.Inicial", 1, 0, 'R', True)
+            pdf.cell(12, 5, "L.Final", 1, 0, 'R', True)
+            pdf.cell(13, 5, "Galones", 1, 0, 'R', True)
+            pdf.cell(17, 5, "Total S/.", 1, 0, 'R', True)
+            pdf.cell(15, 5, "Usuario", 1, 1, 'C', True)
+            pdf.set_font("Arial", '', 7)
+
+    # Subtotal de última máquina
+    if maquina_actual is not None:
+        pdf.set_font("Arial", 'B', 8)
+        pdf.cell(90, 5, f"Subtotal Maquina {maquina_actual}:", 0, 0, 'R')
+        pdf.cell(13, 5, f"{subtotal_maquina_galones:.2f}", 0, 0, 'R')
+        pdf.cell(17, 5, f"S/. {subtotal_maquina_soles:.2f}", 0, 1, 'R')
+        pdf.ln(2)
+
+    # Total general
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_fill_color(150, 200, 150)
+    pdf.cell(0, 8, f"#REGS: {len(datos)} :: TOTAL GALONES: {total_general_galones:.2f} :: TOTAL S/.: S/. {total_general_soles:.2f}", 0, 1, True)
+
+    pdf_output = pdf.output(dest='S').encode('latin-1')
+    buffer.write(pdf_output)
+    buffer.seek(0)
+    return buffer
+
+
 def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, p6, serie="1"):
     pdf.set_font("Arial", 'B', 10)
     hora1 = str(datetime.datetime.now())[0:19] + "  -  Pag. # " + str(pdf.page_no()+sum4)
@@ -584,6 +792,23 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, serie="1
     return buffer
 
 
+@reportes_bp.route('/generar_reporte_vtas_maquina', methods=['POST'])
+def generar_reporte_vtas_maquina():
+    try:
+        titulo = request.form.get('titulo', 'Reporte')
+        subtitulo = request.form.get('subtitulo', '')
+        p1 = request.form.get('p1', '')
+        p2 = request.form.get('p2', '')
+        p3 = request.form.get('p3', '0')
+        p5 = request.form.get('p5', '0')
+
+        pdf_buffer = generar_pdf_ventas_comb_maquina(p1, p2, p3, p5, titulo, subtitulo)
+        pdf_base64 = base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
+        return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod='REP_VENTAS_COMB_MAQUINA')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @reportes_bp.route('/generar_reporte', methods=['POST'])
 def generar_reporte():
     try:
@@ -598,6 +823,13 @@ def generar_reporte():
         p6 = request.form.get('p6', '')
         serie = request.form.get('serie', '1')
         tipo_fecha = request.form.get('tipo_fecha', 'fecha')
+
+        # Validación para rol CAJA: asegurar que p5 es el usuario autenticado (solo en reportes que usan p5)
+        if session.get('user_rol') == 'CAJA' and cod == 'REP_FLEX_PAD':
+            current_user = session.get('user_username', '')
+            if p5 != current_user:
+                flash('Acceso denegado. No puede generar reportes de otros usuarios.', 'danger')
+                return redirect(url_for('reportes.rep_recibos_padron'))
 
         print("p3:"+p3)
         print("p4:"+p4)
