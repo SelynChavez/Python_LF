@@ -10,13 +10,21 @@
             <div class="card-body">
                 <form method="POST" action="{{ url_for('combustibles.editar_combustible', nombre=combustible.nombre) }}">
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label for="nombre" class="form-label">Nombre del Combustible</label>
                             <input type="text" class="form-control" id="nombre" name="nombre"
                                    value="{{ combustible.nombre }}" required>
                         </div>
+                    </div>
+
+                    <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="precio_unitario" class="form-label">Precio Unitario (S/.)</label>
+                            <label for="precio_compra" class="form-label">Precio de Compra (S/.)</label>
+                            <input type="number" class="form-control" id="precio_compra" name="precio_compra"
+                                   step="0.01" value="{{ "%.2f"|format(combustible.precio_compra or 0) }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="precio_unitario" class="form-label">Precio de Venta (S/.)</label>
                             <input type="number" class="form-control" id="precio_unitario" name="precio_unitario"
                                    step="0.01" value="{{ "%.2f"|format(combustible.precio_unitario) }}" required>
                         </div>
@@ -48,7 +56,9 @@
                         <ul class="mb-0 mt-2">
                             <li>Stock Actual: {{ "%.2f"|format(combustible.stock_actual) }} galones</li>
                             <li>Stock Mínimo: {{ "%.2f"|format(combustible.stock_minimo) }} galones</li>
-                            <li>Precio Actual: S/. {{ "%.2f"|format(combustible.precio_unitario) }}</li>
+                            <li>Precio de Compra: S/. {{ "%.2f"|format(combustible.precio_compra or 0) }}</li>
+                            <li>Precio Promedio: S/. {{ "%.2f"|format(combustible.precio_promedio or 0) }}</li>
+                            <li>Precio de Venta: S/. {{ "%.2f"|format(combustible.precio_unitario) }}</li>
                         </ul>
                     </div>
 

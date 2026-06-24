@@ -385,15 +385,18 @@ def reg_combustible():
         cursor.close()
         connection.close()
         total1 = 0
-        total2 = 0
-        total3 = 0
+        total_precio_compra = 0
+        total_precio_venta = 0
+        total_stock_bajo = 0
         for x0 in combustibles:
             total1 += 1
-            total2 += float(x0['precio_unitario'])
+            total_precio_compra += float(x0['precio_compra'] or 0)
+            total_precio_venta += float(x0['precio_unitario'])
             if (float(x0['stock_actual']) < float(x0['stock_minimo'])):
-                total3 += 1
-        total2f = total2 / total1
-        return render_template('reg_combustible.html', combustibles=combustibles, total1=total1, total2=total2f, total3=total3)
+                total_stock_bajo += 1
+        precio_compra_promedio = total_precio_compra / total1 if total1 > 0 else 0
+        precio_venta_promedio = total_precio_venta / total1 if total1 > 0 else 0
+        return render_template('reg_combustible.html', combustibles=combustibles, total1=total1, total2=precio_compra_promedio, total3=precio_venta_promedio, total4=total_stock_bajo)
     except Error as e:
         return jsonify({'error': str(e)}), 500
     finally:
@@ -431,6 +434,7 @@ def create_combustible():
         cursor.execute(sqlconstants.INS_1_COMBUSTIBLE, (
             data['nombre'],
             data['descripcion'],
+            data.get('precio_compra'),
             data['precio_unitario'],
             data.get('stock_actual'),
             data.get('stock_minimo')
@@ -460,6 +464,7 @@ def update_combustible(id):
         cursor.execute(sqlconstants.UPD_1_COMBUSTIBLE, (
             data['nombre'],
             data['descripcion'],
+            data.get('precio_compra'),
             data['precio_unitario'],
             data.get('stock_actual'),
             data.get('stock_minimo'),
@@ -517,6 +522,7 @@ def editar_combustible(nombre):
         if request.method == 'POST':
             nuevo_nombre = request.form.get('nombre', '')
             descripcion = request.form.get('descripcion', '')
+            precio_compra = request.form.get('precio_compra', 0)
             precio = request.form.get('precio_unitario', 0)
             stock_actual = request.form.get('stock_actual', 0)
             stock_minimo = request.form.get('stock_minimo', 0)
@@ -524,10 +530,10 @@ def editar_combustible(nombre):
             try:
                 cursor.execute("""
                     UPDATE a_combustible
-                    SET nombre = %s, descripcion = %s, precio_unitario = %s,
+                    SET nombre = %s, descripcion = %s, precio_compra = %s, precio_unitario = %s,
                         stock_actual = %s, stock_minimo = %s, modified = NOW()
                     WHERE nombre = %s
-                """, (nuevo_nombre, descripcion, precio, stock_actual, stock_minimo, nombre))
+                """, (nuevo_nombre, descripcion, precio_compra, precio, stock_actual, stock_minimo, nombre))
 
                 connection.commit()
                 flash('Combustible actualizado correctamente', 'success')

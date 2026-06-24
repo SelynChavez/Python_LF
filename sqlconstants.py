@@ -243,12 +243,12 @@ LEFT JOIN a_ventas_comb s ON m.id = s.maquina AND DATE(s.fecha) = CURDATE()
 GROUP BY m.id
 '''
 DEL_1_COMBUSTIBLE = 'DELETE FROM a_combustible WHERE id = %s'
-UPD_1_COMBUSTIBLE = "UPDATE a_combustible SET nombre = %s, descripcion = %s, precio_unitario = %s, stock_actual = %s, stock_minimo = %s, modified = NOW() WHERE id = %s"
-INS_1_COMBUSTIBLE = 'INSERT INTO a_combustible (nombre, descripcion, precio_unitario, stock_actual, stock_minimo, modified) VALUES (%s, %s, %s, %s, %s, NOW())'
+UPD_1_COMBUSTIBLE = "UPDATE a_combustible SET nombre = %s, descripcion = %s, precio_compra = %s, precio_unitario = %s, stock_actual = %s, stock_minimo = %s, modified = NOW() WHERE id = %s"
+INS_1_COMBUSTIBLE = 'INSERT INTO a_combustible (nombre, descripcion, precio_compra, precio_unitario, stock_actual, stock_minimo, modified) VALUES (%s, %s, %s, %s, %s, %s, NOW())'
 SELECT_1_COMBUSTIBLE = 'SELECT * FROM a_combustible WHERE id = %s'
-LISTA_COMBUSTIBLE_TODOS = "SELECT id,nombre name, descripcion description,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock FROM a_combustible"
+LISTA_COMBUSTIBLE_TODOS = "SELECT id,nombre name, descripcion description,precio_compra purchase_price,precio_promedio average_price,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock FROM a_combustible"
 INS_MAQUINAS = "INSERT INTO a_maquinas (numero,tipo_combustible,lectura_inicial,capacidad_stock,disponible_stock,ubicacion) VALUES (%s, %s, %s, %s, %s, %s)"
-SEL_COMBUSTIBLE = "SELECT id,nombre name,descripcion,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock,modified FROM a_combustible ORDER BY nombre"
+SEL_COMBUSTIBLE = "SELECT id,nombre name,descripcion,precio_compra purchase_price,precio_promedio average_price,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock,modified FROM a_combustible ORDER BY nombre"
 SEL_1_MAQUINA = """
 SELECT m.id, m.numero machine_number, tipo_combustible fuel_type_id, m.lectura_inicial initial_reading, m.lectura_actual current_reading, 
         capacidad_stock stock_capacity, disponible_stock stock_available, estado status, m.modified created_at, f.nombre as fuel_name, f.precio_unitario unit_price
@@ -597,8 +597,8 @@ GROUP BY producto_nombre, moneda
 
 # Agregar columna estado a compras_comb si no existe
 ALTER_COMPRAS_COMB_ADD_ESTADO = """
-ALTER TABLE a_compras_comb 
-ADD COLUMN IF NOT EXISTS estado VARCHAR(20) DEFAULT 'ACTIVO' 
+ALTER TABLE a_compras_comb
+ADD COLUMN IF NOT EXISTS estado VARCHAR(20) DEFAULT 'ACTIVO'
 AFTER tipo
 """
 
