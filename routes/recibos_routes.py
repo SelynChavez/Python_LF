@@ -99,7 +99,7 @@ def crear_recibo_s6():
         connection = get_db_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
-            consulta = sqlconstants.DETALLE_SERIE_2
+            consulta = sqlconstants.DETALLE_SERIE_3X
             consulta = consulta.replace("$serie$", ser)
             consulta = consulta.replace("$pad$", pad)
             cursor.execute(consulta)
@@ -195,7 +195,7 @@ def crear_recibo_s5():
         connection = get_db_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
-            consulta = sqlconstants.DETALLE_SERIE_2
+            consulta = sqlconstants.DETALLE_SERIE_3X
             consulta = consulta.replace("$serie$", ser)
             consulta = consulta.replace("$pad$", pad)
             cursor.execute(consulta)
@@ -295,7 +295,7 @@ def crear_recibo_s4():
         connection = get_db_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
-            consulta = sqlconstants.DETALLE_SERIE_2
+            consulta = sqlconstants.DETALLE_SERIE_3X
             consulta = consulta.replace("$serie$", ser)
             consulta = consulta.replace("$pad$", pad)
             cursor.execute(consulta)
@@ -391,7 +391,7 @@ def crear_recibo_s3():
         connection = get_db_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
-            consulta = sqlconstants.DETALLE_SERIE_2
+            consulta = sqlconstants.DETALLE_SERIE_3X
             consulta = consulta.replace("$serie$", ser)
             consulta = consulta.replace("$pad$", pad)
             cursor.execute(consulta)
@@ -487,7 +487,7 @@ def crear_recibo_s2():
         connection = get_db_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
-            consulta = sqlconstants.DETALLE_SERIE_2
+            consulta = sqlconstants.DETALLE_SERIE_2x
             consulta = consulta.replace("$serie$", ser)
             consulta = consulta.replace("$pad$", pad)
             cursor.execute(consulta)
@@ -537,11 +537,17 @@ def crear_recibo_s2():
                             query = query.replace("$apo$", i0['codigo'])
                             query = query.replace("$rec$", lid)
                             query = query.replace("$mnt$", mnt)
-                            query = query.replace("$pre$", '0')
-                            query = query.replace("$tip$", '')
+                            query = query.replace("$pre$", str(i0['prestamo']))
+                            query = query.replace("$tip$", str(i0['tipodeuda']))
                             query = query.replace("$usr$", session['user_username'])
                             cursor = connection.cursor()
                             cursor.execute(query)
+                            deu = i0['prestamo']
+                            if deu > 0:
+                                quer0 = "UPDATE a_prestamos SET saldo_pendiente=saldo_pendiente-$mnt$ WHERE id='$pre$'"
+                                quer0 = quer0.replace("$pre$", str(deu))
+                                quer0 = quer0.replace("$mnt$", str(mnt))
+                                cursor.execute(quer0)
                     query9 = sqlconstants.UPDATE_RECIBO_X
                     query9 = query9.replace("$recibo$",lid)
                     cursor.execute(query9)
@@ -641,17 +647,19 @@ def crear_recibo():
                             query = query.replace("$apo$", i0['codigo'])
                             query = query.replace("$rec$", lid)
                             query = query.replace("$mnt$", mnt)
-                            query = query.replace("$pre$", str(i0['prestamo']))
-                            query = query.replace("$tip$", str(i0['tipodeuda']))
+#                            query = query.replace("$pre$", str(i0['prestamo']))
+#                            query = query.replace("$tip$", str(i0['tipodeuda']))
+                            query = query.replace("$pre$", '0')
+                            query = query.replace("$tip$", '')
                             query = query.replace("$usr$", session['user_username'])
                             cursor = connection.cursor()
                             cursor.execute(query)
-                            deu = i0['prestamo']
-                            if deu > 0:
-                                quer0 = "UPDATE a_prestamos SET saldo_pendiente=saldo_pendiente-$mnt$ WHERE id='$pre$'"
-                                quer0 = quer0.replace("$pre$", str(deu))
-                                quer0 = quer0.replace("$mnt$", str(mnt))
-                                cursor.execute(quer0)
+#                            deu = i0['prestamo']
+#                            if deu > 0:
+#                                quer0 = "UPDATE a_prestamos SET saldo_pendiente=saldo_pendiente-$mnt$ WHERE id='$pre$'"
+#                                quer0 = quer0.replace("$pre$", str(deu))
+#                                quer0 = quer0.replace("$mnt$", str(mnt))
+#                                cursor.execute(quer0)
                     query9 = sqlconstants.UPDATE_RECIBO_X
                     query9 = query9.replace("$recibo$",lid)
                     cursor = connection.cursor()

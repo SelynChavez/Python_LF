@@ -137,13 +137,29 @@ FROM a_prestamos p,a_tipos t
 WHERE p.padron='$pad$' and p.estado='aprobado' and t.tipo='APORTE' and t.codigo='PRESTAMO') as table1
 WHERE ( (codigo in ('APAHORRO','APAPORTE') and monto > 0) OR codigo not in ('APAHORRO','APAPORTE') )
 """
-DETALLE_SERIE_2 = """ SELECT t.codigo,t.descripcion,
+DETALLE_SERIE_2x = """SELECT * FROM (SELECT t.codigo,t.descripcion,
+  ROUND(COALESCE((CASE
+      WHEN t.codigo='AP.SEGURO.X' THEN p.monto4
+      ELSE t.monto1
+  END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0, 2 serie
+FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
+WHERE t.tipo='APORTE' and t.atributo1='2' and (t.codigo not in ('PRESTAMO'))
+UNION ALL
+SELECT t.codigo,t.descripcion,p.cuota monto,p.id prestamo,p.tipo_prestamo tipodeuda,t.id idx, 2 serie 
+FROM a_prestamos p,a_tipos t 
+WHERE p.padron='$pad$' and p.estado='aprobado' and t.tipo='APORTE' and t.codigo='PRESTAMO') as table1
+WHERE ( (codigo in ('AP.SEGURO.X') and monto > 0) OR codigo not in ('AP.SEGURO.X') )
+"""
+
+DETALLE_SERIE_3X = """ SELECT t.codigo,t.descripcion,
   ROUND(COALESCE((CASE
       WHEN t.codigo='AP.SEGURO.X' THEN p.monto4
       ELSE t.monto1
   END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
 WHERE t.atributo1='$serie$'   """
+
+
 DASHB_COMB_TOTAL_HOY = """
 SELECT COALESCE(SUM(galones_vendidos), 0) as total_gallons,
        COALESCE(SUM(total_precio), 0) as total_revenue,
