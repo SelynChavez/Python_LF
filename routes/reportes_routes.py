@@ -801,26 +801,26 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
             pdf.set_font("Arial", '', 8)
 
         fecha_actual = dato['fecha_orden']
-        linea += 1
+        linea = int(linea) + 1
 
         # Abrevar tipo de doc
-        tipo_doc_abrevia = dato['tipo_doc'][:3] if dato['tipo_doc'] else ''
+        tipo_doc_abrevia = str(dato['tipo_doc'])[:3] if dato['tipo_doc'] else ''
 
         # Mostrar fila
         pdf.cell(10, 5, str(dato['id']), 1)
-        pdf.cell(15, 5, dato['fecha'], 1)
-        pdf.cell(30, 5, dato['salida_desc'][:18], 1)
-        pdf.cell(30, 5, dato['beneficiario'][:18], 1)
+        pdf.cell(15, 5, str(dato['fecha']), 1)
+        pdf.cell(30, 5, str(dato['salida_desc'])[:25], 1)
+        pdf.cell(30, 5, str(dato['beneficiario'])[:18], 1)
         pdf.cell(12, 5, tipo_doc_abrevia, 1)
         pdf.cell(16, 5, str(dato['numero_doc']), 1)
         pdf.cell(16, 5, f"{float(dato['monto']):.2f}", 1, 'R')
-        pdf.cell(15, 5, dato['tipo_salida'], 1, 1)
+        pdf.cell(15, 5, str(dato['tipo_salida']), 1, 1)
 
         total_dia += float(dato['monto'])
         total_general += float(dato['monto'])
 
         # Nueva página si es necesario
-        if linea >= 40:
+        if int(linea) >= 40:
             pdf.ln(2)
             pdf.set_font("Arial", 'B', 8)
             pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
@@ -838,7 +838,7 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
             pdf.cell(16, 5, 'Monto', 1, 'R')
             pdf.cell(15, 5, 'Tipo Salida', 1, 1)
             total_dia = 0
-            linea = 0
+            linea = int(0)
             pdf.set_font("Arial", '', 8)
 
     # Último total del día
