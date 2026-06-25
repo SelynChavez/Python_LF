@@ -195,14 +195,19 @@ def rep_salidas_entre_fechas():
 
     connection = get_db_connection()
     tipos_salida = []
-    tipos_beneficiario = []
+    tipos_beneficiario = [
+        {'codigo': 'PADRON', 'descripcion': '1. Padrón'},
+        {'codigo': 'SOCIO', 'descripcion': '2. Socio'},
+        {'codigo': 'EMPLEADO', 'descripcion': '3. Empleado'},
+        {'codigo': 'PROVEEDOR', 'descripcion': '4. Proveedor'},
+        {'codigo': 'TERCERO_DEF', 'descripcion': '5. Tercero Definido'},
+        {'codigo': 'TERCERO_ABIERTO', 'descripcion': '6. Tercero Abierto'}
+    ]
 
     if connection:
         cursor = connection.cursor(dictionary=True)
         cursor.execute(sqlconstants.LISTA_TIPO_SALIDAS)
         tipos_salida = cursor.fetchall()
-        cursor.execute("SELECT DISTINCT codigo, descripcion FROM a_tipos WHERE tipo = 'BENEFICIARIO' ORDER BY descripcion")
-        tipos_beneficiario = cursor.fetchall()
         cursor.close()
         connection.close()
 
