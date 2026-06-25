@@ -790,59 +790,70 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
     fecha_actual = None
     num_linea = 0
 
-    for dato in datos:
-        # Si cambia la fecha, mostrar subtotal del día anterior
-        if fecha_actual and dato['fecha_orden'] != fecha_actual:
-            pdf.set_font("Arial", 'B', 8)
-            pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
-            pdf.cell(16, 5, f'{total_dia:.2f}', 1, 'R')
-            pdf.cell(15, 5, '', 1, 1)
-            total_dia = 0
-            pdf.set_font("Arial", '', 8)
+    for idx, dato in enumerate(datos):
+        print(f"[DEBUG] Procesando registro {idx}: {dato}")
 
-        fecha_actual = dato['fecha_orden']
-        num_linea += 1
+        try:
+            # Si cambia la fecha, mostrar subtotal del día anterior
+            if fecha_actual and dato['fecha_orden'] != fecha_actual:
+                pdf.set_font("Arial", 'B', 8)
+                pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
+                pdf.cell(16, 5, f'{total_dia:.2f}', 1, 'R')
+                pdf.cell(15, 5, '', 1, 1)
+                total_dia = 0
+                pdf.set_font("Arial", '', 8)
 
-        # Abrevar tipo de doc
-        tipo_doc_abrevia = str(dato['tipo_doc'])[:3] if dato['tipo_doc'] else ''
+            fecha_actual = dato['fecha_orden']
+            num_linea += 1
+            print(f"[DEBUG] num_linea = {num_linea} (tipo: {type(num_linea)})")
 
-        # Asegurar que tipo_salida es siempre string
-        tipo_salida_str = str(dato['tipo_salida']).strip() if dato['tipo_salida'] else ''
+            # Abrevar tipo de doc
+            tipo_doc_abrevia = str(dato['tipo_doc'])[:3] if dato['tipo_doc'] else ''
 
-        # Mostrar fila
-        pdf.cell(10, 5, str(dato['id']), 1)
-        pdf.cell(15, 5, str(dato['fecha']), 1)
-        pdf.cell(30, 5, str(dato['salida_desc'])[:25], 1)
-        pdf.cell(30, 5, str(dato['beneficiario'])[:18], 1)
-        pdf.cell(12, 5, tipo_doc_abrevia, 1)
-        pdf.cell(16, 5, str(dato['numero_doc']), 1)
-        pdf.cell(16, 5, f"{float(dato['monto']):.2f}", 1, 'R')
-        pdf.cell(15, 5, tipo_salida_str, 1, 1)
+            # Asegurar que tipo_salida es siempre string
+            tipo_salida_str = str(dato['tipo_salida']).strip() if dato['tipo_salida'] else ''
+            print(f"[DEBUG] tipo_salida_str = '{tipo_salida_str}' (tipo: {type(tipo_salida_str)})")
 
-        total_dia += float(dato['monto'])
-        total_general += float(dato['monto'])
+            # Mostrar fila
+            pdf.cell(10, 5, str(dato['id']), 1)
+            pdf.cell(15, 5, str(dato['fecha']), 1)
+            pdf.cell(30, 5, str(dato['salida_desc'])[:25], 1)
+            pdf.cell(30, 5, str(dato['beneficiario'])[:18], 1)
+            pdf.cell(12, 5, tipo_doc_abrevia, 1)
+            pdf.cell(16, 5, str(dato['numero_doc']), 1)
+            pdf.cell(16, 5, f"{float(dato['monto']):.2f}", 1, 'R')
+            pdf.cell(15, 5, tipo_salida_str, 1, 1)
 
-        # Nueva página si es necesario
-        if num_linea >= 40:
-            pdf.ln(2)
-            pdf.set_font("Arial", 'B', 8)
-            pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
-            pdf.cell(16, 5, f'{total_dia:.2f}', 1, 'R')
-            pdf.cell(15, 5, '', 1, 1)
-            pdf.add_page()
-            pdf.set_left_margin(8)
-            pdf.set_font("Arial", 'B', 8)
-            pdf.cell(10, 5, 'Id', 1)
-            pdf.cell(15, 5, 'Fecha', 1)
-            pdf.cell(30, 5, 'Salida', 1)
-            pdf.cell(30, 5, 'Beneficiario', 1)
-            pdf.cell(12, 5, 'T.Doc', 1)
-            pdf.cell(16, 5, 'Nro Doc', 1)
-            pdf.cell(16, 5, 'Monto', 1, 'R')
-            pdf.cell(15, 5, 'Tipo Salida', 1, 1)
-            total_dia = 0
-            num_linea = 0
-            pdf.set_font("Arial", '', 8)
+            total_dia += float(dato['monto'])
+            total_general += float(dato['monto'])
+
+            # Nueva página si es necesario
+            print(f"[DEBUG] Antes de comparación: num_linea={num_linea}, type={type(num_linea)}")
+            if num_linea >= 40:
+                pdf.ln(2)
+                pdf.set_font("Arial", 'B', 8)
+                pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
+                pdf.cell(16, 5, f'{total_dia:.2f}', 1, 'R')
+                pdf.cell(15, 5, '', 1, 1)
+                pdf.add_page()
+                pdf.set_left_margin(8)
+                pdf.set_font("Arial", 'B', 8)
+                pdf.cell(10, 5, 'Id', 1)
+                pdf.cell(15, 5, 'Fecha', 1)
+                pdf.cell(30, 5, 'Salida', 1)
+                pdf.cell(30, 5, 'Beneficiario', 1)
+                pdf.cell(12, 5, 'T.Doc', 1)
+                pdf.cell(16, 5, 'Nro Doc', 1)
+                pdf.cell(16, 5, 'Monto', 1, 'R')
+                pdf.cell(15, 5, 'Tipo Salida', 1, 1)
+                total_dia = 0
+                num_linea = 0
+                pdf.set_font("Arial", '', 8)
+        except Exception as e:
+            print(f"[ERROR] En registro {idx}: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
+            raise
 
     # Último total del día
     if fecha_actual:
