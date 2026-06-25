@@ -758,10 +758,10 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
     pdf.cell(15, 5, 'Fecha', 1)
     pdf.cell(55, 5, 'Salida', 1)
     pdf.cell(35, 5, 'Beneficiario', 1)
-    pdf.cell(20, 5, 'Tp.Sal', 1)
     pdf.cell(12, 5, 'T.Doc', 1)
     pdf.cell(16, 5, 'Nro Doc', 1)
-    pdf.cell(20, 5, 'Monto', 1, 1, 'R')
+    pdf.cell(20, 5, 'Monto', 1, 'R')
+    pdf.cell(20, 5, 'Tp.Sal', 1, 1)
 
     # Obtener datos
     connection = get_db_connection()
@@ -810,10 +810,10 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
         pdf.cell(15, 5, str(dato['fecha']), 1)
         pdf.cell(55, 5, str(dato['salida_desc'])[:40], 1)
         pdf.cell(35, 5, str(dato['beneficiario'])[:25], 1)
-        pdf.cell(20, 5, str(dato['tipo_salida']).strip(), 1)
         pdf.cell(12, 5, tipo_doc_abrevia, 1)
         pdf.cell(16, 5, str(dato['numero_doc']), 1)
-        pdf.cell(20, 5, f"{float(dato['monto']):.2f}", 1, 1, 'R')
+        pdf.cell(20, 5, f"{float(dato['monto']):.2f}", 1, 'R')
+        pdf.cell(20, 5, str(dato['tipo_salida']).strip(), 1, 1)
 
         total_dia += float(dato['monto'])
         total_general += float(dato['monto'])
@@ -831,10 +831,10 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
             pdf.cell(15, 5, 'Fecha', 1)
             pdf.cell(55, 5, 'Salida', 1)
             pdf.cell(35, 5, 'Beneficiario', 1)
-            pdf.cell(20, 5, 'Tp.Sal', 1)
             pdf.cell(12, 5, 'T.Doc', 1)
             pdf.cell(16, 5, 'Nro Doc', 1)
-            pdf.cell(20, 5, 'Monto', 1, 1, 'R')
+            pdf.cell(20, 5, 'Monto', 1, 'R')
+            pdf.cell(20, 5, 'Tp.Sal', 1, 1)
             total_dia = 0
             num_linea = 0
             pdf.set_font("Arial", '', 8)
