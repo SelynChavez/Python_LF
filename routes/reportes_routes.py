@@ -740,122 +740,128 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
 
 
 def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo):
-    buffer = BytesIO()
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_left_margin(8)
+    try:
+        buffer = BytesIO()
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_left_margin(8)
 
-    # Encabezado
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, titulo, 0, 1, 'C')
-    pdf.set_font("Arial", '', 9)
-    pdf.cell(0, 5, subtitulo, 0, 1, 'C')
-    pdf.ln(3)
+        # Encabezado
+        pdf.set_font("Arial", 'B', 14)
+        pdf.cell(0, 10, titulo, 0, 1, 'C')
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(0, 5, subtitulo, 0, 1, 'C')
+        pdf.ln(3)
 
-    # Encabezados de columna
-    pdf.set_font("Arial", 'B', 8)
-    pdf.cell(10, 5, 'Id', 1)
-    pdf.cell(15, 5, 'Fecha', 1)
-    pdf.cell(30, 5, 'Salida', 1)
-    pdf.cell(30, 5, 'Beneficiario', 1)
-    pdf.cell(12, 5, 'T.Doc', 1)
-    pdf.cell(16, 5, 'Nro Doc', 1)
-    pdf.cell(16, 5, 'Monto', 1, 'R')
-    pdf.cell(15, 5, 'Tipo Salida', 1, 1)
-
-    # Obtener datos
-    connection = get_db_connection()
-    if not connection:
-        return None
-
-    cursor = connection.cursor(dictionary=True)
-    query = sqlconstants.REP_SALIDAS_ENTRE_FECHAS
-    query = query.replace("$p1$", p1)
-    query = query.replace("$p2$", p2)
-    query = query.replace("$p3$", p3)
-    query = query.replace("$p4$", p4)
-    query = query.replace("$p5$", p5 if p5 else '')
-    query = query.replace("$p6$", p6 if p6 else '')
-    query = query.replace("$p7$", p7 if p7 else '')
-
-    cursor.execute(query)
-    datos = cursor.fetchall()
-    cursor.close()
-    connection.close()
-
-    # Procesar datos
-    pdf.set_font("Arial", '', 8)
-    total_general = 0
-    total_dia = 0
-    fecha_actual = None
-    linea = 0
-
-    for dato in datos:
-        # Si cambia la fecha, mostrar subtotal del día anterior
-        if fecha_actual and dato['fecha_orden'] != fecha_actual:
-            pdf.set_font("Arial", 'B', 8)
-            pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
-            pdf.cell(16, 5, f'{total_dia:.2f}', 1, 'R')
-            pdf.cell(15, 5, '', 1, 1)
-            total_dia = 0
-            pdf.set_font("Arial", '', 8)
-
-        fecha_actual = dato['fecha_orden']
-        linea = int(linea) + 1
-
-        # Abrevar tipo de doc
-        tipo_doc_abrevia = str(dato['tipo_doc'])[:3] if dato['tipo_doc'] else ''
-
-        # Mostrar fila
-        pdf.cell(10, 5, str(dato['id']), 1)
-        pdf.cell(15, 5, str(dato['fecha']), 1)
-        pdf.cell(30, 5, str(dato['salida_desc'])[:25], 1)
-        pdf.cell(30, 5, str(dato['beneficiario'])[:18], 1)
-        pdf.cell(12, 5, tipo_doc_abrevia, 1)
-        pdf.cell(16, 5, str(dato['numero_doc']), 1)
-        pdf.cell(16, 5, f"{float(dato['monto']):.2f}", 1, 'R')
-        pdf.cell(15, 5, str(dato['tipo_salida']), 1, 1)
-
-        total_dia += float(dato['monto'])
-        total_general += float(dato['monto'])
-
-        # Nueva página si es necesario
-        if int(linea) >= 40:
-            pdf.ln(2)
-            pdf.set_font("Arial", 'B', 8)
-            pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
-            pdf.cell(16, 5, f'{total_dia:.2f}', 1, 'R')
-            pdf.cell(15, 5, '', 1, 1)
-            pdf.add_page()
-            pdf.set_left_margin(8)
-            pdf.set_font("Arial", 'B', 8)
-            pdf.cell(10, 5, 'Id', 1)
-            pdf.cell(15, 5, 'Fecha', 1)
-            pdf.cell(30, 5, 'Salida', 1)
-            pdf.cell(30, 5, 'Beneficiario', 1)
-            pdf.cell(12, 5, 'T.Doc', 1)
-            pdf.cell(16, 5, 'Nro Doc', 1)
-            pdf.cell(16, 5, 'Monto', 1, 'R')
-            pdf.cell(15, 5, 'Tipo Salida', 1, 1)
-            total_dia = 0
-            linea = int(0)
-            pdf.set_font("Arial", '', 8)
-
-    # Último total del día
-    if fecha_actual:
+        # Encabezados de columna
         pdf.set_font("Arial", 'B', 8)
-        pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
-        pdf.cell(16, 5, f'{total_dia:.2f}', 1, 'R')
-        pdf.cell(15, 5, '', 1, 1)
+        pdf.cell(10, 5, 'Id', 1)
+        pdf.cell(15, 5, 'Fecha', 1)
+        pdf.cell(30, 5, 'Salida', 1)
+        pdf.cell(30, 5, 'Beneficiario', 1)
+        pdf.cell(12, 5, 'T.Doc', 1)
+        pdf.cell(16, 5, 'Nro Doc', 1)
+        pdf.cell(16, 5, 'Monto', 1, 'R')
+        pdf.cell(15, 5, 'Tipo Salida', 1, 1)
 
-    # Total final
-    pdf.set_font("Arial", 'B', 10)
-    pdf.cell(129, 7, 'TOTAL FINAL:', 1)
-    pdf.cell(16, 7, f'{total_general:.2f}', 1, 'R')
-    pdf.cell(15, 7, '', 1, 1)
+        # Obtener datos
+        connection = get_db_connection()
+        if not connection:
+            return None
 
-    pdf_output = pdf.output(dest='S').encode('latin-1')
-    return BytesIO(pdf_output)
+        cursor = connection.cursor(dictionary=True)
+        query = sqlconstants.REP_SALIDAS_ENTRE_FECHAS
+        query = query.replace("$p1$", str(p1))
+        query = query.replace("$p2$", str(p2))
+        query = query.replace("$p3$", str(p3))
+        query = query.replace("$p4$", str(p4))
+        query = query.replace("$p5$", str(p5) if p5 else '')
+        query = query.replace("$p6$", str(p6) if p6 else '')
+        query = query.replace("$p7$", str(p7) if p7 else '')
+
+        cursor.execute(query)
+        datos = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+        # Procesar datos
+        pdf.set_font("Arial", '', 8)
+        total_general = 0.0
+        total_dia = 0.0
+        fecha_actual = None
+        linea = 0
+
+        for dato in datos:
+            # Si cambia la fecha, mostrar subtotal del día anterior
+            if fecha_actual and dato['fecha_orden'] != fecha_actual:
+                pdf.set_font("Arial", 'B', 8)
+                pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
+                pdf.cell(16, 5, f'{total_dia:.2f}', 1, 'R')
+                pdf.cell(15, 5, '', 1, 1)
+                total_dia = 0.0
+                pdf.set_font("Arial", '', 8)
+
+            fecha_actual = dato['fecha_orden']
+            linea = int(linea) + 1
+
+            # Abrevar tipo de doc
+            tipo_doc_abrevia = str(dato['tipo_doc'])[:3] if dato['tipo_doc'] else ''
+
+            # Mostrar fila
+            pdf.cell(10, 5, str(dato['id']), 1)
+            pdf.cell(15, 5, str(dato['fecha']), 1)
+            pdf.cell(30, 5, str(dato['salida_desc'])[:25], 1)
+            pdf.cell(30, 5, str(dato['beneficiario'])[:18], 1)
+            pdf.cell(12, 5, tipo_doc_abrevia, 1)
+            pdf.cell(16, 5, str(dato['numero_doc']), 1)
+            pdf.cell(16, 5, f"{float(dato['monto']):.2f}", 1, 'R')
+            pdf.cell(15, 5, str(dato['tipo_salida']), 1, 1)
+
+            total_dia += float(dato['monto'])
+            total_general += float(dato['monto'])
+
+            # Nueva página si es necesario
+            if int(linea) >= 40:
+                pdf.ln(2)
+                pdf.set_font("Arial", 'B', 8)
+                pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
+                pdf.cell(16, 5, f'{total_dia:.2f}', 1, 'R')
+                pdf.cell(15, 5, '', 1, 1)
+                pdf.add_page()
+                pdf.set_left_margin(8)
+                pdf.set_font("Arial", 'B', 8)
+                pdf.cell(10, 5, 'Id', 1)
+                pdf.cell(15, 5, 'Fecha', 1)
+                pdf.cell(30, 5, 'Salida', 1)
+                pdf.cell(30, 5, 'Beneficiario', 1)
+                pdf.cell(12, 5, 'T.Doc', 1)
+                pdf.cell(16, 5, 'Nro Doc', 1)
+                pdf.cell(16, 5, 'Monto', 1, 'R')
+                pdf.cell(15, 5, 'Tipo Salida', 1, 1)
+                total_dia = 0.0
+                linea = 0
+                pdf.set_font("Arial", '', 8)
+
+        # Último total del día
+        if fecha_actual:
+            pdf.set_font("Arial", 'B', 8)
+            pdf.cell(129, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(16, 5, f'{total_dia:.2f}', 1, 'R')
+            pdf.cell(15, 5, '', 1, 1)
+
+        # Total final
+        pdf.set_font("Arial", 'B', 10)
+        pdf.cell(129, 7, 'TOTAL FINAL:', 1)
+        pdf.cell(16, 7, f'{total_general:.2f}', 1, 'R')
+        pdf.cell(15, 7, '', 1, 1)
+
+        pdf_output = pdf.output(dest='S').encode('latin-1')
+        return BytesIO(pdf_output)
+    except Exception as e:
+        import traceback
+        print(f"Error en generar_pdf_salidas_entre_fechas: {str(e)}")
+        print(traceback.format_exc())
+        raise
 
 
 def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", serie="1", tipo_fecha="fecha"):
