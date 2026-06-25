@@ -154,14 +154,15 @@
                     <input type="hidden" id="prestamoId" name="prestamo_id">
 
                     <div class="mb-3">
-                        <label for="editCuota" class="form-label">Cuota (S/.)</label>
+                        <label for="editCuota" class="form-label">Cuota (S/.) <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" id="editCuota" name="cuota"
                                step="0.01" min="0" required>
                     </div>
 
                     <div class="mb-3">
-                        <label for="editEstado" class="form-label">Estado</label>
-                        <select class="form-select" id="editEstado" name="estado" required>
+                        <label for="editEstado" class="form-label">Estado <small class="text-muted">(Opcional)</small></label>
+                        <select class="form-select" id="editEstado" name="estado">
+                            <option value="">-- No cambiar --</option>
                             <option value="pendiente">Pendiente</option>
                             <option value="evaluacion">Evaluación</option>
                             <option value="pagado">Pagado</option>
@@ -201,8 +202,8 @@ function guardarEdicionPrestamo() {
     const cuota = document.getElementById('editCuota').value;
     const estado = document.getElementById('editEstado').value;
 
-    if (!cuota || !estado) {
-        alert('Por favor, complete todos los campos.');
+    if (!cuota || parseFloat(cuota) <= 0) {
+        alert('La cuota es obligatoria y debe ser mayor a 0.');
         return;
     }
 
