@@ -96,7 +96,7 @@
                             <tr>
                                 <td><strong>{{ shift.shift_name }}</strong></td>
                                 <td>{{ "%.2f"|format(shift.gallons) }} gal</td>
-                                <td>${{ "%.2f"|format(shift.revenue) }}</td>
+                                <td>S/.{{ "%.2f"|format(shift.revenue) }}</td>
                                 <td>
                                     <div class="progress" style="height: 10px;">
                                         <div class="progress-bar" 
@@ -146,7 +146,7 @@
                                 <td><strong>{{ machine.machine_number }}</strong></td>
                                 <td>{{ machine.fuel_type }}</td>
                                 <td>{{ "%.2f"|format(machine.gallons) }}</td>
-                                <td>${{ "%.2f"|format(machine.revenue) }}</td>
+                                <td>S/.{{ "%.2f"|format(machine.revenue) }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

@@ -73,6 +73,77 @@
     </div>
 </div>
 
+<!-- Filtros: Mis Ventas Realizadas -->
+<div class="row">
+    <div class="col-12 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros de Búsqueda</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('combustibles.ventas_combustible') }}" class="d-print-none">
+                    <div class="row g-2 mb-3">
+                        {% if is_admin %}
+                        <div class="col-md-3">
+                            <label for="filtro_usuario" class="form-label">Usuario</label>
+                            <select class="form-select" id="filtro_usuario" name="filtro_usuario">
+                                <option value="">Todos los Usuarios</option>
+                                {% for u in usuarios %}
+                                <option value="{{ u.username }}" {% if filtro_usuario == u.username %}selected{% endif %}>{{ u.fullname }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% else %}
+                        <div class="col-md-3">
+                            <label for="filtro_usuario" class="form-label">Usuario</label>
+                            <input type="text" class="form-control" id="filtro_usuario" value="{{ usr }}" readonly>
+                            <input type="hidden" name="filtro_usuario" value="{{ usr }}">
+                        </div>
+                        {% endif %}
+
+                        <div class="col-md-3">
+                            <label for="filtro_fecha_desde" class="form-label">Desde Fecha</label>
+                            <input type="date" class="form-control" id="filtro_fecha_desde" name="filtro_fecha_desde" value="{{ filtro_fecha_desde or '' }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filtro_padron" class="form-label">Padrón</label>
+                            <input type="number" class="form-control" id="filtro_padron" name="filtro_padron" min="0" value="{{ filtro_padron or '' }}" placeholder="0 = Todos">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filtro_forma_pago" class="form-label">Forma de Pago</label>
+                            <select class="form-select" id="filtro_forma_pago" name="filtro_forma_pago">
+                                <option value="">Todos</option>
+                                <option value="Contado" {% if filtro_forma_pago == 'Contado' %}selected{% endif %}>Contado</option>
+                                <option value="Credito" {% if filtro_forma_pago == 'Credito' %}selected{% endif %}>Crédito</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filtro_limite" class="form-label">Mostrar</label>
+                            <select class="form-select" id="filtro_limite" name="filtro_limite">
+                                <option value="10" {% if filtro_limite == '10' %}selected{% endif %}>10</option>
+                                <option value="20" {% if filtro_limite == '20' %}selected{% endif %}>20</option>
+                                <option value="50" {% if filtro_limite == '50' %}selected{% endif %}>50</option>
+                                <option value="100" {% if filtro_limite == '100' %}selected{% endif %}>100</option>
+                                <option value="1000" {% if filtro_limite == '1000' %}selected{% endif %}>1000</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-12 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Filtrar
+                            </button>
+                            <a href="{{ url_for('combustibles.ventas_combustible') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-clockwise"></i> Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Listado: Mis Ventas Realizadas -->
 <div class="row">
     <div class="col-12">
@@ -83,13 +154,7 @@
                     {% if is_admin %}Ventas Realizadas{% else %}Mis Ventas Realizadas{% endif %}
                     <span class="badge bg-secondary ms-2" id="contadorVentas">{{ ventas|length }}</span>
                 </h5>
-                <div class="d-flex align-items-center gap-2 d-print-none">
-                    <label for="filtroPago" class="form-label mb-0 small text-nowrap">Totalizar por:</label>
-                    <select class="form-select form-select-sm" id="filtroPago" style="width:auto;" onchange="aplicarFiltroPago()">
-                        <option value="Ambos" selected>Ambos</option>
-                        <option value="Contado">Contado</option>
-                        <option value="Credito">Credito</option>
-                    </select>
+                <div class="d-print-none">
                     <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" onclick="imprimirVentas()">
                         <i class="bi bi-printer"></i> Imprimir
                     </button>
@@ -97,11 +162,12 @@
             </div>
             <div class="card-body">
                 <!-- Encabezado solo para impresión -->
-                <div class="d-none d-print-block mb-3">
-                    <h4 class="mb-1">Ventas de Combustible</h4>
-                    <p class="mb-0">
-                        {% if not is_admin %}<strong>Usuario:</strong> {{ usr }} &nbsp;&nbsp;{% endif %}
-                        <strong>Totalizar por:</strong> <span id="filtroImpreso">Ambos</span>
+                <div class="d-none d-print-block mb-4">
+                    <h3 class="mb-2" style="font-weight: bold;">Ventas de Combustible Realizadas</h3>
+                    <p class="mb-0 text-muted">
+                        {% if filtro_fecha_desde %}Desde: {{ filtro_fecha_desde }} {% endif %}
+                        {% if filtro_padron and filtro_padron != '0' %}| Padrón: {{ filtro_padron }} {% endif %}
+                        {% if filtro_forma_pago %}| Forma de Pago: {{ filtro_forma_pago }} {% endif %}
                     </p>
                 </div>
 
@@ -123,7 +189,7 @@
                         </thead>
                         <tbody>
                             {% for v in ventas %}
-                            <tr data-forma="{{ v.forma_pago }}" data-monto="{{ v.monto }}">
+                            <tr>
                                 <td>{{ loop.index }}</td>
                                 <td>{{ v.fecha.strftime('%d-%m-%Y') if v.fecha else '' }}</td>
                                 <td>{{ v.padron }}</td>
@@ -137,7 +203,12 @@
                                 <td style="font-size:0.85rem;">{{ v.observacion or '' }}</td>
                                 {% if is_admin %}<td>{{ v.webuser }}</td>{% endif %}
                                 <td class="d-print-none text-center">
-                                    {% if is_admin or v.webuser == usr %}
+                                    {% if is_admin %}
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            title="Editar registro"
+                                            onclick="editarVenta({{ v.id }}, '{{ v.fecha.strftime('%Y-%m-%d') if v.fecha else '' }}', {{ v.padron }}, {{ v.monto }}, '{{ v.forma_pago }}', '{{ v.webuser }}')">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
                                     <button type="button" class="btn btn-sm btn-outline-danger"
                                             title="Eliminar registro"
                                             onclick="eliminarVenta(this, '{{ v.id }}')">
@@ -151,7 +222,7 @@
                         <tfoot>
                             <tr>
                                 <th colspan="4" class="text-end">TOTAL</th>
-                                <th class="text-end" id="totalImpreso">S/ {{ "%.2f"|format(total) }}</th>
+                                <th class="text-end">S/ {{ "%.2f"|format(total) }}</th>
                                 <th colspan="{{ 4 if is_admin else 3 }}"></th>
                             </tr>
                         </tfoot>
@@ -165,32 +236,120 @@
     </div>
 </div>
 
+<!-- Modal para Editar Venta -->
+<div class="modal fade" id="editarVentaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square"></i> Editar Venta de Combustible
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarVenta">
+                    <input type="hidden" id="ventaId" name="venta_id">
+
+                    <div class="mb-3">
+                        <label for="editFecha" class="form-label">Fecha *</label>
+                        <input type="date" class="form-control" id="editFecha" name="fecha" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editPadron" class="form-label">Padrón *</label>
+                        <input type="number" class="form-control" id="editPadron" name="padron" min="1" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editMonto" class="form-label">Monto (S/) *</label>
+                        <input type="number" class="form-control" id="editMonto" name="monto" min="0" step="0.01" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editFormaPago" class="form-label">Forma de Pago *</label>
+                        <select class="form-select" id="editFormaPago" name="forma_pago" required>
+                            <option value="Contado">Contado</option>
+                            <option value="Credito">Crédito</option>
+                        </select>
+                    </div>
+
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Usuario:</strong> <span id="editUsuario"></span> (No se puede modificar)
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="guardarEdicion()">
+                    <i class="bi bi-check-circle"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-// Filtra las filas por forma de pago y recalcula el total mostrado.
-function aplicarFiltroPago() {
-    var filtro = document.getElementById('filtroPago').value; // Ambos | Contado | Credito
-    var filas = document.querySelectorAll('#tablaVentas tbody tr');
-    var total = 0, visibles = 0;
-    filas.forEach(function (fila) {
-        var forma = fila.getAttribute('data-forma');
-        var mostrar = (filtro === 'Ambos' || forma === filtro);
-        fila.style.display = mostrar ? '' : 'none';
-        if (mostrar) {
-            total += parseFloat(fila.getAttribute('data-monto')) || 0;
-            visibles += 1;
-        }
-    });
-    var elTotal = document.getElementById('totalImpreso');
-    if (elTotal) { elTotal.textContent = 'S/ ' + total.toFixed(2); }
-    var elCont = document.getElementById('contadorVentas');
-    if (elCont) { elCont.textContent = visibles; }
-    var elFiltro = document.getElementById('filtroImpreso');
-    if (elFiltro) { elFiltro.textContent = filtro; }
+let editarVentaModalObj = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    editarVentaModalObj = new bootstrap.Modal(document.getElementById('editarVentaModal'));
+});
+
+function editarVenta(id, fecha, padron, monto, forma_pago, usuario) {
+    document.getElementById('ventaId').value = id;
+    document.getElementById('editFecha').value = fecha;
+    document.getElementById('editPadron').value = padron;
+    document.getElementById('editMonto').value = monto;
+    document.getElementById('editFormaPago').value = forma_pago;
+    document.getElementById('editUsuario').textContent = usuario;
+    editarVentaModalObj.show();
 }
 
-// Aplica el filtro seleccionado y luego manda a imprimir.
+function guardarEdicion() {
+    const ventaId = document.getElementById('ventaId').value;
+    const fecha = document.getElementById('editFecha').value;
+    const padron = document.getElementById('editPadron').value;
+    const monto = document.getElementById('editMonto').value;
+    const forma_pago = document.getElementById('editFormaPago').value;
+
+    if (!fecha || !padron || !monto) {
+        alert('Complete todos los campos requeridos.');
+        return;
+    }
+
+    fetch("{{ url_for('combustibles.actualizar_venta_combustible', venta_id=0) }}".replace('/0', '/' + ventaId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            fecha: fecha,
+            padron: parseInt(padron),
+            monto: parseFloat(monto),
+            forma_pago: forma_pago
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Venta actualizada correctamente.');
+            editarVentaModalObj.hide();
+            location.reload();
+        } else {
+            alert('Error al actualizar: ' + (data.error || 'desconocido'));
+        }
+    })
+    .catch(e => {
+        console.error(e);
+        alert('Error al actualizar el registro.');
+    });
+}
+
+// Manda a imprimir
 function imprimirVentas() {
-    aplicarFiltroPago();
     window.print();
 }
 

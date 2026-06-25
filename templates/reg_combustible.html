@@ -89,6 +89,11 @@
                                 {% endif %}
                             </td>
                             <td>
+                                <button class="action-btn {% if c0.active == 'S' %}btn-success{% else %}btn-secondary{% endif %}"
+                                        onclick="event.stopPropagation(); cambiarEstado({{c0.id}}, '{{c0.active}}')"
+                                        title="{% if c0.active == 'S' %}Desactivar{% else %}Activar{% endif %}">
+                                    <i class="bi {% if c0.active == 'S' %}bi-check-circle{% else %}bi-circle{% endif %}"></i>
+                                </button>
                                 <button class="action-btn btn-edit" onclick="event.stopPropagation(); editarCombustible( {{c0.id}} )" title="Editar">
                                     <i class="bi bi-pencil-square"></i>
                                 </button>
@@ -503,6 +508,35 @@
                     mostrarNotificacion('Error al eliminar el registro', 'error');
                 });
             }
+        }
+
+        // Función para cambiar el estado del combustible
+        function cambiarEstado(id, estadoActual) {
+            const nuevoEstado = estadoActual === 'S' ? 'N' : 'S';
+            const accion = nuevoEstado === 'S' ? 'activar' : 'desactivar';
+
+            fetch(`/api/combustibles/${id}/estado`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    active: nuevoEstado
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    mostrarNotificacion('Error: ' + data.error, 'error');
+                } else {
+                    mostrarNotificacion('Combustible ' + accion + ' exitosamente', 'success');
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al cambiar el estado', 'error');
+            });
         }
 
         // Función para actualizar preview del precio

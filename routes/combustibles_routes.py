@@ -215,11 +215,43 @@ def ventas_combustible():
                 connection.rollback()
                 flash(f'Error al registrar la venta: {e}', 'danger')
 
+    # Filtros para GET
+    filtro_usuario = request.args.get('filtro_usuario', '')
+    filtro_fecha_desde = request.args.get('filtro_fecha_desde', '')
+    filtro_padron = request.args.get('filtro_padron', '')
+    filtro_forma_pago = request.args.get('filtro_forma_pago', '')
+
+    # Límite de filas (por defecto 10)
+    try:
+        filtro_limite = int(request.args.get('filtro_limite', 10))
+        if filtro_limite not in (10, 20, 50, 100, 1000):
+            filtro_limite = 10
+    except (ValueError, TypeError):
+        filtro_limite = 10
+
     if is_admin:
         cursor.execute(sqlconstants.LISTA_VENTAS_COMB_PADRON_ALL)
     else:
         cursor.execute(sqlconstants.LISTA_VENTAS_COMB_PADRON_USR, (usr,))
-    ventas = cursor.fetchall()
+    ventas_all = cursor.fetchall()
+
+    # Ordenar por fecha descendente y aplicar filtros localmente
+    ventas_all = sorted(ventas_all, key=lambda x: x['fecha'] or '', reverse=True)
+
+    ventas = []
+    for v in ventas_all:
+        if filtro_usuario and v['webuser'] != filtro_usuario:
+            continue
+        if filtro_fecha_desde and str(v['fecha']) < filtro_fecha_desde:
+            continue
+        if filtro_padron and int(filtro_padron) > 0 and v['padron'] != int(filtro_padron):
+            continue
+        if filtro_forma_pago and v['forma_pago'] != filtro_forma_pago:
+            continue
+        ventas.append(v)
+
+    # Aplicar límite de filas
+    ventas = ventas[:filtro_limite]
 
     usuarios = []
     if is_admin:
@@ -231,19 +263,27 @@ def ventas_combustible():
     connection.close()
     return render_template('ventas_combustible.html', ventas=ventas, usuarios=usuarios,
                            is_admin=is_admin, usr=usr, total=total,
-                           today=datetime.datetime.now().strftime('%Y-%m-%d'))
+                           today=datetime.datetime.now().strftime('%Y-%m-%d'),
+                           filtro_usuario=filtro_usuario,
+                           filtro_fecha_desde=filtro_fecha_desde,
+                           filtro_padron=filtro_padron,
+                           filtro_forma_pago=filtro_forma_pago,
+                           filtro_limite=str(filtro_limite))
 
 
-@combustibles_bp.route('/ventas_combustible/eliminar/<int:venta_id>', methods=['POST'])
+@combustibles_bp.route('/ventas_combustible/actualizar/<int:venta_id>', methods=['POST'])
 @login_required
-def eliminar_venta_combustible(venta_id):
-    """Elimina físicamente una venta. El grifero solo puede eliminar las suyas."""
+def actualizar_venta_combustible(venta_id):
+    """Actualiza una venta existente. Solo el administrador puede editar."""
     rol = session.get('user_rol')
-    usr = session['user_username']
     is_admin = (rol == 'ADMIN')
 
-    if rol not in ('GRIFERO', 'ADMIN'):
-        return jsonify({'success': False, 'error': 'Acceso denegado.'}), 403
+    if not is_admin:
+        return jsonify({'success': False, 'error': 'Acceso denegado. Solo los administradores pueden editar.'}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': 'Datos no proporcionados.'}), 400
 
     connection = get_db_connection()
     if not connection:
@@ -257,10 +297,62 @@ def eliminar_venta_combustible(venta_id):
             cursor.close()
             connection.close()
             return jsonify({'success': False, 'error': 'Registro no encontrado.'}), 404
-        if not is_admin and venta['webuser'] != usr:
+
+        fecha = data.get('fecha')
+        padron = data.get('padron')
+        monto = data.get('monto')
+        forma_pago = data.get('forma_pago', 'Contado')
+
+        if not fecha or not padron or not monto:
             cursor.close()
             connection.close()
-            return jsonify({'success': False, 'error': 'Solo puede eliminar sus propios registros.'}), 403
+            return jsonify({'success': False, 'error': 'Campos requeridos faltantes.'}), 400
+
+        if forma_pago not in ('Contado', 'Credito'):
+            forma_pago = 'Contado'
+
+        upd = connection.cursor()
+        upd.execute("""
+            UPDATE a_ventas_comb_padron
+            SET fecha = %s, padron = %s, monto = %s, forma_pago = %s
+            WHERE id = %s
+        """, (fecha, int(padron), float(monto), forma_pago, venta_id))
+        connection.commit()
+        upd.close()
+        cursor.close()
+        connection.close()
+        return jsonify({'success': True})
+    except Error as e:
+        connection.rollback()
+        try:
+            connection.close()
+        except Exception:
+            pass
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@combustibles_bp.route('/ventas_combustible/eliminar/<int:venta_id>', methods=['POST'])
+@login_required
+def eliminar_venta_combustible(venta_id):
+    """Elimina físicamente una venta. Solo el administrador puede eliminar."""
+    rol = session.get('user_rol')
+    is_admin = (rol == 'ADMIN')
+
+    if not is_admin:
+        return jsonify({'success': False, 'error': 'Acceso denegado. Solo los administradores pueden eliminar.'}), 403
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'success': False, 'error': 'Error de conexión a la base de datos.'}), 500
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.CREATE_VENTAS_COMB_PADRON)
+        cursor.execute(sqlconstants.SELECT_VENTA_COMB_PADRON, (venta_id,))
+        venta = cursor.fetchone()
+        if not venta:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'error': 'Registro no encontrado.'}), 404
         upd = connection.cursor()
         upd.execute(sqlconstants.DELETE_VENTA_COMB_PADRON, (venta_id,))
         connection.commit()
@@ -384,11 +476,15 @@ def reg_combustible():
         combustibles = cursor.fetchall()
         cursor.close()
         connection.close()
+
+        # Filtrar solo combustibles activos para estadísticas
+        combustibles_activos = [c for c in combustibles if c.get('active', 'S') == 'S']
+
         total1 = 0
         total_precio_compra = 0
         total_precio_venta = 0
         total_stock_bajo = 0
-        for x0 in combustibles:
+        for x0 in combustibles_activos:
             total1 += 1
             total_precio_compra += float(x0['precio_compra'] or 0)
             total_precio_venta += float(x0['precio_unitario'])
@@ -482,6 +578,35 @@ def update_combustible(id):
         connection.close()
 
 
+@combustibles_bp.route('/api/combustibles/<int:id>/estado', methods=['PUT'])
+def update_combustible_estado(id):
+    data = request.json
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    cursor = connection.cursor()
+    try:
+        active = data.get('active', 'S')
+        if active not in ('S', 'N'):
+            active = 'S'
+
+        cursor.execute("""
+            UPDATE a_combustible
+            SET active = %s, modified = NOW()
+            WHERE id = %s
+        """, (active, id))
+        connection.commit()
+        if cursor.rowcount > 0:
+            return jsonify({'message': 'Estado actualizado exitosamente'})
+        return jsonify({'error': 'Registro no encontrado'}), 404
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
 @combustibles_bp.route('/api/combustibles/<int:id>', methods=['DELETE'])
 def delete_combustible(id):
     connection = get_db_connection()
@@ -520,20 +645,24 @@ def editar_combustible(nombre):
             return redirect(url_for('combustibles.dashboardC'))
 
         if request.method == 'POST':
-            nuevo_nombre = request.form.get('nombre', '')
-            descripcion = request.form.get('descripcion', '')
-            precio_compra = request.form.get('precio_compra', 0)
-            precio = request.form.get('precio_unitario', 0)
-            stock_actual = request.form.get('stock_actual', 0)
-            stock_minimo = request.form.get('stock_minimo', 0)
+            nuevo_nombre = request.form.get('nombre', '').strip()
+            descripcion = request.form.get('descripcion', '').strip()
+            precio_compra = float(request.form.get('precio_compra', 0) or 0)
+            precio = float(request.form.get('precio_unitario', 0) or 0)
+            stock_actual = float(request.form.get('stock_actual', 0) or 0)
+            stock_minimo = float(request.form.get('stock_minimo', 0) or 0)
+            active = request.form.get('active', 'S')
+
+            if active not in ('S', 'N'):
+                active = 'S'
 
             try:
                 cursor.execute("""
                     UPDATE a_combustible
                     SET nombre = %s, descripcion = %s, precio_compra = %s, precio_unitario = %s,
-                        stock_actual = %s, stock_minimo = %s, modified = NOW()
+                        stock_actual = %s, stock_minimo = %s, active = %s, modified = NOW()
                     WHERE nombre = %s
-                """, (nuevo_nombre, descripcion, precio_compra, precio, stock_actual, stock_minimo, nombre))
+                """, (nuevo_nombre, descripcion, precio_compra, precio, stock_actual, stock_minimo, active, nombre))
 
                 connection.commit()
                 flash('Combustible actualizado correctamente', 'success')

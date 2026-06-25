@@ -50,10 +50,21 @@
                         </div>
                     </div>
 
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="active" class="form-label">Estado</label>
+                            <select class="form-select" id="active" name="active" required>
+                                <option value="S" {% if (combustible.active or 'S') == 'S' %}selected{% endif %}>Activo</option>
+                                <option value="N" {% if combustible.active == 'N' %}selected{% endif %}>Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="alert alert-info" role="alert">
                         <i class="bi bi-info-circle"></i>
                         <strong>Información Actual:</strong>
                         <ul class="mb-0 mt-2">
+                            <li>Estado: <strong>{% if (combustible.active or 'S') == 'S' %}<span class="badge bg-success">Activo</span>{% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}</strong></li>
                             <li>Stock Actual: {{ "%.2f"|format(combustible.stock_actual) }} galones</li>
                             <li>Stock Mínimo: {{ "%.2f"|format(combustible.stock_minimo) }} galones</li>
                             <li>Precio de Compra: S/. {{ "%.2f"|format(combustible.precio_compra or 0) }}</li>
