@@ -124,10 +124,16 @@
                                     </td>
                                 </tr>        
                     {% endfor %}
-                <tr>  
-                    <td colspan="5"></td><td style="text-align:right">S/{{ "{:,.2f}".format(total)}}</td><td style="text-align:right;color:red">S/{{ "{:,.2f}".format(totsp)}}</td><td colspan="3"></td>
-                </tr>
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5"></td>
+                        <td style="text-align:right"><strong>S/{{ "{:,.2f}".format(total)}}</strong></td>
+                        <td></td>
+                        <td style="text-align:right;color:red"><strong>S/{{ "{:,.2f}".format(totsp)}}</strong></td>
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
