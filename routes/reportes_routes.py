@@ -756,12 +756,12 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
     pdf.set_font("Arial", 'B', 8)
     pdf.cell(10, 5, 'Id', 1)
     pdf.cell(15, 5, 'Fecha', 1)
+    pdf.cell(20, 5, 'Tp.Sal', 1)
     pdf.cell(55, 5, 'Salida', 1)
     pdf.cell(35, 5, 'Beneficiario', 1)
     pdf.cell(12, 5, 'T.Doc', 1)
     pdf.cell(16, 5, 'Nro Doc', 1)
-    pdf.cell(20, 5, 'Monto', 1, 'R')
-    pdf.cell(20, 5, 'Tp.Sal', 1, 1)
+    pdf.cell(20, 5, 'Monto', 1, 1, 'R')
 
     # Obtener datos
     connection = get_db_connection()
@@ -808,12 +808,12 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
         # Mostrar fila
         pdf.cell(10, 5, str(dato['id']), 1)
         pdf.cell(15, 5, str(dato['fecha']), 1)
+        pdf.cell(20, 5, str(dato['tipo_salida']).strip(), 1)
         pdf.cell(55, 5, str(dato['salida_desc'])[:40], 1)
         pdf.cell(35, 5, str(dato['beneficiario'])[:25], 1)
         pdf.cell(12, 5, tipo_doc_abrevia, 1)
         pdf.cell(16, 5, str(dato['numero_doc']), 1)
-        pdf.cell(20, 5, f"{float(dato['monto']):.2f}", 1, 'R')
-        pdf.cell(20, 5, str(dato['tipo_salida']).strip(), 1, 1)
+        pdf.cell(20, 5, f"{float(dato['monto']):.2f}", 1, 1, 'R')
 
         total_dia += float(dato['monto'])
         total_general += float(dato['monto'])
@@ -829,12 +829,12 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
             pdf.set_font("Arial", 'B', 8)
             pdf.cell(10, 5, 'Id', 1)
             pdf.cell(15, 5, 'Fecha', 1)
+            pdf.cell(20, 5, 'Tp.Sal', 1)
             pdf.cell(55, 5, 'Salida', 1)
             pdf.cell(35, 5, 'Beneficiario', 1)
             pdf.cell(12, 5, 'T.Doc', 1)
             pdf.cell(16, 5, 'Nro Doc', 1)
-            pdf.cell(20, 5, 'Monto', 1, 'R')
-            pdf.cell(20, 5, 'Tp.Sal', 1, 1)
+            pdf.cell(20, 5, 'Monto', 1, 1, 'R')
             total_dia = 0
             num_linea = 0
             pdf.set_font("Arial", '', 8)
