@@ -10,10 +10,10 @@
                 <h4 class="mb-0"><i class="bi bi-graph-up"></i> Reporte de Salidas Entre Fechas</h4>
             </div>
             <div class="card-body">
-                <form id="formReporte" action="/generar_reporte" method="POST" target="_blank">
+                <form id="formReporte" action="/generar_reporte" method="POST" target="_blank" onsubmit="construirSubtitulo()">
                     <input type="hidden" id="cod" name="cod" value="REP_SALIDAS_ENTRE_FECHAS">
                     <input type="hidden" id="titulo" name="titulo" value="Reporte de Salidas Entre Fechas">
-                    <input type="hidden" id="subtitulo" name="subtitulo" value="Desde $p1$ a $p2$">
+                    <input type="hidden" id="subtitulo" name="subtitulo" value="">
 
                     <!-- Rango de Fechas -->
                     <div class="row">
@@ -83,4 +83,39 @@
         </div>
     </div>
 </div>
+
+<script>
+function construirSubtitulo() {
+    const p1 = document.getElementById('p1').value || '--';
+    const p2 = document.getElementById('p2').value || '--';
+    const p3 = document.getElementById('p3').value;
+    const p4 = document.getElementById('p4').value;
+    const p5 = document.getElementById('p5').value;
+    const p6 = document.getElementById('p6').value;
+    const p7 = document.getElementById('p7').value;
+
+    const p3Text = document.getElementById('p3').options[document.getElementById('p3').selectedIndex].text;
+    const p4Text = document.getElementById('p4').options[document.getElementById('p4').selectedIndex].text;
+
+    let subtitulo = `Desde ${p1} a ${p2}`;
+
+    if (p3 !== '0') {
+        subtitulo += ` | Tipo Salida: ${p3Text}`;
+    }
+    if (p4 !== '0') {
+        subtitulo += ` | Tipo Beneficiario: ${p4Text}`;
+    }
+    if (p5) {
+        subtitulo += ` | Beneficiario: ${p5}`;
+    }
+    if (p6) {
+        subtitulo += ` | Documento: ${p6}`;
+    }
+    if (p7) {
+        subtitulo += ` | Período: ${p7}`;
+    }
+
+    document.getElementById('subtitulo').value = subtitulo;
+}
+</script>
 {% endblock %}
