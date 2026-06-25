@@ -625,7 +625,7 @@ AFTER tipo
 REP_SALIDAS_ENTRE_FECHAS = """
 SELECT
     s.id,
-    DATE_FORMAT(s.fecha_solicitud, '%d/%m/%Y') as fecha,
+    DATE_FORMAT(s.fecha_solicitud, '%d/%m/%y') as fecha,
     ts.descripcion as salida_desc,
     s.beneficiario_nombre as beneficiario,
     s.tipo_doc,
