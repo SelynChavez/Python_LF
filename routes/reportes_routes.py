@@ -739,18 +739,34 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
     pdf.ln()
 
 
-def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo):
+def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo, cod='REP_SALIDAS_ENTRE_FECHAS', usuario=''):
+    import datetime
+
     buffer = BytesIO()
     pdf = FPDF()
     pdf.add_page()
     pdf.set_left_margin(8)
+    pdf.set_right_margin(8)
 
-    # Encabezado
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, titulo, 0, 1, 'C')
+    # Encabezado superior con detalles
     pdf.set_font("Arial", '', 9)
-    pdf.cell(0, 5, subtitulo, 0, 1, 'C')
-    pdf.ln(3)
+    empresa = "E.T.Las Flores"
+    fecha_hora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cabecera_izq = f"{empresa} :: [{cod}] - [{usuario}] -"
+    cabecera_der = f"{fecha_hora} - Pag. # 1"
+
+    # Primera línea de cabecera
+    pdf.cell(100, 5, cabecera_izq, 0, 0, 'L')
+    pdf.cell(0, 5, cabecera_der, 0, 1, 'R')
+
+    # Título del reporte
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 6, titulo, 0, 1, 'C')
+
+    # Subtítulo
+    pdf.set_font("Arial", '', 9)
+    pdf.cell(0, 4, subtitulo, 0, 1, 'C')
+    pdf.ln(2)
 
     # Encabezados de columna
     pdf.set_font("Arial", 'B', 8)
@@ -864,7 +880,8 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", s
     elif cod == "REP_SALDOS_COMB":
         return generar_pdf_saldos_comb(pdf, titulo, subtitulo)
     elif cod == "REP_SALIDAS_ENTRE_FECHAS":
-        return generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo)
+        usuario = session.get('user_username', 'desconocido')
+        return generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo, cod, usuario)
 
     # Configurar margen izquierdo
     if cod in ('REP_FLEX_PAD', 'REP_FLEX_APO'):
