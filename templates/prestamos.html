@@ -47,6 +47,7 @@
                                     <th>Tipo</th>
                                     <th>Monto Solicitado</th>
                                     <th>Monto Aprobado</th>
+                                    <th>Cuota</th>
                                     <th>Saldo Pendiente</th>
                                     <th>Fecha</th>
                                     <th>Estado</th>
@@ -62,6 +63,7 @@
                                     <td>{{ prestamo.tipo_nombre }}</td>
                                     <td style="text-align:right; color:navy">S/{{ prestamo.monto_solicitado }}</td>
                                     <td style="text-align:right">S/{{ "{:,.2f}".format(prestamo.mnt_aprobado)}}</td>
+                                    <td style="text-align:right">S/{{ "{:,.2f}".format(prestamo.cuota or 0) }}</td>
                                     <td style="text-align:right"; color:>
                                          <span class="text-danger">S/{{ "{:,.2f}".format(prestamo.sld_pendiente)}} </span>
                                     </td>
@@ -81,7 +83,7 @@
                                     </td>
                                     <td>
                                         {% if prestamo.estado == 'pendiente' or prestamo.estado == 'evaluacion' %}
-                                        <form action="{{ url_for('prestamos.aprobar_prestamo', prestamo_id=prestamo.id) }}" 
+                                        <form action="{{ url_for('prestamos.aprobar_prestamo', prestamo_id=prestamo.id) }}"
                                               method="post" style="display: inline;">
                                             <input type="hidden" id="p1" name="p1" value="{{p1}}">
                                             <input type="hidden" id="p2" name="p2" value="{{p2}}">
@@ -93,7 +95,7 @@
                                                 <i class="bi bi-check-circle"></i>
                                             </button>
                                         </form>
-                                        <form action="{{ url_for('prestamos.rechazar_prestamo', prestamo_id=prestamo.id) }}" 
+                                        <form action="{{ url_for('prestamos.rechazar_prestamo', prestamo_id=prestamo.id) }}"
                                               method="post" style="display: inline;">
                                               <input type="hidden" id="p1" name="p1" value="{{p1}}">
                                               <input type="hidden" id="p2" name="p2" value="{{p2}}">
@@ -106,10 +108,16 @@
                                             </button>
                                         </form>
                                         {% endif %}
+                                        <!-- Botón para editar cuota y estado -->
+                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                                onclick="abrirModalEditar({{ prestamo.id }}, {{ prestamo.cuota or 0 }}, '{{ prestamo.estado }}')"
+                                                title="Editar Cuota y Estado">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
                                         <!-- Botón para descargar PDF -->
                                         {% if prestamo.estado != 'rechazado' %}
-                                            <a href="{{ url_for('reportes.generar_pdf_prestamo', prestamo_id=prestamo.id) }}" 
-                                            class="btn btn-secondary" target="_blank" title="Ver PDF">
+                                            <a href="{{ url_for('reportes.generar_pdf_prestamo', prestamo_id=prestamo.id) }}"
+                                            class="btn btn-secondary btn-sm" target="_blank" title="Ver PDF">
                                                 <i class="bi bi-file-pdf"></i>
                                             </a>
                                         {% endif %}
@@ -124,4 +132,98 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para Editar Cuota y Estado -->
+<div class="modal fade" id="editarPrestamoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square"></i> Editar Cuota y Estado
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarPrestamo">
+                    <input type="hidden" id="prestamoId" name="prestamo_id">
+
+                    <div class="mb-3">
+                        <label for="editCuota" class="form-label">Cuota (S/.)</label>
+                        <input type="number" class="form-control" id="editCuota" name="cuota"
+                               step="0.01" min="0" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editEstado" class="form-label">Estado</label>
+                        <select class="form-select" id="editEstado" name="estado" required>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="evaluacion">Evaluación</option>
+                            <option value="pagado">Pagado</option>
+                            <option value="anulado">Anulado</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="guardarEdicionPrestamo()">
+                    <i class="bi bi-check-circle"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let editarPrestamoModalObj = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    editarPrestamoModalObj = new bootstrap.Modal(document.getElementById('editarPrestamoModal'));
+});
+
+function abrirModalEditar(prestamoId, cuota, estado) {
+    document.getElementById('prestamoId').value = prestamoId;
+    document.getElementById('editCuota').value = cuota;
+    document.getElementById('editEstado').value = estado;
+    editarPrestamoModalObj.show();
+}
+
+function guardarEdicionPrestamo() {
+    const prestamoId = document.getElementById('prestamoId').value;
+    const cuota = document.getElementById('editCuota').value;
+    const estado = document.getElementById('editEstado').value;
+
+    if (!cuota || !estado) {
+        alert('Por favor, complete todos los campos.');
+        return;
+    }
+
+    fetch(`/api/prestamos/${prestamoId}/actualizar`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            cuota: parseFloat(cuota),
+            estado: estado
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Préstamo actualizado correctamente.');
+            editarPrestamoModalObj.hide();
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo actualizar.'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al actualizar el préstamo.');
+    });
+}
+</script>
 {% endblock %}

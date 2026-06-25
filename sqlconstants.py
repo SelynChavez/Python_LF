@@ -280,6 +280,7 @@ INS_PRESTAMO = "INSERT INTO a_prestamos (padron,fecha_solicitud,tipo_prestamo,mo
 ACT_PRESTAMO = "UPDATE a_prestamos SET estado='pendiente',modified=now(),webuser='$usr$' WHERE id='$lid$' "
 APR_PRESTAMO = "UPDATE a_prestamos SET estado='aprobado',fecha_aprobacion=curdate(),monto_aprobado=monto_solicitado,saldo_pendiente=monto_solicitado WHERE id = %s"
 RCH_PRESTAMO = "UPDATE a_prestamos SET estado='rechazado' WHERE id = %s"
+UPD_PRESTAMO_CUOTA_ESTADO = "UPDATE a_prestamos SET cuota=%s, estado=%s WHERE id=%s"
 DROPLIST_DEUDAS = "SELECT tp.* FROM a_tipos tp WHERE tp.tipo='DEUDA' "
 DROPLIST_APORTES_SALDO_X_PADRON = "SELECT aporte codigo,descripcion,aportado,retirado,(aportado-retirado) saldo FROM av_total_aportes_x_padron WHERE padron='$pad$' and aporte in (select codigo from a_tipos where tipo='APORTE' and atributo4='S') ORDER by 1"
 SELECT_PRESTAMOS_1 = """

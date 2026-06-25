@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash, session
+from flask import render_template, request, redirect, url_for, flash, session, jsonify
 from functools import wraps
 from mysql.connector import Error
 import datetime
@@ -201,3 +201,26 @@ def rechazar_prestamo(prestamo_id):
     conn.close()
     flash('Préstamo rechazado', 'info')
     return redirect(url_for('prestamos.prestamos', prestamos=prestamos, total=total, p1=p1, p2=p2, p3=p3, p4=p4))
+
+
+@prestamos_bp.route('/api/prestamos/<int:prestamo_id>/actualizar', methods=['POST'])
+def actualizar_prestamo(prestamo_id):
+    try:
+        data = request.get_json()
+        cuota = data.get('cuota')
+        estado = data.get('estado')
+
+        if cuota is None or estado is None:
+            return jsonify({'success': False, 'error': 'Cuota y estado son requeridos'}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(sqlconstants.UPD_PRESTAMO_CUOTA_ESTADO, (cuota, estado, prestamo_id))
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Préstamo actualizado correctamente'})
+    except Error as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
