@@ -627,6 +627,7 @@ SELECT
     s.id,
     DATE_FORMAT(s.fecha_solicitud, '%d/%m/%y') as fecha,
     ts.descripcion as salida_desc,
+    CAST(s.tipo_salida AS CHAR) as tipo_salida,
     s.beneficiario_nombre as beneficiario,
     s.tipo_doc,
     s.numero_doc,
