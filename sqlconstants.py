@@ -622,3 +622,24 @@ ADD COLUMN IF NOT EXISTS estado VARCHAR(20) DEFAULT 'ACTIVO'
 AFTER tipo
 """
 
+REP_SALIDAS_ENTRE_FECHAS = """
+SELECT
+    s.id,
+    DATE_FORMAT(s.fecha_solicitud, '%d/%m/%Y') as fecha,
+    ts.descripcion as salida_desc,
+    s.beneficiario_nombre as beneficiario,
+    s.tipo_doc,
+    s.numero_doc,
+    s.monto,
+    DATE_FORMAT(s.fecha_solicitud, '%Y-%m-%d') as fecha_orden
+FROM a_salidas s
+JOIN a_tipos ts ON s.tipo_salida = ts.codigo AND ts.tipo = 'SALIDA'
+WHERE s.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$')
+    AND (s.tipo_salida = '$p3$' OR '$p3$' = '0')
+    AND (s.tipo_beneficiario = '$p4$' OR '$p4$' = '0')
+    AND (s.beneficiario_nombre LIKE '%$p5$%' OR '$p5$' = '')
+    AND (s.numero_doc LIKE '%$p6$%' OR '$p6$' = '')
+    AND (s.periodo = '$p7$' OR '$p7$' = '')
+ORDER BY s.fecha_solicitud DESC, s.id DESC
+"""
+

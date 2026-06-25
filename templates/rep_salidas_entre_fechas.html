@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte - Salidas Entre Fechas {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-graph-up"></i> Reporte de Salidas Entre Fechas</h4>
+            </div>
+            <div class="card-body">
+                <form id="formReporte" action="/generar_reporte" method="POST" target="_blank">
+                    <input type="hidden" id="cod" name="cod" value="REP_SALIDAS_ENTRE_FECHAS">
+                    <input type="hidden" id="titulo" name="titulo" value="Reporte de Salidas Entre Fechas">
+                    <input type="hidden" id="subtitulo" name="subtitulo" value="Desde $p1$ a $p2$">
+
+                    <!-- Rango de Fechas -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="p1" class="form-label">Fecha Desde <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="p1" name="p1" value="{{ p1 }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p2" class="form-label">Fecha Hasta <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="p2" name="p2" value="{{ p2 }}" required>
+                        </div>
+                    </div>
+
+                    <!-- Tipo de Salida y Tipo de Beneficiario -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="p3" class="form-label">Tipo de Salida</label>
+                            <select class="form-select" id="p3" name="p3">
+                                <option value="0">-- Todos --</option>
+                                {% for tipo_salida in tipos_salida %}
+                                <option value="{{ tipo_salida.codigo }}">{{ tipo_salida.descripcion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p4" class="form-label">Tipo de Beneficiario</label>
+                            <select class="form-select" id="p4" name="p4">
+                                <option value="0">-- Todos --</option>
+                                {% for tipo_benef in tipos_beneficiario %}
+                                <option value="{{ tipo_benef.codigo }}">{{ tipo_benef.descripcion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Nombre de Beneficiario y Número de Documento -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="p5" class="form-label">Nombre de Beneficiario (Búsqueda)</label>
+                            <input type="text" class="form-control" id="p5" name="p5" placeholder="Ingrese parte del nombre" value="{{ p5 }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p6" class="form-label">Número de Documento (Búsqueda)</label>
+                            <input type="text" class="form-control" id="p6" name="p6" placeholder="Ingrese parte del documento" value="{{ p6 }}">
+                        </div>
+                    </div>
+
+                    <!-- Período -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="p7" class="form-label">Período</label>
+                            <input type="text" class="form-control" id="p7" name="p7" placeholder="Ej: 2024-01" value="{{ p7 }}">
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="submit" class="btn btn-primary me-md-2">
+                            <i class="bi bi-eye"></i> Generar y Ver Reporte
+                        </button>
+                        <a href="{{ url_for('reportes.reportes') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
