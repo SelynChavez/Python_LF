@@ -151,12 +151,7 @@ def ver_compra(id):
 
     cursor = connection.cursor(dictionary=True)
     try:
-        cursor.execute("""
-            SELECT c.*, p.nombre as nombre_proveedor
-            FROM a_compras_comb c
-            LEFT JOIN a_proveedores p ON c.ruc = p.ruc
-            WHERE c.id = %s
-        """, (id,))
+        cursor.execute(sqlconstants.SEL_COMPRAS_COMB_CON_PROVEEDOR, (id,))
         compra = cursor.fetchone()
 
         if not compra:
@@ -210,10 +205,7 @@ def anular_compra(id):
             precio = detalle['precio']
 
             # Obtener stock actual y precio promedio actual
-            cursor.execute("""
-                SELECT stock_actual, COALESCE(precio_promedio, precio_unitario) as precio_promedio
-                FROM a_combustible WHERE nombre = %s
-            """, (producto,))
+            cursor.execute(sqlconstants.SEL_COMBUSTIBLE_STOCK_PRECIO, (producto,))
             comb = cursor.fetchone()
 
             if comb:
@@ -231,16 +223,10 @@ def anular_compra(id):
                     new_precio_promedio = precio
 
                 # Actualizar stock y precio promedio
-                cursor.execute("""
-                    UPDATE a_combustible
-                    SET stock_actual = %s, precio_promedio = %s
-                    WHERE nombre = %s
-                """, (new_stock, new_precio_promedio, producto))
+                cursor.execute(sqlconstants.UPD_COMBUSTIBLE_STOCK_PRECIO, (new_stock, new_precio_promedio, producto))
 
         # Marcar compra como anulada
-        cursor.execute("""
-            UPDATE a_compras_comb SET estado = 'ANULADO' WHERE id = %s
-        """, (id,))
+        cursor.execute(sqlconstants.UPD_COMPRAS_COMB_ANULADO, (id,))
 
         connection.commit()
         return jsonify({'success': True, 'message': 'Compra anulada correctamente'})

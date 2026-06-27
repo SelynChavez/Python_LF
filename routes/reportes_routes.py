@@ -1166,16 +1166,7 @@ def generar_recibo(tipo_doc, serie, numero_doc, codigo_padron, nombre_socio, fec
 def generar_pdf_prestamo(prestamo_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-            SELECT p.*, pr.placa, pr.monto0, s.nombre, s.email, s.fono telefono, s.dni,
-                   tp.descripcion as tipo_nombre, tp.monto1 tasa_interes,
-                   s.nombre as socio_nombre, p.id padron
-            FROM a_prestamos p
-            JOIN a_padrones pr ON p.padron = pr.id
-            JOIN a_socios s ON pr.socio = s.id
-            JOIN a_tipos tp ON tp.tipo='DEUDA' AND p.tipo_prestamo = tp.codigo
-            WHERE p.id = %s
-        """, (prestamo_id,))
+    cursor.execute(sqlconstants.SEL_PRESTAMOS_PDF, (prestamo_id,))
     prestamo = cursor.fetchone()
     conn.close()
     if not prestamo:
@@ -1273,15 +1264,7 @@ def generar_pdf_prestamo(prestamo_id):
 def generar_pdf_retiro(retiro_id):
     conn = get_db_connection()
     with conn.cursor(dictionary=True) as cursor:
-        cursor.execute("""
-            SELECT r.*, pr.placa, r.saldo_final_dia monto_aportado,
-                   s.nombre, s.email, s.fono telefono,
-                   s.nombre as nombre_socio
-            FROM a_retiros r
-            JOIN a_padrones pr ON r.padron = pr.id
-            JOIN a_socios s ON pr.socio = s.id
-            WHERE r.id = %s
-        """, (retiro_id,))
+        cursor.execute(sqlconstants.SEL_RETIROS_PDF, (retiro_id,))
         retiro = cursor.fetchone()
     conn.close()
     if not retiro:

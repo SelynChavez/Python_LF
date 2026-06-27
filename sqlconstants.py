@@ -669,3 +669,46 @@ SEL_COMPRAS_COMB_DETALLES = "SELECT * FROM a_compras_comb_detalles WHERE factura
 
 SEL_MAQUINAS_ORDEN = "SELECT id, numero FROM a_maquinas ORDER BY numero"
 
+SEL_COMPRAS_COMB_CON_PROVEEDOR = """
+SELECT c.*, p.nombre as nombre_proveedor
+FROM a_compras_comb c
+LEFT JOIN a_proveedores p ON c.ruc = p.ruc
+WHERE c.id = %s
+"""
+
+SEL_COMBUSTIBLE_STOCK_PRECIO = """
+SELECT stock_actual, COALESCE(precio_promedio, precio_unitario) as precio_promedio
+FROM a_combustible WHERE nombre = %s
+"""
+
+UPD_COMBUSTIBLE_STOCK_PRECIO = """
+UPDATE a_combustible
+SET stock_actual = %s, precio_promedio = %s
+WHERE nombre = %s
+"""
+
+UPD_COMPRAS_COMB_ANULADO = """
+UPDATE a_compras_comb SET estado = 'ANULADO' WHERE id = %s
+"""
+
+SEL_PRESTAMOS_PDF = """
+SELECT p.*, pr.placa, pr.monto0, s.nombre, s.email, s.fono telefono, s.dni,
+       tp.descripcion as tipo_nombre, tp.monto1 tasa_interes,
+       s.nombre as socio_nombre, p.id padron
+FROM a_prestamos p
+JOIN a_padrones pr ON p.padron = pr.id
+JOIN a_socios s ON pr.socio = s.id
+JOIN a_tipos tp ON tp.tipo='DEUDA' and p.tipo_prestamo = tp.codigo
+WHERE p.id = %s
+"""
+
+SEL_RETIROS_PDF = """
+SELECT r.*, pr.placa, r.saldo_final_dia monto_aportado,
+       s.nombre, s.email, s.fono telefono,
+       s.nombre as nombre_socio
+FROM a_retiros r
+JOIN a_padrones pr ON r.padron = pr.id
+JOIN a_socios s ON pr.socio = s.id
+WHERE r.id = %s
+"""
+
