@@ -590,11 +590,7 @@ def update_combustible_estado(id):
         if active not in ('S', 'N'):
             active = 'S'
 
-        cursor.execute("""
-            UPDATE a_combustible
-            SET active = %s, modified = NOW()
-            WHERE id = %s
-        """, (active, id))
+        cursor.execute(sqlconstants.UPD_COMBUSTIBLE_ACTIVE, (active, id))
         connection.commit()
         if cursor.rowcount > 0:
             return jsonify({'message': 'Estado actualizado exitosamente'})
@@ -637,7 +633,7 @@ def editar_combustible(nombre):
 
     cursor = connection.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT * FROM a_combustible WHERE nombre = %s", (nombre,))
+        cursor.execute(sqlconstants.SEL_COMBUSTIBLE_BY_NOMBRE, (nombre,))
         combustible = cursor.fetchone()
 
         if not combustible:
@@ -657,12 +653,7 @@ def editar_combustible(nombre):
                 active = 'S'
 
             try:
-                cursor.execute("""
-                    UPDATE a_combustible
-                    SET nombre = %s, descripcion = %s, precio_compra = %s, precio_unitario = %s,
-                        stock_actual = %s, stock_minimo = %s, active = %s, modified = NOW()
-                    WHERE nombre = %s
-                """, (nuevo_nombre, descripcion, precio_compra, precio, stock_actual, stock_minimo, active, nombre))
+                cursor.execute(sqlconstants.UPD_COMBUSTIBLE_COMPLETO, (nuevo_nombre, descripcion, precio_compra, precio, stock_actual, stock_minimo, active, nombre))
 
                 connection.commit()
                 flash('Combustible actualizado correctamente', 'success')

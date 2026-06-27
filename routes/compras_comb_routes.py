@@ -190,7 +190,7 @@ def anular_compra(id):
     cursor = connection.cursor(dictionary=True)
     try:
         # Obtener datos de la compra
-        cursor.execute("SELECT * FROM a_compras_comb WHERE id = %s", (id,))
+        cursor.execute(sqlconstants.SEL_COMPRAS_COMB_BY_ID, (id,))
         compra = cursor.fetchone()
 
         if not compra:
@@ -200,7 +200,7 @@ def anular_compra(id):
             return jsonify({'success': False, 'message': 'Esta compra ya fue anulada'}), 400
 
         # Obtener detalles de la compra
-        cursor.execute("SELECT * FROM a_compras_comb_detalles WHERE factura_id = %s", (id,))
+        cursor.execute(sqlconstants.SEL_COMPRAS_COMB_DETALLES, (id,))
         detalles = cursor.fetchall()
 
         # Revertir cambios en stock y precio promedio

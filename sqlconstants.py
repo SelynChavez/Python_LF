@@ -644,3 +644,28 @@ WHERE s.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$')
 ORDER BY s.fecha_solicitud DESC, s.id DESC
 """
 
+# INLINE SQL CONSOLIDADO (antes estaban dispersos en los archivos de rutas)
+
+SEL_RECIBO_BY_ID = "SELECT id, active FROM a_recibos WHERE id=%s"
+
+UPD_COMBUSTIBLE_ACTIVE = """
+UPDATE a_combustible
+SET active = %s, modified = NOW()
+WHERE id = %s
+"""
+
+SEL_COMBUSTIBLE_BY_NOMBRE = "SELECT * FROM a_combustible WHERE nombre = %s"
+
+UPD_COMBUSTIBLE_COMPLETO = """
+UPDATE a_combustible
+SET nombre = %s, descripcion = %s, precio_compra = %s, precio_unitario = %s,
+    stock_actual = %s, stock_minimo = %s, active = %s, modified = NOW()
+WHERE nombre = %s
+"""
+
+SEL_COMPRAS_COMB_BY_ID = "SELECT * FROM a_compras_comb WHERE id = %s"
+
+SEL_COMPRAS_COMB_DETALLES = "SELECT * FROM a_compras_comb_detalles WHERE factura_id = %s"
+
+SEL_MAQUINAS_ORDEN = "SELECT id, numero FROM a_maquinas ORDER BY numero"
+

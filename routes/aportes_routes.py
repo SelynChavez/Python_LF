@@ -54,7 +54,7 @@ def anular_recibo():
 
     try:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT id, active FROM a_recibos WHERE id=%s", (lid,))
+        cursor.execute(sqlconstants.SEL_RECIBO_BY_ID, (lid,))
         recibo = cursor.fetchone()
         if not recibo:
             cursor.close()

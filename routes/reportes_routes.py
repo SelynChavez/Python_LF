@@ -261,7 +261,7 @@ def rep_ventas_comb_maquina():
     connection = get_db_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT id, numero FROM a_maquinas ORDER BY numero")
+        cursor.execute(sqlconstants.SEL_MAQUINAS_ORDEN)
         maquinas = cursor.fetchall()
         if not is_caja_or_grifero:
             cursor.execute(sqlconstants.LISTA_USUARIOS_ACTIVOS)
