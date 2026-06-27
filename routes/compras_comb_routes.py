@@ -158,9 +158,7 @@ def ver_compra(id):
             flash('Compra no encontrada', 'warning')
             return redirect(url_for('compras_comb.lista_compras'))
 
-        cursor.execute("""
-            SELECT * FROM a_compras_comb_detalles WHERE factura_id = %s
-        """, (id,))
+        cursor.execute(sqlconstants.SEL_COMPRAS_COMB_DETALLES, (id,))
         detalles = cursor.fetchall()
 
         cursor.close()
