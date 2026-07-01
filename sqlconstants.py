@@ -367,14 +367,15 @@ SET fecha_solicitud = %s,
     tipo_doc = %s,
     numero_doc = %s,
     periodo = %s,
+    tipo_caja = %s,
     modified = CURRENT_TIMESTAMP,
     webuser = %s,
     estado = 'CONFIRMADO'
 WHERE id = %s """
-INS_9_SALIDAS = """ 
-INSERT INTO a_salidas 
-(fecha_solicitud, tipo_salida, tipo_beneficiario, beneficiario,beneficiario_nombre, monto, estado, observaciones, tipo_doc, numero_doc, periodo, webuser)
-VALUES (%s, %s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s)
+INS_9_SALIDAS = """
+INSERT INTO a_salidas
+(fecha_solicitud, tipo_salida, tipo_beneficiario, beneficiario,beneficiario_nombre, monto, estado, observaciones, tipo_doc, numero_doc, periodo, tipo_caja, webuser)
+VALUES (%s, %s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s, %s)
 """
 UPD_9_INGRESOS = """UPDATE a_ingresos
 SET fecha_solicitud = %s,
