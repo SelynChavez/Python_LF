@@ -222,6 +222,15 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label><i class="bi bi-cash-stack"></i>Tipo de Caja</label>
+                                        <select class="form-select" id="tipo_caja" required>
+                                            <option value="EFECTIVO">EFECTIVO</option>
+                                            <option value="BANCOS">BANCOS</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                             
                             <div class="form-group">
@@ -318,6 +327,7 @@
                 periodo: document.getElementById('periodo').value,
                 tipo_doc: document.getElementById('tipo_doc').value,
                 numero_doc: document.getElementById('numero_doc').value,
+                tipo_caja: document.getElementById('tipo_caja').value,
                 observaciones: document.getElementById('observaciones').value
             };
             
@@ -422,6 +432,7 @@
                 document.getElementById('numero_doc').value = data.numero_doc;
                 document.getElementById('periodo').value = data.periodo;
                 document.getElementById('monto').value = data.monto;
+                document.getElementById('tipo_caja').value = data.tipo_caja || 'EFECTIVO';
                 document.getElementById('observaciones').value = data.observaciones || '';
                 
                 // Disparar cambio en tipo_beneficiario
@@ -449,6 +460,7 @@
             document.getElementById('tipo_salida').value = '';
             document.getElementById('tipo_beneficiario').value = '';
             document.getElementById('monto').value = '';
+            document.getElementById('tipo_caja').value = 'EFECTIVO';
             document.getElementById('tipo_doc').value = 'BOLETA';
             document.getElementById('numero_doc').value = '';
             document.getElementById('periodo').value = '202601';

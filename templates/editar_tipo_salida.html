@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Editar Tipo de Salida{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Tipo : {{ tipo.codigo }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('editar_tipo_salida', id=tipo.id) }}">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="codigo" class="form-label">Codigo *</label>
+                            <input type="text" class="form-control" id="codigo" name="codigo" max="15" value="{{ tipo.codigo }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="descripcion" class="form-label">Descripcion *</label>
+                            <input type="text" class="form-control" id="descripcion" name="descripcion" maxlength="50" value="{{ tipo.descripcion }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="monto1" class="form-label">Monto Fijo Salida</label>
+                            <input type="number" class="form-control" id="monto1" name="monto1" min="0.00" max="999.99" value="{{ tipo.monto1 }}" maxlength="6">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Serie</label>
+                            <select class="form-select" id="atributo1" name="atributo1" required>
+                                <option value="1" {{ 'selected' if tipo.atributo1 == '1' }}>001</option>
+                                <option value="2" {{ 'selected' if tipo.atributo1 == '2' }}>002</option>
+                                <option value="3" {{ 'selected' if tipo.atributo1 == '3' }}>003</option>
+                                <option value="4" {{ 'selected' if tipo.atributo1 == '4' }}>004</option>
+                                <option value="5" {{ 'selected' if tipo.atributo1 == '5' }}>005</option>
+                                <option value="6" {{ 'selected' if tipo.atributo1 == '6' }}>006</option>
+                                <option value="7" {{ 'selected' if tipo.atributo1 == '7' }}>007</option>
+                                <option value="8" {{ 'selected' if tipo.atributo1 == '8' }}>008</option>
+                                <option value="9" {{ 'selected' if tipo.atributo1 == '9' }}>009</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="atributo3" class="form-label">Cod.Plan Contable GE</label>
+                            <input type="number" class="form-control" id="atributo3" name="atributo3" min="0" max="999" value="{{ tipo.atributo3 }}" maxlength="4">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Permite Retiro</label>
+                            <select class="form-select" id="atributo4" name="atributo4" required>
+                                <option value="S" {{ 'selected' if tipo.atributo4 == 'S' }}>Si</option>
+                                <option value="N" {{ 'selected' if tipo.atributo4 == 'N' }}>No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                        <a href="{{ url_for('listar_tipos_salidas') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

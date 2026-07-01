@@ -126,6 +126,7 @@ def guardar_salida():
                 data['tipo_doc'],
                 data['numero_doc'],
                 data['periodo'],
+                data.get('tipo_caja', 'EFECTIVO'),
                 'webuser',
                 data['id']
             )
@@ -142,6 +143,7 @@ def guardar_salida():
                 data['tipo_doc'],
                 data['numero_doc'],
                 data['periodo'],
+                data.get('tipo_caja', 'EFECTIVO'),
                 'webuser'
             )
 
