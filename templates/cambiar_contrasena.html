@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Cambiar Contraseña - ETLF{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-key"></i> Cambiar Contraseña</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('auth.cambiar_contrasena') }}">
+                    <div class="mb-3">
+                        <label for="password_actual" class="form-label">Contraseña Actual</label>
+                        <input type="password" class="form-control" id="password_actual" name="password_actual" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password_nuevo" class="form-label">Contraseña Nueva</label>
+                        <input type="password" class="form-control" id="password_nuevo" name="password_nuevo" required>
+                        <small class="form-text text-muted">Mínimo 6 caracteres</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password_confirmar" class="form-label">Confirmar Contraseña Nueva</label>
+                        <input type="password" class="form-control" id="password_confirmar" name="password_confirmar" required>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Cambiar Contraseña
+                        </button>
+                        <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

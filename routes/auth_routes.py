@@ -71,6 +71,67 @@ def login():
     return render_template('login.html')
 
 
+@auth_bp.route('/cambiar-contrasena', methods=['GET', 'POST'])
+@login_required
+def cambiar_contrasena():
+    if request.method == 'GET':
+        return render_template('cambiar_contrasena.html')
+
+    if request.method == 'POST':
+        password_actual = request.form.get('password_actual')
+        password_nuevo = request.form.get('password_nuevo')
+        password_confirmar = request.form.get('password_confirmar')
+
+        if not password_actual or not password_nuevo or not password_confirmar:
+            flash('Por favor, complete todos los campos.', 'danger')
+            return render_template('cambiar_contrasena.html')
+
+        if len(password_nuevo) < 6:
+            flash('La contraseña debe tener mínimo 6 caracteres.', 'danger')
+            return render_template('cambiar_contrasena.html')
+
+        if password_nuevo != password_confirmar:
+            flash('Las contraseñas nuevas no coinciden.', 'danger')
+            return render_template('cambiar_contrasena.html')
+
+        connection = get_db_connection()
+        if not connection:
+            flash('Error de conexión a la base de datos.', 'danger')
+            return render_template('cambiar_contrasena.html')
+
+        cursor = connection.cursor(dictionary=True)
+        try:
+            hashed_password_actual = hash_password(password_actual)
+            query = "SELECT * FROM applicationuser WHERE id = %s AND password = %s"
+            cursor.execute(query, (session['user_id'], hashed_password_actual))
+            user = cursor.fetchone()
+
+            if not user:
+                flash('Contraseña actual incorrecta.', 'danger')
+                cursor.close()
+                connection.close()
+                return render_template('cambiar_contrasena.html')
+
+            hashed_password_nuevo = hash_password(password_nuevo)
+            update_query = "UPDATE applicationuser SET password = %s WHERE id = %s"
+            cursor.execute(update_query, (hashed_password_nuevo, session['user_id']))
+            connection.commit()
+
+            cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'cambio_contrasena', 'Cambio de contraseña exitoso'))
+            connection.commit()
+
+            flash('Contraseña cambiada correctamente.', 'success')
+            cursor.close()
+            connection.close()
+            return redirect(url_for('dashboard.dashboard'))
+        except Error as err:
+            connection.rollback()
+            flash(f'Error al cambiar la contraseña: {err}', 'danger')
+            cursor.close()
+            connection.close()
+            return render_template('cambiar_contrasena.html')
+
+
 @auth_bp.route('/logout')
 def logout():
     if 'user_id' in session:

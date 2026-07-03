@@ -111,6 +111,7 @@
                         <ul class="dropdown-menu">
                             <li><span class="dropdown-item-text"><small>Rol: {{ session.user_rol }}</small></span></li>
                             <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.cambiar_contrasena') }}"><i class="bi bi-key"></i> Cambiar Contraseña</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
                         </ul>
                     </li>
