@@ -29,6 +29,7 @@
                                 <th>Moneda</th>
                                 <th class="text-end">Total</th>
                                 <th>Usuario</th>
+                                <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -43,12 +44,13 @@
                                 <td>{{ c.moneda }}</td>
                                 <td class="text-end"><b>{{ c.total }}</b></td>
                                 <td>{{ c.webuser }}</td>
+                                <td>{{ c.estado }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a href="{{ url_for('compras_comb.ver_compra', id=c.id) }}" class="btn btn-outline-primary" title="Ver">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        {% if c.estado != 'ANULADO' %}
+                                        {% if c.estado != 'ANU' %}
                                         <button type="button" class="btn btn-outline-danger" title="Anular" onclick="anularCompra({{ c.id }})">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -62,7 +64,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="9" class="text-center text-muted">No hay compras registradas</td>
+                                <td colspan="10" class="text-center text-muted">No hay compras registradas</td>
                             </tr>
                             {% endfor %}
                         </tbody>

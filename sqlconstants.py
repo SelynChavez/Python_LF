@@ -398,7 +398,7 @@ VALUES (%s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s)
 """
 
 # Compras de Combustible
-LISTA_COMPRAS_COMB = """SELECT c.id, c.ruc, COALESCE(p.nombre, c.ruc) nombre_proveedor, c.fecha, c.numero, c.tipo, c.total, c.moneda, c.webuser, c.created_at FROM a_compras_comb c LEFT JOIN a_proveedores p ON c.ruc = p.ruc ORDER BY c.id DESC LIMIT 200"""
+LISTA_COMPRAS_COMB = """SELECT c.id, c.ruc, COALESCE(p.nombre, c.ruc) nombre_proveedor, c.fecha, c.numero, c.tipo, c.total, c.moneda, c.webuser, SUBSTRING(c.estado, 1, 3) as estado, c.created_at FROM a_compras_comb c LEFT JOIN a_proveedores p ON c.ruc = p.ruc WHERE c.estado = 'ACTIVO' ORDER BY c.id DESC LIMIT 200"""
 INS_COMPRA_COMB = "INSERT INTO a_compras_comb (ruc, fecha, numero, subtotal, igv, descuentos, adicionales, total, moneda, tipo, observaciones, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 INS_COMPRA_COMB_DET = "INSERT INTO a_compras_comb_detalles (factura_id, producto, descripcion, cantidad, uom, precio, subtotal, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
 UPD_COMB_STOCK_COMPRA = """UPDATE a_combustible SET precio_promedio = CASE WHEN (stock_actual + %s) > 0 THEN ((stock_actual * COALESCE(precio_promedio, precio_unitario)) + (%s * %s)) / (stock_actual + %s) ELSE %s END, stock_actual = stock_actual + %s WHERE nombre = %s"""
@@ -689,7 +689,7 @@ WHERE nombre = %s
 """
 
 UPD_COMPRAS_COMB_ANULADO = """
-UPDATE a_compras_comb SET estado = 'ANULADO' WHERE id = %s
+UPDATE a_compras_comb SET numero = CONCAT(numero, '-ANU'), estado = 'ANULADO' WHERE id = %s
 """
 
 SEL_PRESTAMOS_PDF = """
