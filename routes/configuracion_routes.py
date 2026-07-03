@@ -1264,12 +1264,12 @@ def editar_usuario(id):
     return render_template('editar_usuario.html', usuario=usuario)
 
 
-@configuracion_bp.route('/usuarios/eliminar/<int:id>')
+@configuracion_bp.route('/usuarios/desactivar/<int:id>')
 @login_required
 @admin_required
-def eliminar_usuario(id):
+def desactivar_usuario(id):
     if id == session['user_id']:
-        flash('No puede eliminar su propio usuario.', 'danger')
+        flash('No puede desactivar su propio usuario.', 'danger')
         return redirect(url_for('configuracion.listar_usuarios'))
     connection = get_db_connection()
     if connection:
@@ -1277,16 +1277,44 @@ def eliminar_usuario(id):
             cursor = connection.cursor(dictionary=True)
             cursor.execute(sqlconstants.SEL_NM_USUARIO, (id,))
             usuario = cursor.fetchone()
-            cursor.execute(sqlconstants.DELETE_USUARIO, (id,))
+            cursor.execute("UPDATE applicationuser SET status = %s WHERE id = %s", ('INACTIVE', id))
             connection.commit()
             if usuario:
-                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'eliminar_usuario', f'Eliminó el usuario: {usuario["username"]}'))
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'desactivar_usuario', f'Desactivó el usuario: {usuario["username"]}'))
                 connection.commit()
             cursor.close()
             connection.close()
-            flash('Usuario eliminado exitosamente.', 'success')
+            flash('Usuario desactivado exitosamente.', 'success')
         except Error as e:
-            flash(f'Error al eliminar usuario: {str(e)}', 'danger')
+            flash(f'Error al desactivar usuario: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')
+    return redirect(url_for('configuracion.listar_usuarios'))
+
+
+@configuracion_bp.route('/usuarios/activar/<int:id>')
+@login_required
+@admin_required
+def activar_usuario(id):
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(sqlconstants.SEL_NM_USUARIO, (id,))
+            usuario = cursor.fetchone()
+            cursor.execute("UPDATE applicationuser SET status = %s WHERE id = %s", ('ACTIVE', id))
+            connection.commit()
+            if usuario:
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'activar_usuario', f'Activó el usuario: {usuario["username"]}'))
+                connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Usuario activado exitosamente.', 'success')
+        except Error as e:
+            flash(f'Error al activar usuario: {str(e)}', 'danger')
             connection.rollback()
             cursor.close()
             connection.close()

@@ -13,13 +13,13 @@ $(document).ready(function() {
         });
     });
 
-    // Confirmación para eliminar
-    $('.btn-eliminar').on('click', function(e) {
+    // Confirmación para desactivar usuario
+    $('.btn-desactivar').on('click', function(e) {
         e.preventDefault();
         const url = $(this).attr('href');
         const nombre = $(this).data('nombre');
-        
-        if (confirm(`¿Está seguro de eliminar al usuario "${nombre}"? Esta acción no se puede deshacer.`)) {
+
+        if (confirm(`¿Está seguro de desactivar al usuario "${nombre}"? Podrá ser reactivado posteriormente.`)) {
             window.location.href = url;
         }
     });
@@ -98,15 +98,23 @@ $(document).ready(function() {
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         {% if usuario.id != session.user_id %}
-                                        <a href="{{ url_for('configuracion.eliminar_usuario', id=usuario.id) }}" 
-                                           class="btn btn-sm btn-danger btn-eliminar" 
-                                           data-nombre="{{ usuario.fullname }}"
-                                           title="Eliminar">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                            {% if usuario.status == 'ACTIVE' %}
+                                            <a href="{{ url_for('configuracion.desactivar_usuario', id=usuario.id) }}"
+                                               class="btn btn-sm btn-danger btn-desactivar"
+                                               data-nombre="{{ usuario.fullname }}"
+                                               title="Desactivar">
+                                                <i class="bi bi-person-x"></i>
+                                            </a>
+                                            {% else %}
+                                            <a href="{{ url_for('configuracion.activar_usuario', id=usuario.id) }}"
+                                               class="btn btn-sm btn-success"
+                                               title="Activar">
+                                                <i class="bi bi-person-check"></i>
+                                            </a>
+                                            {% endif %}
                                         {% else %}
-                                        <button class="btn btn-sm btn-secondary" disabled title="No puedes eliminarte">
-                                            <i class="bi bi-trash"></i>
+                                        <button class="btn btn-sm btn-secondary" disabled title="No puedes desactivarte">
+                                            <i class="bi bi-person-x"></i>
                                         </button>
                                         {% endif %}
                                     </div>
