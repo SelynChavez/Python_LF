@@ -199,8 +199,8 @@ def anular_compra(id):
         # Revertir cambios en stock y precio promedio
         for detalle in detalles:
             producto = detalle['producto']
-            cantidad = detalle['cantidad']
-            precio = detalle['precio']
+            cantidad = float(detalle['cantidad'])
+            precio = float(detalle['precio'])
 
             # Obtener stock actual y precio promedio actual
             cursor.execute(sqlconstants.SEL_COMBUSTIBLE_STOCK_PRECIO, (producto,))
@@ -230,7 +230,16 @@ def anular_compra(id):
         return jsonify({'success': True, 'message': 'Compra anulada correctamente'})
     except Error as err:
         connection.rollback()
-        return jsonify({'success': False, 'message': str(err)}), 500
+        print(f"Error en anular_compra: {err}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Error: {str(err)}'}), 500
+    except Exception as err:
+        connection.rollback()
+        print(f"Error no esperado en anular_compra: {err}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Error: {str(err)}'}), 500
     finally:
         cursor.close()
         connection.close()
