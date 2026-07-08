@@ -44,6 +44,20 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
             <div class="dashboard-icon">
+                <i class="bi bi-person-badge"></i>
+            </div>
+            <h3>Choferes</h3>
+            <p>Gestión completa de choferes</p>
+            <a href="{{ url_for('configuracion.listar_choferes') if session.user_rol == 'ADMIN' else '#' }}"
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-eye"></i> Ver Choferes
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="dashboard-icon">
                 <i class="bi bi-truck"></i>
             </div>
             <h3>Padrones</h3>

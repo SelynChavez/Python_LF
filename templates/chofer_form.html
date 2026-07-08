@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}{{ 'ETLF - Editar Chofer' if chofer else 'ETLF - Crear Chofer' }}{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi {{ 'bi-pencil' if chofer else 'bi-person-plus' }}"></i>
+                    {{ 'Editar Chofer: ' + chofer.nombre if chofer else 'Crear Nuevo Chofer' }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('configuracion.guardar_chofer', id=chofer.id if chofer else 0) }}">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre"
+                                   value="{{ chofer.nombre if chofer else '' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="dni" class="form-label">DNI *</label>
+                            <input type="number" class="form-control" id="dni" name="dni"
+                                   value="{{ chofer.dni if chofer else '' }}" min="0" max="99999999" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fono" class="form-label">Fono *</label>
+                            <input type="text" class="form-control" id="fono" name="fono"
+                                   value="{{ chofer.fono if chofer else '' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">E.Mail</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   value="{{ chofer.email if chofer else '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="licencia" class="form-label"># de Licencia *</label>
+                            <select class="form-select" id="licencia" name="licencia" required>
+                                <option value="">Seleccionar Licencia...</option>
+                                <option value="AI" {{ 'selected' if (chofer and chofer.licencia == 'AI') }}>AI</option>
+                                <option value="AII" {{ 'selected' if (chofer and chofer.licencia == 'AII') }}>AII</option>
+                                <option value="AIII" {{ 'selected' if (chofer and chofer.licencia == 'AIII') }}>AIII</option>
+                                <option value="Suspendida" {{ 'selected' if (chofer and chofer.licencia == 'Suspendida') }}>Suspendida</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label">Tipo *</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                <option value="">Seleccionar Tipo...</option>
+                                <option value="Dueño" {{ 'selected' if (chofer and chofer.tipo == 'Dueño') }}>Dueño</option>
+                                <option value="Alquilado" {{ 'selected' if (chofer and chofer.tipo == 'Alquilado') }}>Alquilado</option>
+                                <option value="Externo" {{ 'selected' if (chofer and chofer.tipo == 'Externo') }}>Externo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="rating" class="form-label">Rating</label>
+                            <select class="form-select" id="rating" name="rating">
+                                <option value="">Seleccionar Rating...</option>
+                                <option value="RecordImpecable" {{ 'selected' if (chofer and chofer.rating == 'RecordImpecable') }}>Record Impecable</option>
+                                <option value="Promedio" {{ 'selected' if (chofer and chofer.rating == 'Promedio') }}>Promedio</option>
+                                <option value="Reiterativo" {{ 'selected' if (chofer and chofer.rating == 'Reiterativo') }}>Reiterativo</option>
+                                <option value="Problematico" {{ 'selected' if (chofer and chofer.rating == 'Problematico') }}>Problematico</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="comentarios" class="form-label">Comentarios</label>
+                            <input type="text" class="form-control" id="comentarios" name="comentarios"
+                                   value="{{ chofer.comentarios if chofer else '' }}" required>
+                        </div>
+                    </div>
+
+                    {% if chofer %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="active" class="form-label">Activo?</label>
+                            <select class="form-select" id="active" name="active" required>
+                                <option value="S" {{ 'selected' if chofer.active == 'S' }}>Si</option>
+                                <option value="N" {{ 'selected' if chofer.active == 'N' }}>No</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="usuario" class="form-label">Usuario Asociado</label>
+                            <input type="text" class="form-control" id="usuario" name="usuario"
+                                   value="{{ chofer.usuario if chofer else '' }}">
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Los campos marcados con * son obligatorios
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn {{ 'btn-primary' if chofer else 'btn-success' }}">
+                            <i class="bi {{ 'bi-save' if chofer else 'bi-check-circle' }}"></i>
+                            {{ 'Guardar Cambios' if chofer else 'Crear Chofer' }}
+                        </button>
+                        <a href="{{ url_for('configuracion.listar_choferes') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> {{ 'Volver a la lista' if chofer else 'Cancelar' }}
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -80,6 +80,13 @@ SELECT_SOCIO = "SELECT * FROM a_socios WHERE id = %s"
 SEL_NM_SOCIO = "SELECT nombre FROM a_socios WHERE id = %s"
 DELETE_SOCIO = "DELETE FROM a_socios WHERE id = %s"
 
+LISTA_CHOFERES = "SELECT * FROM a_choferes ORDER BY modified DESC "
+INSERT_CHOFER = "INSERT INTO a_choferes (nombre, fono, dni, licencia, comentarios, tipo, rating, email, active, modified, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'S', now(), %s)"
+UPDATE_CHOFER = "UPDATE a_choferes SET nombre=%s, fono=%s, dni=%s, licencia=%s, comentarios=%s, tipo=%s, rating=%s, active=%s, email=%s, usuario=%s, modified=now() WHERE id=%s "
+SELECT_CHOFER = "SELECT * FROM a_choferes WHERE id = %s"
+SEL_NM_CHOFER = "SELECT nombre FROM a_choferes WHERE id = %s"
+DELETE_CHOFER = "DELETE FROM a_choferes WHERE id = %s"
+
 LISTA_EMPLEADOS = "SELECT * FROM a_empleados ORDER BY modified DESC "
 INSERT_EMPLEADO = "INSERT INTO a_empleados (nombre, fono, dni, email, cargo, direccion, afp, sueldo, active, modified, webuser) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'S', now(), %s)"
 UPDATE_EMPLEADO = "UPDATE a_empleados SET nombre=%s, fono=%s, dni=%s, email=%s, cargo=%s, direccion=%s, afp=%s, sueldo=%s, active=%s,  modified=now() WHERE id=%s "

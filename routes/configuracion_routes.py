@@ -878,6 +878,146 @@ def eliminar_socio(id):
     return redirect(url_for('configuracion.listar_socios'))
 
 
+@configuracion_bp.route('/choferes')
+@login_required
+@admin_required
+def listar_choferes():
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_CHOFERES)
+        choferes = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return render_template('choferes.html', choferes=choferes)
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
+
+@configuracion_bp.route('/choferes/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_chofer():
+    return render_template('chofer_form.html', chofer=None)
+
+
+@configuracion_bp.route('/choferes/guardar/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def guardar_chofer(id):
+    if id > 0:
+        connection = get_db_connection()
+        if not connection:
+            flash('Error de conexión a la base de datos.', 'danger')
+            return redirect(url_for('configuracion.listar_choferes'))
+
+        if request.method == 'POST':
+            nombre = request.form.get('nombre')
+            fono = request.form.get('fono')
+            dni = request.form.get('dni')
+            licencia = request.form.get('licencia')
+            comentarios = request.form.get('comentarios')
+            tipo = request.form.get('tipo')
+            rating = request.form.get('rating')
+            active = request.form.get('active')
+            email = request.form.get('email')
+            usuario = request.form.get('usuario')
+            try:
+                cursor = connection.cursor()
+                cursor.execute(sqlconstants.UPDATE_CHOFER, (nombre, fono, dni, licencia, comentarios, tipo, rating, active, email, usuario, id))
+                connection.commit()
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_chofer', f'Editó el chofer: {nombre}'))
+                connection.commit()
+                cursor.close()
+                connection.close()
+                flash('Chofer actualizado exitosamente.', 'success')
+                return redirect(url_for('configuracion.listar_choferes'))
+            except Error as e:
+                if 'Duplicate entry' in str(e):
+                    flash('El nombre/dni de chofer ya existe.', 'danger')
+                else:
+                    flash(f'Error al actualizar chofer: {str(e)}', 'danger')
+                connection.rollback()
+                cursor.close()
+                connection.close()
+                return redirect(url_for('configuracion.guardar_chofer', id=id))
+
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.SELECT_CHOFER, (id,))
+        chofer = cursor.fetchone()
+        cursor.close()
+        connection.close()
+        if not chofer:
+            flash('Chofer no encontrado.', 'danger')
+            return redirect(url_for('configuracion.listar_choferes'))
+        return render_template('chofer_form.html', chofer=chofer)
+    else:
+        if request.method == 'POST':
+            nombre = request.form.get('nombre')
+            dni = request.form.get('dni')
+            fono = request.form.get('fono')
+            licencia = request.form.get('licencia')
+            tipo = request.form.get('tipo')
+            rating = request.form.get('rating')
+            email = request.form.get('email')
+            comentarios = request.form.get('comentarios')
+            if not all([dni, fono, nombre, tipo, email, comentarios]):
+                flash('Por favor, complete todos los campos.', 'danger')
+                return render_template('chofer_form.html', chofer=None)
+            connection = get_db_connection()
+            if connection:
+                try:
+                    cursor = connection.cursor()
+                    cursor.execute(sqlconstants.INSERT_CHOFER, (nombre, fono, dni, licencia, comentarios, tipo, rating, email, session['user_username']))
+                    connection.commit()
+                    cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_chofer', f'Creó el chofer: {nombre}'))
+                    connection.commit()
+                    cursor.close()
+                    connection.close()
+                    flash('Chofer creado exitosamente.', 'success')
+                    return redirect(url_for('configuracion.listar_choferes'))
+                except Error as e:
+                    if 'Duplicate entry' in str(e):
+                        flash('El nombre/dni de chofer o email ya existe.', 'danger')
+                    else:
+                        flash(f'Error al crear chofer: {str(e)}', 'danger')
+                    connection.rollback()
+                    cursor.close()
+                    connection.close()
+            else:
+                flash('Error de conexión a la base de datos.', 'danger')
+        return render_template('chofer_form.html', chofer=None)
+
+
+@configuracion_bp.route('/choferes/eliminar/<int:id>')
+@login_required
+@admin_required
+def eliminar_chofer(id):
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(sqlconstants.SEL_NM_CHOFER, (id,))
+            chofer = cursor.fetchone()
+            cursor.execute(sqlconstants.DELETE_CHOFER, (id,))
+            connection.commit()
+            if chofer:
+                cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'eliminar_chofer', f'Eliminó el chofer: {chofer["nombre"]}'))
+                connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Chofer eliminado exitosamente.', 'success')
+        except Error as e:
+            flash(f'Error al eliminar chofer: {str(e)}', 'danger')
+            connection.rollback()
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos.', 'danger')
+    return redirect(url_for('configuracion.listar_choferes'))
+
+
 @configuracion_bp.route('/proveedores')
 @login_required
 @admin_required
