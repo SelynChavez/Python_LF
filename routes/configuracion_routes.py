@@ -320,14 +320,15 @@ def guardar_tipo_salida(id):
         if not connection:
             flash('Error de conexión a la base de datos.', 'danger')
             return redirect(url_for('configuracion.listar_tipos_salidas'))
-        
+
         if request.method == 'POST':
             codigo = request.form.get('codigo')
             descripcion = request.form.get('descripcion')
             atributo3 = request.form.get('atributo3') or ''
+            atributo4 = request.form.get('atributo4') or ''
             try:
                 cursor = connection.cursor()
-                cursor.execute(sqlconstants.UPDATE_TIPO, (codigo, descripcion, '0','0','','',atributo3,'','', id))
+                cursor.execute(sqlconstants.UPDATE_TIPO, (codigo, descripcion, '0','0','','',atributo3,atributo4,'', id))
                 connection.commit()
                 cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_tipo_salida', f'LOG::Editó el tipo: {codigo}'))
                 connection.commit()
@@ -360,6 +361,7 @@ def guardar_tipo_salida(id):
             codigo = request.form.get('codigo')
             descripcion = request.form.get('descripcion')
             atributo3 = request.form.get('atributo3') or ''
+            atributo4 = request.form.get('atributo4') or ''
             if not all([codigo, descripcion]):
                 flash('Por favor, complete todos los campos.', 'danger')
                 return render_template('tipo_salida_form.html', tipo=None)
@@ -367,7 +369,7 @@ def guardar_tipo_salida(id):
             if connection:
                 try:
                     cursor = connection.cursor()
-                    cursor.execute(sqlconstants.INSERT_TIPO, (tipo, codigo, descripcion, '0', '0', '', '', atributo3, '', '', session['user_username']))
+                    cursor.execute(sqlconstants.INSERT_TIPO, (tipo, codigo, descripcion, '0', '0', '', '', atributo3, atributo4, '', session['user_username']))
                     connection.commit()
                     cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_tipo_salida', f'LOG::Creó el Tipo: {codigo}'))
                     connection.commit()

@@ -28,8 +28,24 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="atributo3" class="form-label">Cuenta Contable</label>
-                            <input type="number" class="form-control" id="atributo3" name="atributo3" min="0" max="999999999" step="1" 
+                            <input type="number" class="form-control" id="atributo3" name="atributo3" min="0" max="999999999" step="1"
                                    value="{{ tipo.atributo3 if tipo else '' }}" maxlength="9">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="atributo4" class="form-label">Categoría</label>
+                            <select class="form-control" id="atributo4" name="atributo4">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="A" {% if tipo and tipo.atributo4 == 'A' %}selected{% endif %}>A</option>
+                                <option value="B" {% if tipo and tipo.atributo4 == 'B' %}selected{% endif %}>B</option>
+                                <option value="C" {% if tipo and tipo.atributo4 == 'C' %}selected{% endif %}>C</option>
+                                <option value="D" {% if tipo and tipo.atributo4 == 'D' %}selected{% endif %}>D</option>
+                                <option value="E" {% if tipo and tipo.atributo4 == 'E' %}selected{% endif %}>E</option>
+                                <option value="F" {% if tipo and tipo.atributo4 == 'F' %}selected{% endif %}>F</option>
+                                <option value="G" {% if tipo and tipo.atributo4 == 'G' %}selected{% endif %}>G</option>
+                                <option value="H" {% if tipo and tipo.atributo4 == 'H' %}selected{% endif %}>H</option>
+                                <option value="I" {% if tipo and tipo.atributo4 == 'I' %}selected{% endif %}>I</option>
+                                <option value="J" {% if tipo and tipo.atributo4 == 'J' %}selected{% endif %}>J</option>
+                            </select>
                         </div>
                     </div>
 
