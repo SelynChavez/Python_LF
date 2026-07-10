@@ -216,6 +216,38 @@ def rep_salidas_entre_fechas():
                          tipos_salida=tipos_salida, tipos_beneficiario=tipos_beneficiario)
 
 
+@reportes_bp.route('/rep_ingresos_entre_fechas')
+@login_required
+def rep_ingresos_entre_fechas():
+    if session.get('user_rol') != 'ADMIN':
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "0"
+    p4 = "0"
+    p5 = ""
+    p6 = ""
+
+    connection = get_db_connection()
+    tipos_ingreso = []
+    tipos_tercero = []
+
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_TIPO_INGRESOS)
+        tipos_ingreso = cursor.fetchall()
+        cursor.execute(sqlconstants.LISTA_3_TERCEROS)
+        tipos_tercero = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+    return render_template('rep_ingresos_entre_fechas.html',
+                         p1=p1, p2=p2, p3=p3, p4=p4, p5=p5, p6=p6,
+                         tipos_ingreso=tipos_ingreso, tipos_tercero=tipos_tercero)
+
+
 @reportes_bp.route('/rep_ventas_comb')
 @login_required
 def rep_ventas_comb():
@@ -739,6 +771,136 @@ def generar_pdf_cabecera(pdf, cod, titulo, subtitulo, sum4, p1, p2, p3, p4, p5, 
     pdf.ln()
 
 
+def generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo, cod='REP_INGRESOS_ENTRE_FECHAS', usuario=''):
+    import datetime
+
+    buffer = BytesIO()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_left_margin(8)
+    pdf.set_right_margin(8)
+
+    # Encabezado superior con detalles
+    pdf.set_font("Arial", '', 9)
+    empresa = "E.T.Las Flores"
+    fecha_hora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cabecera_izq = f"{empresa} :: [{cod}] - [{usuario}] -"
+    cabecera_der = f"{fecha_hora} - Pag. # 1"
+
+    # Primera línea de cabecera
+    pdf.cell(100, 5, cabecera_izq, 0, 0, 'L')
+    pdf.cell(0, 5, cabecera_der, 0, 1, 'R')
+
+    # Título del reporte
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 6, titulo, 0, 1, 'C')
+
+    # Subtítulo
+    pdf.set_font("Arial", '', 9)
+    pdf.cell(0, 4, subtitulo, 0, 1, 'C')
+    pdf.ln(2)
+
+    # Encabezados de columna
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(10, 5, 'Id', 1)
+    pdf.cell(15, 5, 'Fecha', 1)
+    pdf.cell(20, 5, 'Tp.Ing', 1)
+    pdf.cell(50, 5, 'Ingreso', 1)
+    pdf.cell(30, 5, 'Tercero', 1)
+    pdf.cell(12, 5, 'T.Doc', 1)
+    pdf.cell(16, 5, 'Nro Doc', 1)
+    pdf.cell(20, 5, 'Monto', 1, 1, 'R')
+
+    # Obtener datos
+    connection = get_db_connection()
+    if not connection:
+        return None
+
+    cursor = connection.cursor(dictionary=True)
+    query = sqlconstants.REP_INGRESOS_ENTRE_FECHAS
+    query = query.replace("$p1$", str(p1))
+    query = query.replace("$p2$", str(p2))
+    query = query.replace("$p3$", str(p3))
+    query = query.replace("$p4$", str(p4))
+    query = query.replace("$p5$", str(p5) if p5 else '')
+    query = query.replace("$p6$", str(p6) if p6 else '')
+
+    cursor.execute(query)
+    datos = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    # Procesar datos
+    pdf.set_font("Arial", '', 8)
+    total_general = 0
+    total_dia = 0
+    fecha_actual = None
+    num_linea = 0
+
+    for dato in datos:
+        # Si cambia la fecha, mostrar subtotal del día anterior
+        if fecha_actual and dato['fecha_orden'] != fecha_actual:
+            pdf.set_font("Arial", 'B', 8)
+            pdf.cell(147, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(20, 5, f'{total_dia:.2f}', 1, 1, 'R')
+            total_dia = 0
+            pdf.set_font("Arial", '', 8)
+
+        fecha_actual = dato['fecha_orden']
+        num_linea += 1
+
+        # Abrevar tipo de doc
+        tipo_doc_abrevia = str(dato['tipo_doc'])[:3] if dato['tipo_doc'] else ''
+
+        # Mostrar fila
+        pdf.cell(10, 5, str(dato['id']), 1)
+        pdf.cell(15, 5, str(dato['fecha']), 1)
+        pdf.cell(20, 5, str(dato['tipo_ingreso']).strip(), 1)
+        pdf.cell(50, 5, str(dato['ingreso_desc'])[:35], 1)
+        pdf.cell(30, 5, str(dato['tercero_nombre'])[:20], 1)
+        pdf.cell(12, 5, tipo_doc_abrevia, 1)
+        pdf.cell(16, 5, str(dato['numero_doc']), 1)
+        pdf.cell(20, 5, f"{float(dato['monto']):.2f}", 1, 1, 'R')
+
+        total_dia += float(dato['monto'])
+        total_general += float(dato['monto'])
+
+        # Nueva página si es necesario
+        if num_linea >= 40:
+            pdf.ln(2)
+            pdf.set_font("Arial", 'B', 8)
+            pdf.cell(147, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(20, 5, f'{total_dia:.2f}', 1, 1, 'R')
+            pdf.add_page()
+            pdf.set_left_margin(8)
+            pdf.set_font("Arial", 'B', 8)
+            pdf.cell(10, 5, 'Id', 1)
+            pdf.cell(15, 5, 'Fecha', 1)
+            pdf.cell(20, 5, 'Tp.Ing', 1)
+            pdf.cell(50, 5, 'Ingreso', 1)
+            pdf.cell(30, 5, 'Tercero', 1)
+            pdf.cell(12, 5, 'T.Doc', 1)
+            pdf.cell(16, 5, 'Nro Doc', 1)
+            pdf.cell(20, 5, 'Monto', 1, 1, 'R')
+            total_dia = 0
+            num_linea = 0
+            pdf.set_font("Arial", '', 8)
+
+    # Último total del día
+    if fecha_actual:
+        pdf.set_font("Arial", 'B', 8)
+        pdf.cell(147, 5, f'Total del Día {fecha_actual}:', 1)
+        pdf.cell(20, 5, f'{total_dia:.2f}', 1, 1, 'R')
+
+    # Total final
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(147, 7, 'TOTAL FINAL:', 1)
+    pdf.cell(20, 7, f'{total_general:.2f}', 1, 1, 'R')
+
+    pdf_output = pdf.output(dest='S').encode('latin-1')
+    return BytesIO(pdf_output)
+
+
 def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo, cod='REP_SALIDAS_ENTRE_FECHAS', usuario=''):
     import datetime
 
@@ -879,6 +1041,9 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", s
         return generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, p5, titulo, subtitulo)
     elif cod == "REP_SALDOS_COMB":
         return generar_pdf_saldos_comb(pdf, titulo, subtitulo)
+    elif cod == "REP_INGRESOS_ENTRE_FECHAS":
+        usuario = session.get('user_username', 'desconocido')
+        return generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo, cod, usuario)
     elif cod == "REP_SALIDAS_ENTRE_FECHAS":
         usuario = session.get('user_username', 'desconocido')
         return generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo, cod, usuario)

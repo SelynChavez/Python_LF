@@ -652,6 +652,30 @@ WHERE s.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$')
 ORDER BY s.fecha_solicitud DESC, s.id DESC
 """
 
+REP_INGRESOS_ENTRE_FECHAS = """
+SELECT
+    i.id,
+    DATE_FORMAT(i.fecha_solicitud, '%d/%m/%y') as fecha,
+    ti.descripcion as ingreso_desc,
+    CAST(i.tipo_ingreso AS CHAR) as tipo_ingreso,
+    i.tercero as tercero_id,
+    i.tipo_tercero,
+    COALESCE(tt.descripcion, i.tercero) as tercero_nombre,
+    i.tipo_doc,
+    i.numero_doc,
+    i.monto,
+    DATE_FORMAT(i.fecha_solicitud, '%Y-%m-%d') as fecha_orden
+FROM a_ingresos i
+JOIN a_tipos ti ON i.tipo_ingreso = ti.codigo AND ti.tipo = 'INGRESO'
+LEFT JOIN a_tipos tt ON i.tipo_tercero = tt.codigo AND tt.tipo = 'TERCERO'
+WHERE i.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$')
+    AND (i.tipo_ingreso = '$p3$' OR '$p3$' = '0')
+    AND (i.tipo_tercero = '$p4$' OR '$p4$' = '0')
+    AND (COALESCE(tt.descripcion, i.tercero) LIKE '%$p5$%' OR '$p5$' = '')
+    AND (i.numero_doc LIKE '%$p6$%' OR '$p6$' = '')
+ORDER BY i.fecha_solicitud DESC, i.id DESC
+"""
+
 # INLINE SQL CONSOLIDADO (antes estaban dispersos en los archivos de rutas)
 
 SEL_RECIBO_BY_ID = "SELECT id, active FROM a_recibos WHERE id=%s"

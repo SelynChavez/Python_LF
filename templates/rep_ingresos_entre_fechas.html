@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte - Ingresos Entre Fechas {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-graph-down"></i> Reporte de Ingresos Entre Fechas</h4>
+            </div>
+            <div class="card-body">
+                <form id="formReporte" action="/generar_reporte" method="POST" target="_blank" onsubmit="construirSubtitulo()">
+                    <input type="hidden" id="cod" name="cod" value="REP_INGRESOS_ENTRE_FECHAS">
+                    <input type="hidden" id="titulo" name="titulo" value="Reporte de Ingresos Entre Fechas">
+                    <input type="hidden" id="subtitulo" name="subtitulo" value="">
+
+                    <!-- Rango de Fechas -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="p1" class="form-label">Fecha Desde <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="p1" name="p1" value="{{ p1 }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p2" class="form-label">Fecha Hasta <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="p2" name="p2" value="{{ p2 }}" required>
+                        </div>
+                    </div>
+
+                    <!-- Tipo de Ingreso y Tipo de Tercero -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="p3" class="form-label">Tipo de Ingreso</label>
+                            <select class="form-select" id="p3" name="p3">
+                                <option value="0">-- Todos --</option>
+                                {% for tipo_ingreso in tipos_ingreso %}
+                                <option value="{{ tipo_ingreso.codigo }}">{{ tipo_ingreso.descripcion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p4" class="form-label">Tipo de Tercero</label>
+                            <select class="form-select" id="p4" name="p4">
+                                <option value="0">-- Todos --</option>
+                                {% for tipo_tercero in tipos_tercero %}
+                                <option value="{{ tipo_tercero.codigo }}">{{ tipo_tercero.descripcion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Nombre de Tercero y Número de Documento -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="p5" class="form-label">Nombre del Tercero (Búsqueda)</label>
+                            <input type="text" class="form-control" id="p5" name="p5" placeholder="Ingrese parte del nombre" value="{{ p5 }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p6" class="form-label">Número de Documento (Búsqueda)</label>
+                            <input type="text" class="form-control" id="p6" name="p6" placeholder="Ingrese parte del documento" value="{{ p6 }}">
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="submit" class="btn btn-primary me-md-2">
+                            <i class="bi bi-eye"></i> Generar y Ver Reporte
+                        </button>
+                        <a href="{{ url_for('reportes.reportes') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function construirSubtitulo() {
+    const p1 = document.getElementById('p1').value || '--';
+    const p2 = document.getElementById('p2').value || '--';
+    const p3 = document.getElementById('p3').value;
+    const p4 = document.getElementById('p4').value;
+    const p5 = document.getElementById('p5').value;
+    const p6 = document.getElementById('p6').value;
+
+    const p3Text = document.getElementById('p3').options[document.getElementById('p3').selectedIndex].text;
+    const p4Text = document.getElementById('p4').options[document.getElementById('p4').selectedIndex].text;
+
+    let subtitulo = `Desde ${p1} a ${p2}`;
+
+    if (p3 !== '0') {
+        subtitulo += ` | Tipo Ingreso: ${p3Text}`;
+    }
+    if (p4 !== '0') {
+        subtitulo += ` | Tipo Tercero: ${p4Text}`;
+    }
+    if (p5) {
+        subtitulo += ` | Tercero: ${p5}`;
+    }
+    if (p6) {
+        subtitulo += ` | Documento: ${p6}`;
+    }
+
+    document.getElementById('subtitulo').value = subtitulo;
+}
+</script>
+{% endblock %}

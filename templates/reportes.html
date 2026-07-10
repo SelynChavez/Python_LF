@@ -70,6 +70,17 @@
 
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card dashboard-card">
+            <p><b>Reporte de Ingresos Entre Fechas</b></p>
+            <small class="text-muted">Ingresos con filtros avanzados</small>
+            <a href="{{ url_for('reportes.rep_ingresos_entre_fechas') if session.user_rol == 'ADMIN' else '#' }}"
+               class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-graph-down"></i> Ingresos
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
             <p><b>Reporte de Salidas Entre Fechas</b></p>
             <small class="text-muted">Salidas con filtros avanzados</small>
             <a href="{{ url_for('reportes.rep_salidas_entre_fechas') if session.user_rol == 'ADMIN' else '#' }}"
