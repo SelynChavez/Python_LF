@@ -836,6 +836,7 @@ def generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo,
     total_dia = 0
     fecha_actual = None
     num_linea = 0
+    num_pagina = 1
 
     for dato in datos:
         # Si cambia la fecha, mostrar subtotal del día anterior
@@ -967,6 +968,7 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
     total_dia = 0
     fecha_actual = None
     num_linea = 0
+    num_pagina = 1
 
     for dato in datos:
         # Si cambia la fecha, mostrar subtotal del día anterior
@@ -983,12 +985,17 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
         # Abrevar tipo de doc
         tipo_doc_abrevia = str(dato['tipo_doc'])[:3] if dato['tipo_doc'] else ''
 
+        # Convertir beneficiario a TitleCase si está en mayúsculas
+        beneficiario = str(dato['beneficiario']).strip()
+        if beneficiario == beneficiario.upper() and beneficiario:
+            beneficiario = ' '.join(word.capitalize() for word in beneficiario.split())
+
         # Mostrar fila
         pdf.cell(10, 5, str(dato['id']), 1)
         pdf.cell(15, 5, str(dato['fecha']), 1)
         pdf.cell(20, 5, str(dato['tipo_salida']).strip(), 1)
         pdf.cell(55, 5, str(dato['salida_desc'])[:40], 1)
-        pdf.cell(35, 5, str(dato['beneficiario'])[:25], 1)
+        pdf.cell(35, 5, beneficiario[:25], 1)
         pdf.cell(12, 5, tipo_doc_abrevia, 1)
         pdf.cell(16, 5, str(dato['numero_doc']), 1)
         pdf.cell(20, 5, f"{float(dato['monto']):.2f}", 1, 1, 'R')
@@ -1004,6 +1011,30 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
             pdf.cell(20, 5, f'{total_dia:.2f}', 1, 1, 'R')
             pdf.add_page()
             pdf.set_left_margin(8)
+            pdf.set_right_margin(8)
+            num_pagina += 1
+
+            # Encabezado superior con detalles (nueva página)
+            pdf.set_font("Arial", '', 9)
+            empresa = "E.T.Las Flores"
+            fecha_hora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            cabecera_izq = f"{empresa} :: [{cod}] - [{usuario}] -"
+            cabecera_der = f"{fecha_hora} - Pag. # {num_pagina}"
+
+            # Primera línea de cabecera
+            pdf.cell(100, 5, cabecera_izq, 0, 0, 'L')
+            pdf.cell(0, 5, cabecera_der, 0, 1, 'R')
+
+            # Título del reporte
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 6, titulo, 0, 1, 'C')
+
+            # Subtítulo
+            pdf.set_font("Arial", '', 9)
+            pdf.cell(0, 4, subtitulo, 0, 1, 'C')
+            pdf.ln(2)
+
+            # Encabezados de columna
             pdf.set_font("Arial", 'B', 8)
             pdf.cell(10, 5, 'Id', 1)
             pdf.cell(15, 5, 'Fecha', 1)

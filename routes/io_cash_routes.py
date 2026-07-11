@@ -241,6 +241,14 @@ def buscar_salidas():
         query += " ORDER BY fecha_solicitud DESC, id DESC"
         cursor.execute(query, params)
         resultados = cursor.fetchall()
+
+        # Convertir beneficiarios en mayúsculas a TitleCase
+        for resultado in resultados:
+            if 'beneficiario_nombre' in resultado and resultado['beneficiario_nombre']:
+                beneficiario = str(resultado['beneficiario_nombre']).strip()
+                if beneficiario == beneficiario.upper():
+                    resultado['beneficiario_nombre'] = ' '.join(word.capitalize() for word in beneficiario.split())
+
         return jsonify({
             'success': True,
             'data': resultados
