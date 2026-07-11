@@ -351,7 +351,7 @@ LISTA_SALIDAS = "SELECT * FROM a_salidas WHERE DATE(fecha_solicitud) BETWEEN %s 
 LISTA_TIPO_SALIDAS = "SELECT codigo,concat(descripcion,' [',codigo,']') descripcion FROM a_tipos WHERE tipo = 'SALIDA' ORDER BY 2"
 LISTA_TIPO_INGRESOS = "SELECT codigo, CONCAT(descripcion, ' [', codigo, ']') as descripcion FROM a_tipos WHERE tipo = 'INGRESO' ORDER BY 2"
 LISTA_DISCT_TIPO_SALIDAS = "SELECT DISTINCT codigo,descripcion nombre FROM a_tipos WHERE tipo = 'SALIDA' ORDER BY descripcion"
-LISTA_FILTRO_SALIDAS = "SELECT s.*, DATE_FORMAT(fecha_solicitud, '%d/%m/%Y') fecha FROM a_salidas s WHERE fecha_solicitud BETWEEN %s AND %s "
+LISTA_FILTRO_SALIDAS = "SELECT s.*, DATE_FORMAT(fecha_solicitud, '%d/%m/%Y') fecha FROM a_salidas s WHERE fecha_solicitud BETWEEN %s AND %s AND s.estado != 'ANULADO' "
 LISTA_2_PADRONES = "SELECT id, nombPadronSocio(p.id) nombre, placa FROM a_padrones p ORDER BY nombre"
 LISTA_3_PADRONES = "SELECT id, nombre, placa FROM a_padrones ORDER BY nombre"
 LISTA_2_SOCIOS = "SELECT id, nombre, dni FROM a_socios ORDER BY nombre"
@@ -649,6 +649,7 @@ WHERE s.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$')
     AND (s.beneficiario_nombre LIKE '%$p5$%' OR '$p5$' = '')
     AND (s.numero_doc LIKE '%$p6$%' OR '$p6$' = '')
     AND (s.periodo = '$p7$' OR '$p7$' = '')
+    AND s.estado != 'ANULADO'
 ORDER BY s.fecha_solicitud DESC, s.id DESC
 """
 
