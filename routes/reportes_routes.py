@@ -248,6 +248,37 @@ def rep_ingresos_entre_fechas():
                          tipos_ingreso=tipos_ingreso, tipos_tercero=tipos_tercero)
 
 
+@reportes_bp.route('/rep_control_pagos_prestamos')
+@login_required
+def rep_control_pagos_prestamos():
+    if session.get('user_rol') != 'ADMIN':
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "0"
+    p4 = "0"
+    p5 = "0"
+
+    connection = get_db_connection()
+    padrones = []
+    tipos_prestamo = []
+
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_2_PADRONES)
+        padrones = cursor.fetchall()
+        cursor.execute(sqlconstants.DROPLIST_DEUDAS)
+        tipos_prestamo = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+    return render_template('rep_control_pagos_prestamos.html',
+                         p1=p1, p2=p2, p3=p3, p4=p4, p5=p5,
+                         padrones=padrones, tipos_prestamo=tipos_prestamo)
+
+
 @reportes_bp.route('/rep_ventas_comb')
 @login_required
 def rep_ventas_comb():
@@ -1063,6 +1094,150 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
     return BytesIO(pdf_output)
 
 
+def generar_pdf_control_pagos_prestamos(p1, p2, p3, p4, p5, titulo, subtitulo, cod='REP_CONTROL_PAGOS_PRESTAMOS', usuario=''):
+    import datetime
+
+    buffer = BytesIO()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_left_margin(8)
+    pdf.set_right_margin(8)
+
+    # Encabezado superior con detalles
+    pdf.set_font("Arial", '', 9)
+    empresa = "E.T.Las Flores"
+    fecha_hora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cabecera_izq = f"{empresa} :: [{cod}] - [{usuario}] -"
+    cabecera_der = f"{fecha_hora} - Pag. # 1"
+
+    # Primera línea de cabecera
+    pdf.cell(100, 5, cabecera_izq, 0, 0, 'L')
+    pdf.cell(0, 5, cabecera_der, 0, 1, 'R')
+
+    # Título del reporte
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 6, titulo, 0, 1, 'C')
+
+    # Subtítulo
+    pdf.set_font("Arial", '', 9)
+    pdf.cell(0, 4, subtitulo, 0, 1, 'C')
+    pdf.ln(2)
+
+    # Encabezados de columna
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(9, 5, 'Id', 1)
+    pdf.cell(12, 5, 'Padron', 1)
+    pdf.cell(69, 5, 'Nombre', 1)
+    pdf.cell(15, 5, 'Tipo', 1)
+    pdf.cell(12, 5, 'Fch.Sol', 1)
+    pdf.cell(15, 5, 'Aprobado', 1, 0, 'R')
+    pdf.cell(15, 5, 'Pagado', 1, 0, 'R')
+    pdf.cell(15, 5, 'Deuda', 1, 0, 'R')
+    pdf.cell(16, 5, 'Estado', 1)
+    pdf.cell(20, 5, 'Actualizado', 1, 1)
+
+    # Obtener datos
+    connection = get_db_connection()
+    if not connection:
+        return None
+
+    cursor = connection.cursor(dictionary=True)
+    query = sqlconstants.REP_CONTROL_PAGOS_PRESTAMOS
+    query = query.replace("$p1$", p1)
+    query = query.replace("$p2$", p2)
+    query = query.replace("$p3$", p3)
+    query = query.replace("$p4$", p4)
+    query = query.replace("$p5$", p5)
+    cursor.execute(query)
+    datos = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    # Procesar datos
+    pdf.set_font("Arial", '', 7)
+    total_general_aprobado = 0
+    total_general_pagado = 0
+    total_general_deuda = 0
+    num_linea = 0
+    num_pagina = 1
+
+    for dato in datos:
+        num_linea += 1
+
+        # Nueva página si es necesario
+        if num_linea >= 35:
+            pdf.add_page()
+            pdf.set_left_margin(8)
+            pdf.set_right_margin(8)
+            num_pagina += 1
+
+            # Encabezado superior (nueva página)
+            pdf.set_font("Arial", '', 9)
+            cabecera_izq = f"{empresa} :: [{cod}] - [{usuario}] -"
+            cabecera_der = f"{fecha_hora} - Pag. # {num_pagina}"
+            pdf.cell(100, 5, cabecera_izq, 0, 0, 'L')
+            pdf.cell(0, 5, cabecera_der, 0, 1, 'R')
+
+            # Título del reporte
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 6, titulo, 0, 1, 'C')
+
+            # Subtítulo
+            pdf.set_font("Arial", '', 9)
+            pdf.cell(0, 4, subtitulo, 0, 1, 'C')
+            pdf.ln(2)
+
+            # Encabezados de columna (nueva página)
+            pdf.set_font("Arial", 'B', 8)
+            pdf.cell(9, 5, 'Id', 1)
+            pdf.cell(12, 5, 'Padron', 1)
+            pdf.cell(69, 5, 'Nombre', 1)
+            pdf.cell(15, 5, 'Tipo', 1)
+            pdf.cell(12, 5, 'Fch.Sol', 1)
+            pdf.cell(15, 5, 'Aprobado', 1, 0, 'R')
+            pdf.cell(15, 5, 'Pagado', 1, 0, 'R')
+            pdf.cell(15, 5, 'Deuda', 1, 0, 'R')
+            pdf.cell(16, 5, 'Estado', 1)
+            pdf.cell(20, 5, 'Actualizado', 1, 1)
+
+            pdf.set_font("Arial", '', 7)
+            num_linea = 0
+
+        # Mostrar fila
+        nombre = str(dato['nombre'])[:60] if dato['nombre'] else '-'
+        tipo = str(dato['tipo_prestamo'])[:12] if dato['tipo_prestamo'] else '-'
+        estado = str(dato['estado'])[:10] if dato['estado'] else '-'
+        aprobado = float(dato['aprobado']) if dato['aprobado'] else 0
+        pagado = float(dato['pagado']) if dato['pagado'] else 0
+        deuda = float(dato['deuda']) if dato['deuda'] else 0
+
+        pdf.cell(9, 4, str(dato['prestamo']), 1)
+        pdf.cell(12, 4, str(dato['padron']), 1)
+        pdf.cell(69, 4, nombre, 1)
+        pdf.cell(15, 4, tipo, 1)
+        pdf.cell(12, 4, str(dato['fecha_solicitud']), 1)
+        pdf.cell(15, 4, f"{aprobado:.2f}", 1, 0, 'R')
+        pdf.cell(15, 4, f"{pagado:.2f}", 1, 0, 'R')
+        pdf.cell(15, 4, f"{deuda:.2f}", 1, 0, 'R')
+        pdf.cell(16, 4, estado, 1)
+        pdf.cell(20, 4, str(dato['actualizado']), 1, 1)
+
+        total_general_aprobado += aprobado
+        total_general_pagado += pagado
+        total_general_deuda += deuda
+
+    # Total final
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(117, 5, 'TOTALES:', 1)
+    pdf.cell(15, 5, f'{total_general_aprobado:.2f}', 1, 0, 'R')
+    pdf.cell(15, 5, f'{total_general_pagado:.2f}', 1, 0, 'R')
+    pdf.cell(15, 5, f'{total_general_deuda:.2f}', 1, 0, 'R')
+    pdf.cell(36, 5, '', 1, 1)
+
+    pdf_output = pdf.output(dest='S').encode('latin-1')
+    return BytesIO(pdf_output)
+
+
 def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", serie="1", tipo_fecha="fecha"):
     buffer = BytesIO()
     pdf = FPDF()
@@ -1078,6 +1253,9 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", s
     elif cod == "REP_SALIDAS_ENTRE_FECHAS":
         usuario = session.get('user_username', 'desconocido')
         return generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo, cod, usuario)
+    elif cod == "REP_CONTROL_PAGOS_PRESTAMOS":
+        usuario = session.get('user_username', 'desconocido')
+        return generar_pdf_control_pagos_prestamos(p1, p2, p3, p4, p5, titulo, subtitulo, cod, usuario)
 
     # Configurar margen izquierdo
     if cod in ('REP_FLEX_PAD', 'REP_FLEX_APO'):

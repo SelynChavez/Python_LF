@@ -90,5 +90,16 @@
         </div>
     </div>
 
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <p><b>Reporte de Control de Pagos Préstamos</b></p>
+            <small class="text-muted">Control de pagos y deudas de préstamos</small>
+            <a href="{{ url_for('reportes.rep_control_pagos_prestamos') if session.user_rol == 'ADMIN' else '#' }}"
+               class="btn btn-info {{ 'disabled' if session.user_rol != 'ADMIN' }}">
+                <i class="bi bi-cash-coin"></i> Pagos Préstamos
+            </a>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

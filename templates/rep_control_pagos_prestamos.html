@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte - Control de Pagos Prestamos {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-graph-up"></i> Reporte de Control de Pagos Préstamos</h4>
+            </div>
+            <div class="card-body">
+                <form id="formReporte" action="/generar_reporte" method="POST" target="_blank" onsubmit="construirSubtitulo()">
+                    <input type="hidden" id="cod" name="cod" value="REP_CONTROL_PAGOS_PRESTAMOS">
+                    <input type="hidden" id="titulo" name="titulo" value="Reporte de Control de Pagos Préstamos">
+                    <input type="hidden" id="subtitulo" name="subtitulo" value="">
+
+                    <!-- Rango de Fechas -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="p1" class="form-label">Fecha Desde <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="p1" name="p1" value="{{ p1 }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p2" class="form-label">Fecha Hasta <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="p2" name="p2" value="{{ p2 }}" required>
+                        </div>
+                    </div>
+
+                    <!-- Padrón y Tipo de Préstamo -->
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label for="p3" class="form-label">Padrón</label>
+                            <select class="form-control" id="p3" name="p3">
+                                <option value="0">-- Todos --</option>
+                                {% for padron in padrones %}
+                                    <option value="{{ padron.id }}" {% if padron.id|string == p3|string %}selected{% endif %}>
+                                        {{ padron.nombre }} ({{ padron.placa }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="p4" class="form-label">Tipo de Préstamo</label>
+                            <select class="form-control" id="p4" name="p4">
+                                <option value="0">-- Todos --</option>
+                                {% for tipo in tipos_prestamo %}
+                                    <option value="{{ tipo.codigo }}" {% if tipo.codigo|string == p4|string %}selected{% endif %}>
+                                        {{ tipo.descripcion }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="p5" class="form-label">Estado</label>
+                            <select class="form-control" id="p5" name="p5">
+                                <option value="0">-- Todos --</option>
+                                <option value="aprobado" {% if p5 == 'aprobado' %}selected{% endif %}>Aprobado</option>
+                                <option value="pagado" {% if p5 == 'pagado' %}selected{% endif %}>Pagado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="submit" class="btn btn-primary me-md-2">
+                            <i class="bi bi-eye"></i> Generar y Ver Reporte
+                        </button>
+                        <a href="{{ url_for('reportes.reportes') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+
+                    <!-- Información de campos requeridos -->
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        Los campos marcados con <span class="text-danger">*</span> son obligatorios
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function construirSubtitulo() {
+    const p1 = document.getElementById('p1').value;
+    const p2 = document.getElementById('p2').value;
+    const subtitulo = `Desde: ${p1} | Hasta: ${p2}`;
+    document.getElementById('subtitulo').value = subtitulo;
+}
+</script>
+{% endblock %}
