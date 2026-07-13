@@ -548,6 +548,9 @@ def crear_recibo_s2():
                                 quer0 = quer0.replace("$pre$", str(deu))
                                 quer0 = quer0.replace("$mnt$", str(mnt))
                                 cursor.execute(quer0)
+                                # invocar al SP para q ponga como "pagado" el prestamo si el saldo pendiente es 0 
+                                cursor.execute("CALL b2p.actPrestamoFinal({})".format(deu))
+
                     query9 = sqlconstants.UPDATE_RECIBO_X
                     query9 = query9.replace("$recibo$",lid)
                     cursor.execute(query9)
