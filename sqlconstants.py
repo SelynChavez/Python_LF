@@ -650,7 +650,29 @@ WHERE s.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$')
     AND (s.numero_doc LIKE '%$p6$%' OR '$p6$' = '')
     AND (s.periodo = '$p7$' OR '$p7$' = '')
     AND s.estado != 'ANULADO'
-ORDER BY s.fecha_solicitud DESC, s.id DESC
+
+UNION ALL
+
+SELECT
+    p.id,
+    DATE_FORMAT(p.fecha_solicitud, '%d/%m/%y') as fecha,
+    'Prestamo en Efectivo' as salida_desc,
+    'PRESTAMO' as tipo_salida,
+    LOWER(SUBSTR(COALESCE(nombPadronSocio(p.padron), CONCAT('Padron #', p.padron)), 1, 25)) as beneficiario,
+    'EFECT' as tipo_doc,
+    CAST(p.id AS CHAR) as numero_doc,
+    p.monto_aprobado as monto,
+    DATE_FORMAT(p.fecha_solicitud, '%Y-%m-%d') as fecha_orden
+FROM a_prestamos p
+WHERE p.tipo_prestamo = 'EFECTIVO'
+    AND p.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$')
+    AND ('PRESTAMO' = '$p3$' OR '$p3$' = '0')
+    AND ('PADRON' = '$p4$' OR '$p4$' = '0')
+    AND (LOWER(SUBSTR(COALESCE(nombPadronSocio(p.padron), CONCAT('Padron #', p.padron)), 1, 25)) LIKE '%$p5$%' OR '$p5$' = '')
+    AND (CAST(p.id AS CHAR) LIKE '%$p6$%' OR '$p6$' = '')
+    AND (SUBSTR(p.fecha_solicitud, 1, 6) = '$p7$' OR '$p7$' = '')
+
+ORDER BY fecha_orden DESC, id DESC
 """
 
 REP_INGRESOS_ENTRE_FECHAS = """
