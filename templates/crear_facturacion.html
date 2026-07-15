@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Facturación{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Crear Nuevo Registro de Facturación</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="descripcion" class="form-label">Descripción <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="descripcion" name="descripcion" required placeholder="Ej: Pago por servicio de agua">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fecha" class="form-label">Fecha <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ fecha_hoy }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="costo" class="form-label">Costo (S/.) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="costo" name="costo" step="0.01" value="0" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="pago" class="form-label">Tipo <span class="text-danger">*</span></label>
+                                <select class="form-control" id="pago" name="pago" required>
+                                    <option value="N">Servicio (Deuda)</option>
+                                    <option value="S">Pago Realizado</option>
+                                </select>
+                                <small class="text-muted">
+                                    Servicio: Se muestra en la columna "Servicios" (azul)<br>
+                                    Pago: Se muestra en la columna "Pagos" (rojo)
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <small>
+                            <strong>Nota:</strong> La fecha y hora de creación se registrarán automáticamente.
+                            El usuario será registrado como <strong>{{ session.user_username }}</strong>.
+                        </small>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{{ url_for('facturacion.listar_facturacion') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Crear Registro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

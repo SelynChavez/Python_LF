@@ -39,7 +39,7 @@ from routes import (
     reportes_bp, io_cash_bp, combustibles_bp,
     productos_bp, dashboard_bp, aportes_bp,
     prestamos_bp, retiros_bp, recibos_bp,
-    compras_comb_bp
+    compras_comb_bp, facturacion_bp
 )
 
 app.register_blueprint(auth_bp)
@@ -55,6 +55,7 @@ app.register_blueprint(prestamos_bp)
 app.register_blueprint(retiros_bp)
 app.register_blueprint(recibos_bp)
 app.register_blueprint(compras_comb_bp)
+app.register_blueprint(facturacion_bp)
 
 # ==================== CONTROL DE ACCESO POR ROL ====================
 # El rol GRIFERO solo puede acceder a la pantalla de Registrar Turno.

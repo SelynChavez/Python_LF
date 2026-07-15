@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}Facturación{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Facturación</h4>
+                {% if session.user_username in ['selyn', 'matias'] %}
+                    <a href="{{ url_for('facturacion.crear_facturacion') }}" class="btn btn-sm btn-success" title="Crear nuevo registro" data-bs-toggle="tooltip">
+                        <i class="bi bi-plus-circle"></i> Nuevo Registro
+                    </a>
+                {% endif %}
+            </div>
+            {% if facturaciones %}
+                <!-- Resumen -->
+                <div style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 1.5rem;">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 style="margin-bottom: 0.5rem;">Total Servicios (Deudas):</h6>
+                            <p style="color: #007bff; font-size: 1.3em; font-weight: bold; margin-bottom: 0;">
+                                S/. {{ "%.2f"|format(facturaciones|selectattr('pago', 'equalto', 'N')|map(attribute='costo')|sum) }}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 style="margin-bottom: 0.5rem;">Total Pagos Realizados:</h6>
+                            <p style="color: #dc3545; font-size: 1.3em; font-weight: bold; margin-bottom: 0;">
+                                S/. {{ "%.2f"|format(facturaciones|selectattr('pago', 'equalto', 'S')|map(attribute='costo')|sum) }}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 style="margin-bottom: 0.5rem;">Lo que se debe al día de hoy:</h6>
+                            <p style="color: #28a745; font-size: 1.3em; font-weight: bold; margin-bottom: 0;">
+                                S/. {{ "%.2f"|format(
+                                    facturaciones|selectattr('pago', 'equalto', 'N')|map(attribute='costo')|sum -
+                                    facturaciones|selectattr('pago', 'equalto', 'S')|map(attribute='costo')|sum
+                                ) }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Descripción</th>
+                                <th>Fecha</th>
+                                <th style="text-align: right;">
+                                    <span style="color: #007bff;">Servicios</span>
+                                </th>
+                                <th style="text-align: right;">
+                                    <span style="color: #dc3545;">Pagos</span>
+                                </th>
+                                <th>Pagado</th>
+                                <th>Creado</th>
+                                <th>Usuario</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if facturaciones %}
+                                {% for fac in facturaciones %}
+                                    <tr>
+                                        <td>{{ fac.id }}</td>
+                                        <td>{{ fac.descripcion }}</td>
+                                        <td>{{ fac.fecha }}</td>
+                                        <td style="text-align: right;">
+                                            {% if fac.pago == 'N' %}
+                                                <span style="color: #007bff; font-weight: bold;">
+                                                    S/. {{ "%.2f"|format(fac.costo) }}
+                                                </span>
+                                            {% else %}
+                                                <span style="color: #007bff;">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="text-align: right;">
+                                            {% if fac.pago == 'S' %}
+                                                <span style="color: #dc3545; font-weight: bold;">
+                                                    S/. {{ "%.2f"|format(fac.costo) }}
+                                                </span>
+                                            {% else %}
+                                                <span style="color: #dc3545;">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if fac.pagado == 'S' %}
+                                                <span class="badge bg-success">Sí</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">No</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ fac.creado }}</td>
+                                        <td>{{ fac.webuser }}</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                {% if session.user_username in ['selyn', 'matias'] %}
+                                                    <button type="button" class="btn btn-sm {% if fac.pagado == 'S' %}btn-success{% else %}btn-warning{% endif %}" onclick="togglePagado({{ fac.id }}, '{{ fac.pagado }}')" title="{% if fac.pagado == 'S' %}Marcar como no pagado{% else %}Marcar como pagado{% endif %}" data-bs-toggle="tooltip">
+                                                        {% if fac.pagado == 'S' %}
+                                                            <i class="bi bi-check-circle"></i>
+                                                        {% else %}
+                                                            <i class="bi bi-x-circle"></i>
+                                                        {% endif %}
+                                                    </button>
+                                                {% else %}
+                                                    <span class="badge {% if fac.pagado == 'S' %}bg-success{% else %}bg-warning{% endif %}" title="Estado: {% if fac.pagado == 'S' %}Pagado{% else %}No pagado{% endif %}" data-bs-toggle="tooltip">
+                                                        {% if fac.pagado == 'S' %}
+                                                            <i class="bi bi-check-circle"></i>
+                                                        {% else %}
+                                                            <i class="bi bi-x-circle"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                {% endif %}
+                                                <button type="button" class="btn btn-sm {% if fac.sustento %}btn-info{% else %}btn-primary{% endif %}" onclick="manejarSustento({{ fac.id }}, {{ 'true' if fac.sustento else 'false' }})" title="{% if fac.sustento %}Ver sustento{% else %}Subir sustento{% endif %}" data-bs-toggle="tooltip">
+                                                    {% if fac.sustento %}
+                                                        <i class="bi bi-download"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-upload"></i>
+                                                    {% endif %}
+                                                </button>
+                                                {% if session.user_username in ['selyn', 'matias'] %}
+                                                    <a href="{{ url_for('facturacion.editar_facturacion', id=fac.id) }}" class="btn btn-sm btn-info" title="Editar registro" data-bs-toggle="tooltip">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmarEliminar({{ fac.id }})" title="Eliminar registro" data-bs-toggle="tooltip">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">
+                                        No hay registros de facturación
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para subir sustento -->
+<div class="modal fade" id="modalSubirSustento" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-upload"></i> Subir Sustento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formSustento">
+                    <input type="hidden" id="idFacturacion" name="id">
+                    <div class="mb-3">
+                        <label for="archivoSustento" class="form-label">Seleccionar archivo (PDF, PNG, JPG)</label>
+                        <input type="file" class="form-control" id="archivoSustento" name="archivo" accept=".pdf,.png,.jpg,.jpeg" required>
+                        <small class="text-muted">Tamaño máximo: 5MB</small>
+                    </div>
+                    <div id="previewSustento" style="display: none;" class="mb-3">
+                        <img id="imagenPreview" src="" style="max-width: 100%; max-height: 200px;" alt="Preview">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarSustento()">
+                    <i class="bi bi-check-circle"></i> Guardar Sustento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para ver imagen de sustento -->
+<div class="modal fade" id="modalVerImagen" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-image"></i> Sustento - Imagen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="imagenModal" src="" style="max-width: 100%; max-height: 600px;" alt="Sustento">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="descargarImagenModal()">
+                    <i class="bi bi-download"></i> Descargar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePagado(id, estadoActual) {
+    const nuevoEstado = estadoActual === 'S' ? 'N' : 'S';
+
+    if (confirm(`¿Cambiar estado a ${nuevoEstado === 'S' ? 'Pagado' : 'No Pagado'}?`)) {
+        fetch(`{{ url_for('facturacion.actualizar_pagado') }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id: id,
+                pagado: nuevoEstado
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo actualizar'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al actualizar');
+        });
+    }
+}
+
+function manejarSustento(id, tieneSustento) {
+    if (tieneSustento) {
+        // Si tiene sustento, verificar si es imagen o PDF
+        const url = `{{ url_for('facturacion.descargar_sustento', id=0) }}`.replace('/0', `/${id}`);
+
+        fetch(url)
+        .then(response => {
+            // Intentar parsear como JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                // Es un archivo binario (PDF), descargar
+                throw new Error('pdf');
+            }
+        })
+        .then(data => {
+            if (data.tipo === 'imagen') {
+                // Es imagen, mostrar en modal
+                document.getElementById('imagenModal').src = data.data;
+                document.getElementById('imagenModal').dataset.id = id;
+                const modal = new bootstrap.Modal(document.getElementById('modalVerImagen'));
+                modal.show();
+            } else if (data.error) {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            // Si es PDF, el servidor lo envía como archivo y no es JSON
+            // Descargar directamente
+            const url = `{{ url_for('facturacion.descargar_sustento', id=0) }}`.replace('/0', `/${id}`);
+            window.location.href = url;
+        });
+    } else {
+        // Si no tiene sustento, abrir modal de subida
+        document.getElementById('idFacturacion').value = id;
+        document.getElementById('archivoSustento').value = '';
+        document.getElementById('previewSustento').style.display = 'none';
+        const modal = new bootstrap.Modal(document.getElementById('modalSubirSustento'));
+        modal.show();
+    }
+}
+
+function descargarImagenModal() {
+    const id = document.getElementById('imagenModal').dataset.id;
+    const src = document.getElementById('imagenModal').src;
+
+    // Crear un link temporal para descargar
+    const link = document.createElement('a');
+    link.href = src;
+    link.download = `sustento_${id}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function confirmarEliminar(id) {
+    if (confirm('¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.')) {
+        // Crear un formulario invisible para enviar la solicitud POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `{{ url_for('facturacion.eliminar_facturacion', id=0) }}`.replace('/0', `/${id}`);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+document.getElementById('archivoSustento')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            if (file.type.startsWith('image/')) {
+                document.getElementById('imagenPreview').src = event.target.result;
+                document.getElementById('previewSustento').style.display = 'block';
+            } else {
+                document.getElementById('previewSustento').style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+function guardarSustento() {
+    const id = document.getElementById('idFacturacion').value;
+    const archivo = document.getElementById('archivoSustento').files[0];
+
+    if (!archivo) {
+        alert('Por favor, selecciona un archivo');
+        return;
+    }
+
+    if (archivo.size > 5 * 1024 * 1024) {
+        alert('El archivo no puede exceder 5MB');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('id', id);
+    formData.append('archivo', archivo);
+
+    fetch(`{{ url_for('facturacion.guardar_sustento') }}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Sustento guardado correctamente');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'No se pudo guardar'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar el archivo');
+    });
+}
+
+// Inicializar tooltips de Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

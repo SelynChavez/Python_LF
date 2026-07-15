@@ -788,3 +788,26 @@ JOIN a_socios s ON pr.socio = s.id
 WHERE r.id = %s
 """
 
+# Facturación
+LISTA_FACTURACION = """
+SELECT id, descripcion, fecha, costo, pago, pagado, sustento,
+       DATE_FORMAT(creado, '%d/%m/%Y %H:%i') as creado, webuser
+FROM a_facturacion_sys
+ORDER BY fecha DESC, id DESC
+"""
+
+INSERT_FACTURACION = """
+INSERT INTO a_facturacion_sys (descripcion, fecha, costo, pago, pagado, sustento, creado, webuser)
+VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s)
+"""
+
+SELECT_FACTURACION = "SELECT * FROM a_facturacion_sys WHERE id = %s"
+
+UPDATE_FACTURACION = """
+UPDATE a_facturacion_sys
+SET descripcion = %s, fecha = %s, costo = %s, pago = %s, pagado = %s, sustento = %s
+WHERE id = %s
+"""
+
+DELETE_FACTURACION = "DELETE FROM a_facturacion_sys WHERE id = %s"
+
