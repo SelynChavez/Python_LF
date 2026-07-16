@@ -1308,8 +1308,8 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", s
             pdf.cell(18, 5, dato["d2"], 1)
             pdf.cell(18, 5, dato["d3"], 1)
             pdf.cell(18, 5, dato["d4"], 1)
-            d6 = dato["d6"]
-            pdf.cell(60, 5, d6[:33], 1)
+            d6 = dato["d6"] if dato["d6"] else "-"
+            pdf.cell(60, 5, str(d6)[:33], 1)
             pdf.cell(20, 5, dato["d7"], 1, 0, 'R')
             pdf.cell(8, 5, dato["d8"], 1)
             pdf.cell(18, 5, dato["d9"], 1)
@@ -1319,8 +1319,8 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", s
             pdf.cell(18, 5, dato["d1"], 1)
             pdf.cell(18, 5, dato["d2"], 1)
             pdf.cell(18, 5, dato["d3"], 1)
-            d4 = dato["d4"]
-            pdf.cell(60, 5, d4[:33], 1)
+            d4 = dato["d4"] if dato["d4"] else "-"
+            pdf.cell(60, 5, str(d4)[:33], 1)
             pdf.cell(18, 5, dato["d5"], 1)
             pdf.cell(15, 5, dato["d6"], 1)
             pdf.cell(20, 5, dato["d7"], 1, 0, 'R')
