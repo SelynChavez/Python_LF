@@ -368,7 +368,11 @@ def generar_pdf_saldos_comb(pdf, titulo, subtitulo):
 
     connection = get_db_connection()
     if not connection:
-        return None
+        pdf.cell(0, 10, "Error: No hay conexión a la base de datos", 0, 1)
+        pdf_output = pdf.output(dest='S').encode('latin-1')
+        buffer.write(pdf_output)
+        buffer.seek(0)
+        return buffer
 
     cursor = connection.cursor(dictionary=True)
     cursor.execute(sqlconstants.REP_SALDOS_COMB)
@@ -428,7 +432,8 @@ def generar_pdf_saldos_comb(pdf, titulo, subtitulo):
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 12)
     pdf.set_fill_color(150, 200, 150)
-    pdf.cell(0, 8, f"#REGS: {len(saldos)} :: TOTAL SALDO PENDIENTE: S/. {total_general:.2f}", 0, 1, True)
+    saldos_count = len(saldos) if saldos else 0
+    pdf.cell(0, 8, f"#REGS: {saldos_count} :: TOTAL SALDO PENDIENTE: S/. {total_general:.2f}", 0, 1, True)
 
     pdf_output = pdf.output(dest='S').encode('latin-1')
     buffer.write(pdf_output)
@@ -475,7 +480,11 @@ def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, p5, titulo, subtitulo):
 
     connection = get_db_connection()
     if not connection:
-        return None
+        pdf.cell(0, 10, "Error: No hay conexión a la base de datos", 0, 1)
+        pdf_output = pdf.output(dest='S').encode('latin-1')
+        buffer.write(pdf_output)
+        buffer.seek(0)
+        return buffer
 
     cursor = connection.cursor(dictionary=True)
     query = sqlconstants.REP_VENTAS_COMB
@@ -582,7 +591,8 @@ def generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, p5, titulo, subtitulo):
     pdf.ln(2)
     pdf.set_font("Arial", 'B', 12)
     pdf.set_fill_color(150, 200, 150)
-    pdf.cell(0, 8, f"#REGS: {len(datos)} :: TOTAL GENERAL: S/. {total_general:.2f}", 0, 1, True)
+    datos_count = len(datos) if datos else 0
+    pdf.cell(0, 8, f"#REGS: {datos_count} :: TOTAL GENERAL: S/. {total_general:.2f}", 0, 1, True)
 
     pdf_output = pdf.output(dest='S').encode('latin-1')
     buffer.write(pdf_output)
@@ -632,6 +642,10 @@ def generar_pdf_ventas_comb_maquina(p1, p2, p3, p5, titulo, subtitulo):
 
     connection = get_db_connection()
     if not connection:
+        pdf.cell(0, 10, "Error: No hay conexión a la base de datos", 0, 1)
+        pdf_output = pdf.output(dest='S').encode('latin-1')
+        buffer.write(pdf_output)
+        buffer.seek(0)
         return buffer
 
     cursor = connection.cursor(dictionary=True)
@@ -744,7 +758,8 @@ def generar_pdf_ventas_comb_maquina(p1, p2, p3, p5, titulo, subtitulo):
     # Total general
     pdf.set_font("Arial", 'B', 12)
     pdf.set_fill_color(150, 200, 150)
-    pdf.cell(0, 8, f"#REGS: {len(datos)} :: TOTAL GALONES: {total_general_galones:.2f} :: TOTAL S/.: S/. {total_general_soles:.2f}", 0, 1, True)
+    datos_count = len(datos) if datos else 0
+    pdf.cell(0, 8, f"#REGS: {datos_count} :: TOTAL GALONES: {total_general_galones:.2f} :: TOTAL S/.: S/. {total_general_soles:.2f}", 0, 1, True)
 
     pdf_output = pdf.output(dest='S').encode('latin-1')
     buffer.write(pdf_output)
@@ -1239,21 +1254,27 @@ def generar_pdf_control_pagos_prestamos(p1, p2, p3, p4, p5, titulo, subtitulo, c
 
 
 def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", serie="1", tipo_fecha="fecha"):
+    print(f"DEBUG: generar_pdf_reporte START - cod={cod}, serie={serie}")
     buffer = BytesIO()
     pdf = FPDF()
     pdf.add_page()
 
     if cod == "REP_VENTAS_COMB":
+        print(f"DEBUG: Entrando a generar_pdf_ventas_comb")
         return generar_pdf_ventas_comb(pdf, p1, p2, p3, p4, p5, titulo, subtitulo)
     elif cod == "REP_SALDOS_COMB":
+        print(f"DEBUG: Entrando a generar_pdf_saldos_comb")
         return generar_pdf_saldos_comb(pdf, titulo, subtitulo)
     elif cod == "REP_INGRESOS_ENTRE_FECHAS":
+        print(f"DEBUG: Entrando a generar_pdf_ingresos_entre_fechas")
         usuario = session.get('user_username', 'desconocido')
         return generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo, cod, usuario)
     elif cod == "REP_SALIDAS_ENTRE_FECHAS":
+        print(f"DEBUG: Entrando a generar_pdf_salidas_entre_fechas")
         usuario = session.get('user_username', 'desconocido')
         return generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo, cod, usuario)
     elif cod == "REP_CONTROL_PAGOS_PRESTAMOS":
+        print(f"DEBUG: Entrando a generar_pdf_control_pagos_prestamos")
         usuario = session.get('user_username', 'desconocido')
         return generar_pdf_control_pagos_prestamos(p1, p2, p3, p4, p5, titulo, subtitulo, cod, usuario)
 
@@ -1279,8 +1300,10 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", s
     serie_map = {'1': "'1'", '2': "'2'", '3-5': "'3','4','5'", '5': "'5'", '6': "'6'"}
     serie_sql = serie_map.get(serie, "'1'")
 
+    print(f"DEBUG: cod={cod}, query type={type(query)}")
     connection = get_db_connection()
     if connection:
+        print(f"DEBUG: Conexión exitosa")
         cursor = connection.cursor(dictionary=True)
         query = query.replace("$p1$", p1)
         query = query.replace("$p2$", p2)
@@ -1290,12 +1313,22 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", s
         query = query.replace("$p6$", p6)
         query = query.replace("$serie$", serie_sql)
         query = query.replace("$tipo_fecha$", tipo_fecha)
+        print(f"DEBUG: Query después de reemplazos (primeras 200 chars): {query[:200]}")
+        print(f"DEBUG: Ejecutando query...")
         cursor.execute(query)
         datos = cursor.fetchall()
+        print(f"DEBUG: datos type={type(datos)}, datos is None={datos is None}, len(datos) si no es None={len(datos) if datos is not None else 'N/A'}")
         cursor.close()
         connection.close()
     else:
         return jsonify({'error': 'Error de conexión'}), 500
+
+    if datos is None:
+        print(f"DEBUG: datos es None, asignando lista vacía")
+        datos = []
+    else:
+        print(f"DEBUG: datos es valido, {len(datos)} registros")
+
     pdf.set_font("Arial", '', 8)
     to1 = 0
     rgt = 0
@@ -1304,28 +1337,30 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", s
         lin += 1
         rgt += 1
         if cod in ('REP1APORTES', 'REP_FLEX_PAD'):
-            pdf.cell(18, 5, dato["d1"], 1)
-            pdf.cell(18, 5, dato["d2"], 1)
-            pdf.cell(18, 5, dato["d3"], 1)
-            pdf.cell(18, 5, dato["d4"], 1)
+            pdf.cell(18, 5, str(dato["d1"]) if dato["d1"] else "-", 1)
+            pdf.cell(18, 5, str(dato["d2"]) if dato["d2"] else "-", 1)
+            pdf.cell(18, 5, str(dato["d3"]) if dato["d3"] else "-", 1)
+            pdf.cell(18, 5, str(dato["d4"]) if dato["d4"] else "-", 1)
             d6 = dato["d6"] if dato["d6"] else "-"
             pdf.cell(60, 5, str(d6)[:33], 1)
-            pdf.cell(20, 5, dato["d7"], 1, 0, 'R')
-            pdf.cell(8, 5, dato["d8"], 1)
-            pdf.cell(18, 5, dato["d9"], 1)
-            pdf.cell(15, 5, dato["d10"], 1)
-            to1 += float(dato["d7"])
+            d7 = str(dato["d7"]) if dato["d7"] else "-"
+            pdf.cell(20, 5, d7, 1, 0, 'R')
+            pdf.cell(8, 5, str(dato["d8"]) if dato["d8"] else "-", 1)
+            pdf.cell(18, 5, str(dato["d9"]) if dato["d9"] else "-", 1)
+            pdf.cell(15, 5, str(dato["d10"]) if dato["d10"] else "-", 1)
+            to1 += float(dato["d7"]) if dato["d7"] else 0
         elif(cod in ('REP2APORTES', 'REP_FLEX_APO')):
-            pdf.cell(18, 5, dato["d1"], 1)
-            pdf.cell(18, 5, dato["d2"], 1)
-            pdf.cell(18, 5, dato["d3"], 1)
+            pdf.cell(18, 5, str(dato["d1"]) if dato["d1"] else "-", 1)
+            pdf.cell(18, 5, str(dato["d2"]) if dato["d2"] else "-", 1)
+            pdf.cell(18, 5, str(dato["d3"]) if dato["d3"] else "-", 1)
             d4 = dato["d4"] if dato["d4"] else "-"
             pdf.cell(60, 5, str(d4)[:33], 1)
-            pdf.cell(18, 5, dato["d5"], 1)
-            pdf.cell(15, 5, dato["d6"], 1)
-            pdf.cell(20, 5, dato["d7"], 1, 0, 'R')
-            pdf.cell(20, 5, dato["d8"], 1)
-            to1 += float(dato["d7"])
+            pdf.cell(18, 5, str(dato["d5"]) if dato["d5"] else "-", 1)
+            pdf.cell(15, 5, str(dato["d6"]) if dato["d6"] else "-", 1)
+            d7 = str(dato["d7"]) if dato["d7"] else "-"
+            pdf.cell(20, 5, d7, 1, 0, 'R')
+            pdf.cell(20, 5, str(dato["d8"]) if dato["d8"] else "-", 1)
+            to1 += float(dato["d7"]) if dato["d7"] else 0
         elif(cod=="REP-PCGE"):
             pdf.cell(15, 5, str(dato["d1"]), 1)
             pdf.cell(20, 5, str(dato["d2"]), 1)
@@ -1398,11 +1433,16 @@ def generar_reporte():
         print("serie:"+serie)
         print("tipo_fecha:"+tipo_fecha)
 
+        print(f"DEBUG: Iniciando generación de PDF - cod={cod}, serie={serie}")
         pdf_buffer = generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7, serie, tipo_fecha)
+        print(f"DEBUG: PDF generado exitosamente, tamaño={pdf_buffer.getbuffer().nbytes if pdf_buffer else 0}")
         pdf_base64 = base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
         return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod=cod)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        print(f"DEBUG ERROR: {str(e)}")
+        print(f"DEBUG TRACEBACK:\n{traceback.format_exc()}")
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
 
 
 @reportes_bp.route('/generar_reporte_plan_contable', methods=['POST', 'GET'])
@@ -1459,7 +1499,7 @@ class ReciboTicket(FPDF):
         self.set_font('Arial', 'B', 7)
         self.cell(20, 4, 'Padron/Socio:', 0, 0)
         self.set_font('Arial', '', 7)
-        nombre = data['nombre_socio']
+        nombre = data['nombre_socio'] if data['nombre_socio'] else ""
         if len(nombre) > self.max_chars:
             nombre_line1 = nombre[:self.max_chars]
             self.cell(0, 4, nombre_line1, 0, 1)
@@ -1488,7 +1528,7 @@ class ReciboTicket(FPDF):
         total = 0
         for item in items:
             codigo = item['codigo']
-            descripcion = item['descripcion']
+            descripcion = item['descripcion'] if item['descripcion'] else ""
             monto = item['monto']
             if float(monto) > 0:
                 total += monto
