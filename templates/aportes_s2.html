@@ -81,7 +81,7 @@
                                     <td>{{ r3.d2 }}</td>
                                     <td>{{ r3.d3 }}</td>
                                     <td>{{ r3.d4 }}</td>
-                                    <td style="white-space:nowrap;font-size:0.75rem;" title="{{ r3.d6 }}"><strong>{{ r3.d6[:30] }}</strong></td>
+                                    <td style="white-space:nowrap;font-size:0.75rem;" title="{{ r3.d6 or '-' }}"><strong>{{ (r3.d6 or '-')[:30] }}</strong></td>
                                     <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ r3.d7 }}</b></td>
                                     <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ r3.d13 }}</b></td>
                                     <td>

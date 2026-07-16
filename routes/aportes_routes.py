@@ -301,8 +301,8 @@ def aportes_s2():
             for reg in recibos:
                 line0 += 1
                 reg['d0'] = str(line0)
-                subtotal += float(reg['d7'])
-                total += round(float(reg['d13']),2)
+                subtotal += float(reg['d7']) if reg['d7'] else 0
+                total += round(float(reg['d13']),2) if reg['d13'] else 0
             return render_template('aportes_s2.html', recibos=recibos, total=total, subtotal=subtotal, p1=p1, p2=p2, p3=p3)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
