@@ -1529,7 +1529,7 @@ class ReciboTicket(FPDF):
         for item in items:
             codigo = item['codigo']
             descripcion = item['descripcion'] if item['descripcion'] else ""
-            monto = item['monto']
+            monto = item['monto'] if item['monto'] else 0
             if float(monto) > 0:
                 total += monto
                 self.cell(15, 4, codigo, 0, 0, 'L')

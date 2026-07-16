@@ -120,7 +120,7 @@ def aportes_series():
             for reg in recibos:
                 line0 += 1
                 reg['d0'] = str(line0)
-                total += float(reg['d7'])
+                total += float(reg['d7']) if reg['d7'] else 0
             return render_template('aportes_series.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3, serie=serie, color=color)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
@@ -156,7 +156,7 @@ def aportes_s6():
             for reg in recibos:
                 line0 += 1
                 reg['d0'] = str(line0)
-                total += float(reg['d7'])
+                total += float(reg['d7']) if reg['d7'] else 0
             return render_template('aportes_s6.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
@@ -188,11 +188,11 @@ def aportes_s5():
             cursor.execute(query)
             recibos = cursor.fetchall()
             cursor.close()
-            connection.close() 
+            connection.close()
             for reg in recibos:
                 line0 += 1
                 reg['d0'] = str(line0)
-                total += float(reg['d7'])
+                total += float(reg['d7']) if reg['d7'] else 0
             return render_template('aportes_s5.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
@@ -228,7 +228,7 @@ def aportes_s4():
             for reg in recibos:
                 line0 += 1
                 reg['d0'] = str(line0)
-                total += float(reg['d7'])
+                total += float(reg['d7']) if reg['d7'] else 0
             return render_template('aportes_s4.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
@@ -264,7 +264,7 @@ def aportes_s3():
             for reg in recibos:
                 line0 += 1
                 reg['d0'] = str(line0)
-                total += float(reg['d7'])
+                total += float(reg['d7']) if reg['d7'] else 0
             return render_template('aportes_s3.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
@@ -428,7 +428,7 @@ def aportes():
             for reg in recibos:
                 line0 += 1
                 reg['d0'] = str(line0)
-                total += float(reg['d7'])
+                total += float(reg['d7']) if reg['d7'] else 0
             return render_template('aportes.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3, sr=sr)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
@@ -472,7 +472,7 @@ def aportes_socio():
             for reg in recibos:
                 line0 += 1
                 reg['d0'] = str(line0)
-                total += round(float(reg['d7']),2)
+                total += round(float(reg['d7']),2) if reg['d7'] else 0
             return render_template('aportes_socio.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3, padrones=padrones)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
