@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte - Detalle de Pagos Préstamos {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-graph-up"></i> Detalle de Pagos por Préstamo</h4>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()" style="background-color: #e9ecef;">
+                    <i class="bi bi-printer"></i> Imprimir
+                </button>
+            </div>
+            <div class="card-body">
+                <form id="formReporte" method="POST" action="{{ url_for('reportes.rep_detalle_pagos_prestamos') }}">
+                    <!-- Rango de Fechas -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label for="p1" class="form-label">Fecha Desde <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="p1" name="p1" value="{{ p1 }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="p2" class="form-label">Fecha Hasta <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="p2" name="p2" value="{{ p2 }}" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="p3" class="form-label">Padrón</label>
+                            <select class="form-control" id="p3" name="p3">
+                                <option value="0">-- Todos --</option>
+                                {% for padron in padrones %}
+                                    <option value="{{ padron.id }}" {% if padron.id|string == p3|string %}selected{% endif %}>
+                                        {{ padron.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="p4" class="form-label">Tipo Préstamo</label>
+                            <select class="form-control" id="p4" name="p4">
+                                <option value="0">-- Todos --</option>
+                                {% for tipo in tipos_prestamo %}
+                                    <option value="{{ tipo.codigo }}" {% if tipo.codigo|string == p4|string %}selected{% endif %}>
+                                        {{ tipo.descripcion }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="p5" class="form-label">Estado</label>
+                            <select class="form-control" id="p5" name="p5">
+                                <option value="0">-- Todos --</option>
+                                <option value="aprobado" {% if p5 == 'aprobado' %}selected{% endif %}>Aprobado</option>
+                                <option value="pagado" {% if p5 == 'pagado' %}selected{% endif %}>Pagado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="d-flex justify-content-end gap-2 mb-3 d-print-none">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Consultar
+                        </button>
+                        <a href="{{ url_for('reportes.reportes') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+
+                <!-- Resultados -->
+                {% if prestamos %}
+                    <div class="d-print-none mb-3">
+                        <strong>Total de registros: <span class="badge bg-primary">{{ prestamos|length }}</span></strong>
+                    </div>
+
+                    <div class="accordion" id="accordionPrestamos">
+                        {% for prestamo in prestamos %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button {% if loop.first %}{% else %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ prestamo.prestamo }}" aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" style="font-family: Courier, monospace;">
+                                        <strong>PRESTAMO NRO: {{ prestamo.prestamo }}</strong> | Padrón: {{ (prestamo.nombre + '_____________________________________')[0:50] }}
+                                        <span class="ms-auto badge bg-info me-2" style="text-align: right; min-width: 140px;">Aprobado: S/. {{ "%.2f"|format(prestamo.aprobado) }}</span>
+                                        <span class="badge bg-warning me-2" style="text-align: right; min-width: 120px;">Pagado: S/. {{ "%.2f"|format(prestamo.pagado) }}</span>
+                                        <span class="badge bg-danger" style="text-align: right; min-width: 120px;">Deuda: S/. {{ "%.2f"|format(prestamo.deuda) }}</span>
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ prestamo.prestamo }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" data-bs-parent="#accordionPrestamos">
+                                    <div class="accordion-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th style="width: 15%; font-family: Courier, monospace;">Nro. Recibo</th>
+                                                        <th style="width: 20%; font-family: Courier, monospace;">Fecha Pago</th>
+                                                        <th style="width: 20%; text-align: right; font-family: Courier, monospace;">Monto</th>
+                                                        <th style="width: 20%; font-family: Courier, monospace;">ID Control</th>
+                                                        <th style="width: 25%; font-family: Courier, monospace;">Tipo Préstamo</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% if detalles_pagos[prestamo.prestamo] %}
+                                                        {% for detalle in detalles_pagos[prestamo.prestamo] %}
+                                                            <tr>
+                                                                <td style="font-family: Courier, monospace;">{{ detalle.numero_recibo }}</td>
+                                                                <td style="font-family: Courier, monospace;">{{ detalle.fecha_pago }}</td>
+                                                                <td style="text-align: right; font-family: Courier, monospace;">
+                                                                    <strong style="color: #28a745;">S/. {{ "%.2f"|format(detalle.monto_pago) }}</strong>
+                                                                </td>
+                                                                <td style="font-family: Courier, monospace;">{{ detalle.id_control }}</td>
+                                                                <td style="font-family: Courier, monospace;">{{ prestamo.tipo_prestamo }}</td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                        <tr class="table-secondary">
+                                                            <td colspan="2" style="text-align: right; font-family: Courier, monospace;"><strong>Subtotal de Pagos:</strong></td>
+                                                            <td style="text-align: right; font-family: Courier, monospace;">
+                                                                <strong style="color: #007bff;">S/. {{ "%.2f"|format(detalles_pagos[prestamo.prestamo]|map(attribute='monto_pago')|sum) }}</strong>
+                                                            </td>
+                                                            <td colspan="2"></td>
+                                                        </tr>
+                                                    {% else %}
+                                                        <tr>
+                                                            <td colspan="5" class="text-center text-muted">
+                                                                <em>No hay registros de pagos</em>
+                                                            </td>
+                                                        </tr>
+                                                    {% endif %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="p-3 border-top">
+                                            <small class="text-muted">
+                                                <strong>Resumen:</strong>
+                                                Tipo: {{ prestamo.tipo_prestamo }} |
+                                                Fecha Solicitud: {{ prestamo.fecha_solicitud }} |
+                                                Estado: {{ prestamo.estado }} |
+                                                Actualizado: {{ prestamo.actualizado }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No hay registros que coincidan con los filtros aplicados
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style media="print">
+    .d-print-none { display: none !important; }
+    .accordion-button { cursor: auto !important; }
+    .accordion-button:after { display: none !important; }
+    .accordion-button { color: inherit !important; background-color: inherit !important; }
+    .accordion-collapse { display: block !important; }
+</style>
+{% endblock %}

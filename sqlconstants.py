@@ -811,3 +811,39 @@ WHERE id = %s
 
 DELETE_FACTURACION = "DELETE FROM a_facturacion_sys WHERE id = %s"
 
+# Reporte de Control de Pagos Préstamos con Detalles
+REP_DETALLE_PAGOS_PRESTAMOS = """
+SELECT
+  p.id as prestamo,
+  p.padron,
+  nombPadronSocio(p.padron) as nombre,
+  p.tipo_prestamo,
+  dateDMY(p.fecha_solicitud) as fecha_solicitud,
+  t1.aprobado,
+  t1.pagado,
+  COALESCE(t1.aprobado - t1.pagado, 0) as deuda,
+  p.estado,
+  IFNULL(dateDMY(p.modified), '') as actualizado
+FROM a_view_rep_prestamo_pagos t1, a_prestamos p
+WHERE p.id = t1.id
+  AND (p.fecha_solicitud >= date('$p1$') AND p.fecha_solicitud <= date('$p2$'))
+  AND (p.padron = '$p3$' OR '$p3$' = '0')
+  AND (p.tipo_prestamo = '$p4$' OR '$p4$' = '0')
+  AND (p.estado = '$p5$' OR '$p5$' = '0')
+ORDER BY p.fecha_solicitud DESC, p.id DESC
+"""
+
+# Detalles de pagos para un préstamo específico
+REP_DETALLE_PAGOS_PRESTAMOS_ITEMS = """
+SELECT
+  rd.id as id_control,
+  r.numero as numero_recibo,
+  dateDMY(r.fecha) as fecha_pago,
+  rd.monto as monto_pago
+FROM a_recibos_detalle rd
+INNER JOIN a_recibos r ON rd.recibo = r.id
+WHERE rd.prestamo = $prestamo_id$
+  AND r.active = 'S'
+ORDER BY rd.id DESC
+"""
+

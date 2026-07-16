@@ -279,6 +279,71 @@ def rep_control_pagos_prestamos():
                          padrones=padrones, tipos_prestamo=tipos_prestamo)
 
 
+@reportes_bp.route('/rep_detalle_pagos_prestamos', methods=['GET', 'POST'])
+@login_required
+def rep_detalle_pagos_prestamos():
+    if session.get('user_rol') != 'ADMIN':
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "0"
+    p4 = "0"
+    p5 = "0"
+    prestamos = []
+    detalles_pagos = {}
+
+    connection = get_db_connection()
+    padrones = []
+    tipos_prestamo = []
+
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_2_PADRONES)
+        padrones = cursor.fetchall()
+        cursor.execute(sqlconstants.DROPLIST_DEUDAS)
+        tipos_prestamo = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+    if request.method == 'POST':
+        p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
+        p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
+        p3 = request.form.get('p3', '0')
+        p4 = request.form.get('p4', '0')
+        p5 = request.form.get('p5', '0')
+
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+
+            # Obtener préstamos
+            query = sqlconstants.REP_DETALLE_PAGOS_PRESTAMOS
+            query = query.replace("$p1$", p1)
+            query = query.replace("$p2$", p2)
+            query = query.replace("$p3$", p3)
+            query = query.replace("$p4$", p4)
+            query = query.replace("$p5$", p5)
+            cursor.execute(query)
+            prestamos = cursor.fetchall()
+
+            # Obtener detalles de pagos para cada préstamo
+            for prestamo in prestamos:
+                query_detalles = sqlconstants.REP_DETALLE_PAGOS_PRESTAMOS_ITEMS
+                query_detalles = query_detalles.replace("$prestamo_id$", str(prestamo['prestamo']))
+                cursor.execute(query_detalles)
+                detalles_pagos[prestamo['prestamo']] = cursor.fetchall()
+
+            cursor.close()
+            connection.close()
+
+    return render_template('rep_detalle_pagos_prestamos.html',
+                         p1=p1, p2=p2, p3=p3, p4=p4, p5=p5,
+                         padrones=padrones, tipos_prestamo=tipos_prestamo,
+                         prestamos=prestamos, detalles_pagos=detalles_pagos)
+
+
 @reportes_bp.route('/rep_ventas_comb')
 @login_required
 def rep_ventas_comb():
