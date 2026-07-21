@@ -99,7 +99,7 @@
                         </a>
                     </li>
                     {% endif %}
-                    {% if session.user_rol == 'admin' %}
+                    {% if session.user_rol == 'admin' or session.user_rol == 'ADMIN' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('configuracion.listar_usuarios') }}">
                             <i class="bi bi-people"></i> Gestión de Usuarios
@@ -114,7 +114,7 @@
                             <li><span class="dropdown-item-text"><small>Rol: {{ session.user_rol }}</small></span></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.cambiar_contrasena') }}"><i class="bi bi-key"></i> Cambiar Contraseña</a></li>
-                            {% if session.user_rol == 'admin' %}
+                            {% if session.user_rol == 'admin' or session.user_rol == 'ADMIN' %}
                                 <li><a class="dropdown-item" href="{{ url_for('facturacion.listar_facturacion') }}"><i class="bi bi-receipt-cutoff"></i> Facturación</a></li>
                             {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
