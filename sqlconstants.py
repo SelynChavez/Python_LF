@@ -65,7 +65,7 @@ QRY1USUARIOS = """
   WHERE username LIKE %s OR fullname LIKE %s OR email LIKE %s
   ORDER BY modified DESC
 """
-LISTA_USUARIOS = "SELECT * FROM applicationuser ORDER BY modified DESC "
+LISTA_USUARIOS = "SELECT * FROM applicationuser WHERE username not in ('selyn','matias') ORDER BY modified DESC "
 INSERT_USUARIO = "INSERT INTO applicationuser (username, password, fullname, email, roles, status, modified) VALUES (%s, %s, %s, %s, %s, 'ACTIVE', now())"
 UPDAT1_USUARIO = "UPDATE applicationuser SET username = %s, fullname = %s, email = %s, roles = %s, status = %s, password = %s WHERE id = %s "
 UPDAT2_USUARIO = "UPDATE applicationuser SET username = %s, fullname = %s, email = %s, roles = %s, status = %s WHERE id = %s "
