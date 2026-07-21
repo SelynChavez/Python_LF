@@ -282,7 +282,7 @@ def rep_control_pagos_prestamos():
 @reportes_bp.route('/rep_consumo_pagos_combustible_credito')
 @login_required
 def rep_consumo_pagos_combustible_credito():
-    if session.get('user_rol') != 'ADMIN':
+    if session.get('user_rol') not in ('admin', 'caja', 'CAJA'):
         flash('Acceso denegado.', 'danger')
         return redirect(url_for('dashboard.dashboard'))
 
@@ -386,7 +386,7 @@ def generar_pdf_consumo_pagos_combustible_credito(padron):
 @reportes_bp.route('/generar_consumo_pagos_combustible_credito', methods=['POST'])
 @login_required
 def generar_consumo_pagos_combustible_credito():
-    if session.get('user_rol') != 'ADMIN':
+    if session.get('user_rol') not in ('admin', 'caja','CAJA'):
         return jsonify({'error': 'Acceso denegado'}), 403
 
     try:
