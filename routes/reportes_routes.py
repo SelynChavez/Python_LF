@@ -279,6 +279,129 @@ def rep_control_pagos_prestamos():
                          padrones=padrones, tipos_prestamo=tipos_prestamo)
 
 
+@reportes_bp.route('/rep_consumo_pagos_combustible_credito')
+@login_required
+def rep_consumo_pagos_combustible_credito():
+    if session.get('user_rol') != 'ADMIN':
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
+    padron = "0"
+    connection = get_db_connection()
+    padrones = []
+
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(sqlconstants.LISTA_2_PADRONES)
+        padrones = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+    return render_template('rep_consumo_pagos_combustible_credito.html',
+                         padron=padron, padrones=padrones)
+
+
+def generar_pdf_consumo_pagos_combustible_credito(padron):
+    """Genera PDF del reporte de Consumo y Pagos de Combustible a Crédito con saldo histórico."""
+    buffer = BytesIO()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_left_margin(8)
+    pdf.set_right_margin(8)
+
+    # Cabecera
+    pdf.set_font("Arial", 'B', 10)
+    hora = str(datetime.datetime.now())[0:19]
+    usr = session['user_username']
+    pdf.cell(0, 8, f"E.T.Las Flores :: [{usr}] :: {hora}", 0, 1, 'L')
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 8, "Reporte de Control de Consumo y Pagos de Combustible a Crédito", 0, 1, 'C')
+    pdf.set_font("Arial", '', 9)
+    pdf.cell(0, 5, f"Padrón: {padron} | Desde: 2026-06-19", 0, 1, 'C')
+    pdf.ln(4)
+
+    # Encabezados
+    pdf.set_font("Arial", 'B', 9)
+    pdf.set_fill_color(200, 200, 200)
+    pdf.cell(25, 6, "Fecha", 1, 0, 'C', True)
+    pdf.cell(15, 6, "Padrón", 1, 0, 'C', True)
+    pdf.cell(30, 6, "Consumo", 1, 0, 'R', True)
+    pdf.cell(30, 6, "Pagos", 1, 0, 'R', True)
+    pdf.cell(30, 6, "Diferencia", 1, 0, 'R', True)
+    pdf.cell(30, 6, "Saldo Acumulado", 1, 1, 'R', True)
+
+    # Obtener datos
+    connection = get_db_connection()
+    if not connection:
+        pdf.cell(0, 10, "Error de conexión", 0, 1)
+        pdf_output = pdf.output(dest='S').encode('latin-1')
+        buffer.write(pdf_output)
+        buffer.seek(0)
+        return buffer
+
+    cursor = connection.cursor(dictionary=True)
+    query = sqlconstants.REP_CONSUMO_PAGOS_COMBUSTIBLE_CREDITO
+    query = query.replace("$padron_list$", str(padron))
+    cursor.execute(query)
+    datos = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    # Procesar datos y calcular saldo histórico
+    pdf.set_font("Arial", '', 8)
+    saldo_historico = 0
+    lin = 0
+
+    for row in datos:
+        lin += 1
+        saldo_historico += float(row['col3']) if row['col3'] else 0
+
+        fecha_str = row['fec'].strftime('%d-%m-%Y') if hasattr(row['fec'], 'strftime') else str(row['fec'])
+        pdf.cell(25, 5, fecha_str, 1, 0, 'C')
+        pdf.cell(15, 5, str(row['pad']), 1, 0, 'C')
+        pdf.cell(30, 5, f"S/. {float(row['col1']):.2f}", 1, 0, 'R')
+        pdf.cell(30, 5, f"S/. {float(row['col2']):.2f}", 1, 0, 'R')
+        pdf.cell(30, 5, f"S/. {float(row['col3']):.2f}", 1, 0, 'R')
+        pdf.cell(30, 5, f"S/. {saldo_historico:.2f}", 1, 1, 'R')
+
+        if lin == 35:
+            pdf.ln(2)
+            lin = 0
+            pdf.set_font("Arial", 'B', 9)
+            pdf.set_fill_color(200, 200, 200)
+            pdf.cell(25, 6, "Fecha", 1, 0, 'C', True)
+            pdf.cell(15, 6, "Padrón", 1, 0, 'C', True)
+            pdf.cell(30, 6, "Consumo", 1, 0, 'R', True)
+            pdf.cell(30, 6, "Pagos", 1, 0, 'R', True)
+            pdf.cell(30, 6, "Diferencia", 1, 0, 'R', True)
+            pdf.cell(30, 6, "Saldo", 1, 1, 'R', True)
+            pdf.set_font("Arial", '', 8)
+
+    pdf_output = pdf.output(dest='S').encode('latin-1')
+    buffer.write(pdf_output)
+    buffer.seek(0)
+    return buffer
+
+
+@reportes_bp.route('/generar_consumo_pagos_combustible_credito', methods=['POST'])
+@login_required
+def generar_consumo_pagos_combustible_credito():
+    if session.get('user_rol') != 'ADMIN':
+        return jsonify({'error': 'Acceso denegado'}), 403
+
+    try:
+        padron = request.form.get('padron', '0')
+
+        pdf_buffer = generar_pdf_consumo_pagos_combustible_credito(padron)
+        pdf_base64 = base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
+        return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod='REP_CONSUMO_PAGOS_COMBUSTIBLE_CREDITO')
+    except Exception as e:
+        import traceback
+        print(f"Error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+
 @reportes_bp.route('/rep_detalle_pagos_prestamos', methods=['GET', 'POST'])
 @login_required
 def rep_detalle_pagos_prestamos():

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte - Control de Consumo y Pagos de Combustible a Crédito {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-graph-up"></i> Reporte de Control de Consumo y Pagos de Combustible a Crédito</h4>
+            </div>
+            <div class="card-body">
+                <form id="formReporte" action="{{ url_for('reportes.generar_consumo_pagos_combustible_credito') }}" method="POST" target="_blank">
+                    <!-- Padrón -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <label for="padron" class="form-label">Padrón <span class="text-danger">*</span></label>
+                            <select class="form-control" id="padron" name="padron" required>
+                                <option value="">-- Seleccionar Padrón --</option>
+                                {% for p in padrones %}
+                                    <option value="{{ p.id }}" {% if p.id|string == padron|string %}selected{% endif %}>
+                                        {{ p.id }} - {{ p.nombre }} ({{ p.placa }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Información -->
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <small>
+                            Este reporte muestra el historial de consumo a crédito y pagos realizados de combustible a partir del 2026-06-19.
+                            <br><strong>Columnas:</strong>
+                            <br>• Consumo: Ventas a crédito del día
+                            <br>• Pagos: Pagos realizados del día
+                            <br>• Diferencia: Consumo - Pagos (deuda diaria)
+                            <br>• Saldo: Suma acumulativa de las diferencias (saldo histórico)
+                        </small>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="submit" class="btn btn-primary me-md-2">
+                            <i class="bi bi-eye"></i> Generar y Ver Reporte
+                        </button>
+                        <a href="{{ url_for('reportes.reportes') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+
+                    <!-- Información de campos requeridos -->
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        El campo marcado con <span class="text-danger">*</span> es obligatorio
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

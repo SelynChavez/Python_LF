@@ -847,3 +847,21 @@ WHERE rd.prestamo = $prestamo_id$
 ORDER BY rd.id DESC
 """
 
+# Reporte de Control de Consumo y Pagos de Combustible a Crédito
+REP_CONSUMO_PAGOS_COMBUSTIBLE_CREDITO = """
+SELECT fec, pad, col1, col2, (col1-col2) as col3
+FROM (
+  SELECT tc.fecha as fec, p.id as pad,
+    IFNULL((SELECT SUM(c1.monto) FROM a_ventas_comb_padron c1
+      WHERE c1.padron=p.id AND tc.fecha=c1.fecha AND c1.forma_pago='Credito'), 0) as col1,
+    IFNULL((SELECT SUM(d.monto) FROM a_recibos r, a_recibos_detalle d
+      WHERE r.id=d.recibo AND r.serie=5 AND r.padron=p.id AND
+            r.fecha=tc.fecha AND r.active='S' AND d.aporte='COBRO.COMB'), 0) as col2
+  FROM a_tc tc, a_padrones p
+  WHERE tc.fecha >= '2026-06-19'
+    AND p.id IN ($padron_list$)
+  ORDER BY tc.fecha ASC
+) AS tab1
+LIMIT 100
+"""
+
