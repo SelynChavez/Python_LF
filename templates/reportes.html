@@ -117,7 +117,7 @@
             <p><b>Control de Consumo y Pagos de Combustible a Crédito</b></p>
             <small class="text-muted">Historial de consumo a crédito y pagos realizados</small>
             <a href="{{ url_for('reportes.rep_consumo_pagos_combustible_credito') if session.user_rol in ('admin', 'caja') else '#' }}"
-               class="btn btn-warning {{ 'disabled' if session.user_rol not in ('admin', 'caja') }}">
+               class="btn btn-warning {{ 'disabled' if session.user_rol not in ('ADMIN') }}">
                 <i class="bi bi-fuel-pump"></i> Consumo & Pagos
             </a>
         </div>
