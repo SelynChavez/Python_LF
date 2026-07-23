@@ -148,14 +148,17 @@ DETALLE_SERIE_2x = """SELECT * FROM (SELECT t.codigo,t.descripcion,
   ROUND(COALESCE((CASE
       WHEN t.codigo='AP.SEGURO.X' THEN p.monto4
       ELSE t.monto1
-  END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0, 2 serie
+  END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0, 2 serie, 0 slddeuda
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
 WHERE t.tipo='APORTE' and t.atributo1='2' and (t.codigo not in ('PRESTAMO'))
 UNION ALL
-SELECT t.codigo,t.descripcion,p.cuota monto,p.id prestamo,p.tipo_prestamo tipodeuda,t.id idx, 2 serie 
+SELECT codigo,descripcion,if(slddeuda>0,if(slddeuda<monto,slddeuda,monto),0) monto,prestamo,tipodeuda,idx,serie,slddeuda FROM
+(
+SELECT t.codigo,t.descripcion,p.cuota monto,p.id prestamo,p.tipo_prestamo tipodeuda,t.id idx, 2 serie,
+(p.monto_aprobado - (select ifnull(sum(v.monto),0) from a_view_recibos_prestamos v where v.prestamo=p.id)) slddeuda
 FROM a_prestamos p,a_tipos t 
 WHERE p.padron='$pad$' and p.estado='aprobado' and t.tipo='APORTE' and t.codigo='PRESTAMO') as table1
-WHERE ( (codigo in ('AP.SEGURO.X') and monto > 0) OR codigo not in ('AP.SEGURO.X') )
+WHERE ( (codigo in ('AP.SEGURO.X') and monto > 0) OR codigo not in ('AP.SEGURO.X') ) ) as table20
 """
 
 DETALLE_SERIE_3X = """ SELECT t.codigo,t.descripcion,
