@@ -642,7 +642,7 @@ SELECT
     s.beneficiario_nombre as beneficiario,
     s.tipo_doc,
     s.numero_doc,
-    s.monto,
+    ifnull(s.monto,0) as monto,
     DATE_FORMAT(s.fecha_solicitud, '%Y-%m-%d') as fecha_orden
 FROM a_salidas s
 JOIN a_tipos ts ON s.tipo_salida = ts.codigo AND ts.tipo = 'SALIDA'
@@ -664,7 +664,7 @@ SELECT
     LOWER(SUBSTR(COALESCE(nombPadronSocio(p.padron), CONCAT('Padron #', p.padron)), 1, 25)) as beneficiario,
     'EFECT' as tipo_doc,
     CAST(p.id AS CHAR) as numero_doc,
-    p.monto_aprobado as monto,
+    ifnull(p.monto_aprobado, 0) as monto,
     DATE_FORMAT(p.fecha_solicitud, '%Y-%m-%d') as fecha_orden
 FROM a_prestamos p
 WHERE p.tipo_prestamo = 'EFECTIVO'
@@ -673,7 +673,8 @@ WHERE p.tipo_prestamo = 'EFECTIVO'
     AND ('PADRON' = '$p4$' OR '$p4$' = '0')
     AND (LOWER(SUBSTR(COALESCE(nombPadronSocio(p.padron), CONCAT('Padron #', p.padron)), 1, 25)) LIKE '%$p5$%' OR '$p5$' = '')
     AND (CAST(p.id AS CHAR) LIKE '%$p6$%' OR '$p6$' = '')
-    AND (SUBSTR(p.fecha_solicitud, 1, 6) = '$p7$' OR '$p7$' = '')
+    AND (SUBSTR(p.fecha_solicitud, 1, 6) = '$p7$' OR '$p7$' = '') 
+    AND p.estado in ('aprobado', 'pagado')
 
 ORDER BY fecha_orden DESC, id DESC
 """
@@ -689,7 +690,7 @@ SELECT
     COALESCE(tt.descripcion, i.tercero) as tercero_nombre,
     i.tipo_doc,
     i.numero_doc,
-    i.monto,
+    ifnull(i.monto, 0) as monto,
     DATE_FORMAT(i.fecha_solicitud, '%Y-%m-%d') as fecha_orden
 FROM a_ingresos i
 JOIN a_tipos ti ON i.tipo_ingreso = ti.codigo AND ti.tipo = 'INGRESO'

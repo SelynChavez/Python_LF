@@ -1182,6 +1182,8 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
     query = query.replace("$p6$", str(p6) if p6 else '')
     query = query.replace("$p7$", str(p7) if p7 else '')
 
+    ## print(f"\n{'='*80}\nQUERY:\n{query}\n{'='*80}\n")
+
     cursor.execute(query)
     datos = cursor.fetchall()
     cursor.close()
