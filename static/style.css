@@ -259,3 +259,49 @@ body {
 .fade-in {
     animation: fadeIn 0.5s ease-out;
 }
+
+/* Tablas comprimidas */
+.table-compact tbody tr td {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+/* Paginación */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.pagination-controls button {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    background-color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.pagination-controls button:hover {
+    background-color: #f0f0f0;
+}
+
+.pagination-controls button.active {
+    background-color: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+}

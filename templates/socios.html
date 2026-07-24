@@ -5,6 +5,19 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    const totalRegistros = $('.fila-socio').length;
+
+    function actualizarContador() {
+        const visibles = $('.fila-socio:visible').length;
+        const texto = totalRegistros > 0
+            ? `Mostrando <strong>${visibles}</strong> de <strong>${totalRegistros}</strong> registros`
+            : 'No hay registros';
+        $('#contadorRegistros').html(texto);
+    }
+
+    // Mostrar contador inicial
+    actualizarContador();
+
     // Búsqueda en tiempo real
     $('#buscarSocio').on('keyup', function() {
         const valor = $(this).val().toLowerCase();
@@ -13,6 +26,7 @@ $(document).ready(function() {
                 $(this).text().toLowerCase().indexOf(valor) > -1
             );
         });
+        actualizarContador();
     });
 
     // Confirmación para eliminar
@@ -55,7 +69,7 @@ $(document).ready(function() {
                 </div>
                 <!-- Tabla Lista -->
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-compact table-hover">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -105,7 +119,10 @@ $(document).ready(function() {
                         </tbody>
                     </table>
                 </div>
-
+                <!-- Contador de registros -->
+                <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; text-align: center;">
+                    <small id="contadorRegistros" style="color: #666;"></small>
+                </div>
             </div>
         </div>
     </div>
