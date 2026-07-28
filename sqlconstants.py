@@ -323,7 +323,32 @@ DASHB_PRRET_APORTES = "SELECT COALESCE(SUM(monto), 0) as total FROM a_recibos_de
 DASHB_PRRET_PRESTAMOS = "SELECT COALESCE(SUM(monto_aprobado), 0) as total FROM a_prestamos WHERE estado='aprobado' and date(fecha_aprobacion)=curdate()"
 DASHB_PRRET_PRESTAMOS_ESTADO = "SELECT estado, COUNT(*) as cantidad, COALESCE(SUM(CASE WHEN estado='aprobado' THEN monto_aprobado ELSE monto_solicitado END), 0) as total FROM a_prestamos GROUP BY estado"
 DASHB_PRRET_PRESTAMOS_TIPOS = "SELECT tp.descripcion, COUNT(*) as cantidad, COALESCE(SUM(p.saldo_pendiente), 0) as total FROM a_prestamos p JOIN a_tipos tp ON tp.tipo='DEUDA' AND p.tipo_prestamo = tp.codigo WHERE p.estado IN ('pendiente', 'aprobado') GROUP BY tp.descripcion"
-DASHB_PRRET_PAD_MAY_APORTES = "select placa,nombre,sum(aportado) aportado from av_total_aportes_x_padron group by placa,nombre order by 3 desc limit 6"
+DASHB_PRRET_PAD_MAY_APORTES = """
+SELECT * FROM (
+SELECT concat(id,':',placa,':',nombre) nombre,aportado,ventas,(ventas-aportado) saldo FROM (
+  SELECT p.id, p.socio, (select s.nombre from a_socios s where s.id=p.socio) nombre, p.placa,
+  IFNULL(
+  ( SELECT SUM(av1.aportado)
+    FROM av_total_aportes_x_padron_fecha av1
+    WHERE av1.padron = p.id AND av1.fecha <= DATE(NOW())
+    AND av1.aporte = 'COBRO.COMB'
+    GROUP BY av1.padron), 0) AS aportado,
+  IFNULL(
+  ( SELECT SUM(av2.monto)
+    FROM a_ventas_comb_padron av2
+    WHERE av2.padron = p.id AND av2.fecha <= DATE(NOW())
+    GROUP BY av2.padron), 0) AS ventas
+  FROM a_padrones p
+  WHERE (IFNULL((SELECT SUM(av1.aportado) FROM av_total_aportes_x_padron_fecha av1
+                WHERE av1.padron = p.id AND av1.fecha <= DATE(NOW())
+                AND av1.aporte = 'COBRO.COMB' GROUP BY av1.padron), 0) +
+         IFNULL((SELECT SUM(av2.monto) FROM a_ventas_comb_padron av2
+                WHERE av2.padron = p.id AND av2.fecha <= DATE(NOW())
+                GROUP BY av2.padron), 0)) > 0
+) AS tabla_datos
+ORDER BY 3 DESC LIMIT 20
+) as tabla_res1 ORDER BY 4 LIMIT 10
+"""
 DASHB_PRRET_MOVS_RET_PREST = """
 (SELECT 'Préstamo' as tipo, pr.placa, p.monto_solicitado as monto, p.estado, p.fecha_solicitud as fecha FROM a_prestamos p JOIN a_padrones pr ON p.padron = pr.id and estado='aprobado' ORDER BY p.id DESC LIMIT 3)
 UNION ALL

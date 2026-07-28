@@ -53,7 +53,7 @@
                 <div class="dashboard-icon">
                     <i class="bi bi-calendar-week"></i>
                 </div>
-                <h3>Administracion de Buses</h3>
+                <h3>Administracion Consumidor Directo</h3>
                 <p>Gestion de ruta, gps, consumo de combustible</p>
                 <a href="{{ url_for('combustibles.dashboardC') if session.user_rol == 'ADMIN' else '#' }}"
                 class="btn btn-primary {{ 'disabled' if session.user_rol != 'ADMIN' }}">

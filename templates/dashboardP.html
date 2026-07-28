@@ -143,24 +143,26 @@
         <div class="col-md-6 mb-4">
             <div class="card">
                 <div class="card-header">
-                    <i class="bi bi-trophy"></i> Top 5 Padrones con más Aportes
+                    <i class="bi bi-trophy"></i> Top 10 Padrones con Mayor Saldo Pendiente
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table table-sm" style="margin-bottom: 0;">
                             <thead>
                                 <tr>
                                     <th>Socio</th>
-                                    <th>Padrón</th>
-                                    <th>Monto Aportado</th>
+                                    <th style="text-align: right;">Vendido</th>
+                                    <th style="text-align: right;">Aportado</th>
+                                    <th style="text-align: right;">Saldo</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody style="font-size: 0.9rem;">
                                 {% for padron in top_padrones %}
-                                <tr>
-                                    <td>{{ padron.nombre }} </td>
-                                    <td>{{ padron.placa }}</td>
-                                    <td class="text-success" style="text-align: right;">S/ {{ "{:,.2f}".format(padron.aportado) }}</td>
+                                <tr style="height: 28px;">
+                                    <td style="padding: 2px 4px;">{{ padron.nombre }} </td>
+                                    <td class="text-info" style="text-align: right; padding: 2px 4px;">S/ {{ "{:,.2f}".format(padron.ventas) }}</td>
+                                    <td class="text-success" style="text-align: right; padding: 2px 4px;">S/ {{ "{:,.2f}".format(padron.aportado) }}</td>
+                                    <td class="text-danger" style="text-align: right; padding: 2px 4px;"><strong>S/ {{ "{:,.2f}".format(padron.saldo) }}</strong></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
