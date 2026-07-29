@@ -104,8 +104,14 @@ def dashboardP():
         ultimos_movimientos = cursor.fetchall()
 
     conn.close()
+    today = datetime.datetime.now()
+    first_day_this_month = today.replace(day=1)
+    last_day_prev_month = first_day_this_month - datetime.timedelta(days=1)
+    last_day_prev_month_formatted = last_day_prev_month.strftime('%d/%m/%y')
+
     return render_template('dashboardP.html',
                          now=datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
+                         last_day_prev_month=last_day_prev_month_formatted,
                          total_socios_mes=total_socios_mes,
                          total_retiros=total_retiros,
                          total_aportes=total_aportes,
