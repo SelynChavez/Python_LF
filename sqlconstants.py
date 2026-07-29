@@ -325,26 +325,26 @@ DASHB_PRRET_PRESTAMOS_ESTADO = "SELECT estado, COUNT(*) as cantidad, COALESCE(SU
 DASHB_PRRET_PRESTAMOS_TIPOS = "SELECT tp.descripcion, COUNT(*) as cantidad, COALESCE(SUM(p.saldo_pendiente), 0) as total FROM a_prestamos p JOIN a_tipos tp ON tp.tipo='DEUDA' AND p.tipo_prestamo = tp.codigo WHERE p.estado IN ('pendiente', 'aprobado') GROUP BY tp.descripcion"
 DASHB_PRRET_PAD_MAY_APORTES = """
 SELECT * FROM (
-SELECT concat(id,':',placa,':',nombre) nombre,aportado,ventas,(ventas-aportado) saldo FROM (
+SELECT concat(id,':',placa,':',nombre) nombre,aportado,ventas,(vtascred-aportado) saldo FROM (
   SELECT p.id, p.socio, (select s.nombre from a_socios s where s.id=p.socio) nombre, p.placa,
   IFNULL(
   ( SELECT SUM(av1.aportado)
     FROM av_total_aportes_x_padron_fecha av1
-    WHERE av1.padron = p.id AND av1.fecha <= DATE(NOW())
+    WHERE av1.padron = p.id AND av1.fecha <= LAST_DAY(CURDATE() - INTERVAL 1 MONTH)
     AND av1.aporte = 'COBRO.COMB'
     GROUP BY av1.padron), 0) AS aportado,
   IFNULL(
   ( SELECT SUM(av2.monto)
     FROM a_ventas_comb_padron av2
-    WHERE av2.padron = p.id AND av2.fecha <= DATE(NOW())
-    GROUP BY av2.padron), 0) AS ventas
+    WHERE av2.padron = p.id AND av2.fecha <= LAST_DAY(CURDATE() - INTERVAL 1 MONTH)
+    GROUP BY av2.padron), 0) AS ventas,
+  IFNULL(
+  ( SELECT SUM(av2.monto)
+    FROM a_ventas_comb_padron av2
+    WHERE av2.padron = p.id AND av2.fecha <= LAST_DAY(CURDATE() - INTERVAL 1 MONTH) 
+    AND forma_pago='Credito'
+    GROUP BY av2.padron), 0) AS vtascred	
   FROM a_padrones p
-  WHERE (IFNULL((SELECT SUM(av1.aportado) FROM av_total_aportes_x_padron_fecha av1
-                WHERE av1.padron = p.id AND av1.fecha <= DATE(NOW())
-                AND av1.aporte = 'COBRO.COMB' GROUP BY av1.padron), 0) +
-         IFNULL((SELECT SUM(av2.monto) FROM a_ventas_comb_padron av2
-                WHERE av2.padron = p.id AND av2.fecha <= DATE(NOW())
-                GROUP BY av2.padron), 0)) > 0
 ) AS tabla_datos
 ORDER BY 3 DESC LIMIT 20
 ) as tabla_res1 ORDER BY 4 LIMIT 10
