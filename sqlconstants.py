@@ -171,10 +171,12 @@ WHERE t.atributo1='$serie$'   """
 
 
 DASHB_COMB_TOTAL_HOY = """
-SELECT COALESCE(SUM(galones_vendidos), 0) as total_gallons,
-       COALESCE(SUM(total_precio), 0) as total_revenue,
-       COUNT(DISTINCT maquina) as active_machines
-FROM a_ventas_comb WHERE DATE(fecha) = CURDATE()
+SELECT COALESCE(SUM(v.galones_vendidos), 0) as total_gallons,
+       COALESCE(SUM(v.total_precio), 0) as total_revenue,
+       COUNT(DISTINCT v.maquina) as active_machines
+FROM a_ventas_comb v
+LEFT JOIN a_maquinas m ON v.maquina = m.id
+WHERE DATE(v.fecha) = CURDATE() AND m.numero != 'MQ1U'
 """
 DASHB_COMB_TURNOS_HOY = """
 SELECT nombre as shift_name, SUM(galones_vendidos) as gallons, SUM(total_precio) as revenue
@@ -611,7 +613,28 @@ FROM a_ventas_comb v
 LEFT JOIN a_maquinas m ON v.maquina = m.id
 WHERE v.fecha >= date('$p1$')
   AND v.fecha <= date('$p2$')
-  AND (v.maquina = '$p3$' OR '0' = '$p3$')
+  AND (v.maquina = '$p3$' OR ('0' = '$p3$' AND m.numero != 'MQ1U'))
+  AND (v.webuser = '$p5$' OR '0' = '$p5$')
+ORDER BY m.numero, v.fecha DESC, v.id DESC
+"""
+
+REP_VENTAS_UREA_MAQUINA = """
+SELECT
+  m.numero machine_number,
+  v.nombre,
+  m.ubicacion local,
+  v.fecha,
+  v.lectura_inicial,
+  v.lectura_final,
+  v.galones_vendidos,
+  v.total_precio,
+  v.webuser,
+  m.id machine_id
+FROM a_ventas_comb v
+LEFT JOIN a_maquinas m ON v.maquina = m.id
+WHERE v.fecha >= date('$p1$')
+  AND v.fecha <= date('$p2$')
+  AND m.numero = 'MQ1U'
   AND (v.webuser = '$p5$' OR '0' = '$p5$')
 ORDER BY m.numero, v.fecha DESC, v.id DESC
 """

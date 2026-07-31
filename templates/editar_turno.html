@@ -13,8 +13,8 @@
                 <div class="alert alert-success">
                     <h5>Máquina: {{ machine.machine_number }}</h5>
                     <p><strong>Combustible:</strong> {{ machine.fuel_name }}</p>
-                    <p><strong>Precio Unitario:</strong> ${{ machine.unit_price }}/gal</p>
-                    <p><strong>Stock Disponible:</strong> {{ "%.1f"|format(machine.stock_available) }} gal</p>
+                    <p><strong>Precio Unitario:</strong> ${{ machine.unit_price }}/{% if machine.fuel_name == 'UREA' %}lts{% else %}gal{% endif %}</p>
+                    <p><strong>Stock Disponible:</strong> {{ "%.1f"|format(machine.stock_available) }} {% if machine.fuel_name == 'UREA' %}lts{% else %}gal{% endif %}</p>
                 </div>
                 <form method="POST" action="{{ url_for('combustibles.editar_turno', machine_id=machine.id) }}">
                     <div class="mb-3">
@@ -38,7 +38,7 @@
                     </div>
                     <div class="alert alert-warning" id="calculation" style="display: none;">
                         <strong>Cálculo:</strong>
-                        <span id="gallons">0.00</span> galones × ${{ machine.unit_price }} = 
+                        <span id="gallons">0.00</span> {% if machine.fuel_name == 'UREA' %}litros{% else %}galones{% endif %} × ${{ machine.unit_price }} =
                         $<span id="total">0.00</span>
                     </div>
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -68,7 +68,7 @@
                                 <th>Turno</th>
                                 <th>Inicial</th>
                                 <th>Final</th>
-                                <th>Galones</th>
+                                <th>{% if machine.fuel_name == 'UREA' %}Litros{% else %}Galones{% endif %}</th>
                                 <th>Total</th>
                             </tr>
                         </thead>

@@ -87,10 +87,10 @@ $(document).ready(function() {
                         <td>
                             {% if machine.total_gallons_today > 0 %}
                             <span class="text-success">
-                                {{ "%.2f"|format(machine.total_gallons_today) }} gal
+                                {{ "%.2f"|format(machine.total_gallons_today) }} {% if machine.fuel_name == 'UREA' %}lts{% else %}gal{% endif %}
                             </span>
                             {% else %}
-                            <span class="text-muted">0.00 gal</span>
+                            <span class="text-muted">0.00 {% if machine.fuel_name == 'UREA' %}lts{% else %}gal{% endif %}</span>
                             {% endif %}
                         </td>
                         <td>

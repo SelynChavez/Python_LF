@@ -25,15 +25,15 @@
                     <div class="card-body">
                         <h4 class="card-title">STOCK: {{ fuel.name }}</h4>
                         <p class="card-text">
-                            <strong>Actual:</strong> 
+                            <strong>Actual:</strong>
                             <span class="{% if fuel.current_stock < fuel.min_stock %}stock-critical
                                        {% else %}stock-normal{% endif %}">
-                                {{ "%.1f"|format(fuel.current_stock) }} gal
+                                {{ "%.1f"|format(fuel.current_stock) }} {% if fuel.name == 'UREA' %}lit{% elif fuel.name == 'FL' %}Und{% else %}gal{% endif %}
                             </span>
                         </p>
-                        <p class="card-text"><strong>Mínimo:</strong> {{ "%.1f"|format(fuel.min_stock) }} gal </p>
+                        <p class="card-text"><strong>Mínimo:</strong> {{ "%.1f"|format(fuel.min_stock) }} {% if fuel.name == 'UREA' %}lit{% elif fuel.name == 'FL' %}Und{% else %}gal{% endif %}</p>
                         <p class="card-text">
-                            <strong>Precio Promedio:</strong> S/.{{ "%.2f"|format(fuel.average_price or 0) }}/gal
+                            <strong>Precio Promedio:</strong> S/.{{ "%.2f"|format(fuel.average_price or 0) }}/{% if fuel.name == 'UREA' %}lit{% elif fuel.name == 'FL' %}Und{% else %}gal{% endif %}
                         </p>
                         <p class="card-text border-top pt-2 mt-2">
                             <strong>Valorización:</strong> <span class="h5 text-primary">S/.{{ "%.2f"|format((fuel.current_stock or 0) * (fuel.average_price or 0)) }}</span>

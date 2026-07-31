@@ -13,7 +13,7 @@
 
 <div class="row">
 
-    <div class="col-md-6 col-lg-4 mb-4">
+    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
             <p><b>Rep. Recibos por Fechas y Padron</b></p>
             <small class="text-muted">Múltiples series y tipos de fecha</small>
@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 mb-4">
+    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
             <p><b>Rep. Recibos por Fechas y Aportes</b></p>
             <small class="text-muted">Con filtro por tipo de aporte</small>
@@ -35,7 +35,7 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 mb-4">
+    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
             <p><b>Ventas de Combustible por Padrón</b></p>
             <small class="text-muted">Con totales por día</small>
@@ -46,7 +46,7 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 mb-4">
+    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
             <p><b>Saldos de Deuda de Combustible</b></p>
             <small class="text-muted">Deuda pendiente por padrón</small>
@@ -57,7 +57,7 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 mb-4">
+    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
             <p><b>Ventas de Combustible por Máquina</b></p>
             <small class="text-muted">Detalle de ventas por máquina</small>
@@ -68,7 +68,18 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 mb-4">
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card dashboard-card">
+            <p><b>Ventas de UREA</b></p>
+            <small class="text-muted">Detalle de ventas de UREA (MQ1U)</small>
+            <a href="{{ url_for('reportes.rep_ventas_urea_maquina') if session.user_rol in ['ADMIN', 'GRIFERO'] else '#' }}"
+               class="btn btn-success {{ 'disabled' if session.user_rol not in ['ADMIN', 'GRIFERO'] }}">
+                <i class="bi bi-fuel-pump"></i> Ventas UREA
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
             <p><b>Reporte de Ingresos Entre Fechas</b></p>
             <small class="text-muted">Ingresos con filtros avanzados</small>
@@ -79,7 +90,7 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 mb-4">
+    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
             <p><b>Reporte de Salidas Entre Fechas</b></p>
             <small class="text-muted">Salidas con filtros avanzados</small>
@@ -90,7 +101,7 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 mb-4">
+    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
             <p><b>Reporte de Control de Pagos Préstamos</b></p>
             <small class="text-muted">Control de pagos y deudas de préstamos</small>
@@ -101,7 +112,7 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 mb-4">
+    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
             <p><b>Detalle de Pagos por Préstamo</b></p>
             <small class="text-muted">Desglose de pagos realizados para cada préstamo</small>
@@ -112,7 +123,7 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 mb-4">
+    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
             <p><b>Control de Consumo y Pagos de Combustible a Crédito</b></p>
             <small class="text-muted">Historial de consumo a crédito y pagos realizados</small>

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte - Ventas de UREA {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-fuel-pump"></i> Reporte de Ventas de UREA</h4>
+            </div>
+            <div class="card-body">
+                <form id="formReporte" action="/generar_reporte_vtas_urea" method="POST" target="_blank">
+                    <input type="hidden" id="cod" name="cod" value="REP_VENTAS_UREA_MAQUINA">
+                    <input type="hidden" id="titulo" name="titulo" value="Reporte de Ventas de UREA">
+                    <input type="hidden" id="subtitulo" name="subtitulo" value="Desde $p1$ a $p2$ - Máquina: MQ1U - Usuario: $p5$">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="p1" class="form-label">Fecha Desde</label>
+                            <input type="date" class="form-control" id="p1" name="p1" value="{{ p1 }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p2" class="form-label">Fecha Hasta</label>
+                            <input type="date" class="form-control" id="p2" name="p2" value="{{ p2 }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="p3" class="form-label">Máquina</label>
+                            <select class="form-select" id="p3" name="p3">
+                                <option value="0">MQ1U</option>
+                                {% for maquina in maquinas_urea %}
+                                    {% if maquina['numero'] == 'MQ1U' %}
+                                        <option value="{{ maquina['id'] }}">Máquina {{ maquina['numero'] }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p5" class="form-label">Usuario</label>
+                            {% if is_caja_or_grifero %}
+                            <input type="text" class="form-control" id="p5_display" value="{{ current_user }}" readonly>
+                            <input type="hidden" id="p5" name="p5" value="{{ current_user }}">
+                            {% else %}
+                            <select class="form-select" id="p5" name="p5">
+                                <option value="0">Todos los Usuarios</option>
+                                {% for usuario in usuarios %}
+                                    <option value="{{ usuario['username'] }}">{{ usuario['fullname'] }}</option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary me-md-2">
+                            <i class="bi bi-eye"></i> Generar y Ver Reporte
+                        </button>
+                        {% if not is_caja_or_grifero %}
+                        <a href="{{ url_for('reportes.reportes') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

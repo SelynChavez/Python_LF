@@ -86,7 +86,7 @@
                         <thead>
                             <tr>
                                 <th>Turno</th>
-                                <th>Galones</th>
+                                <th>Glns o Lts</th>
                                 <th>Ingresos</th>
                                 <th>% del Día</th>
                             </tr>
@@ -95,7 +95,7 @@
                             {% for shift in shift_stats %}
                             <tr>
                                 <td><strong>{{ shift.shift_name }}</strong></td>
-                                <td>{{ "%.2f"|format(shift.gallons) }} gal</td>
+                                <td>{{ "%.2f"|format(shift.gallons) }} Glns</td>
                                 <td>S/.{{ "%.2f"|format(shift.revenue) }}</td>
                                 <td>
                                     <div class="progress" style="height: 10px;">
@@ -135,8 +135,8 @@
                                 <th>#</th>
                                 <th>Máquina</th>
                                 <th>Combustible</th>
-                                <th>Galones</th>
-                                <th>Ingresos</th>
+                                <th>Glns o Lts</th>
+                                <th>Ingresos</th> 
                             </tr>
                         </thead>
                         <tbody>
@@ -145,7 +145,7 @@
                                 <td><span class="badge bg-primary">{{ loop.index }}</span></td>
                                 <td><strong>{{ machine.machine_number }}</strong></td>
                                 <td>{{ machine.fuel_type }}</td>
-                                <td>{{ "%.2f"|format(machine.gallons) }}</td>
+                                <td>{{ "%.2f"|format(machine.gallons) }} {% if machine.fuel_type == 'UREA' %}Lts{% else %}Glns{% endif %}</td>
                                 <td>S/.{{ "%.2f"|format(machine.revenue) }}</td>
                             </tr>
                             {% endfor %}
@@ -188,8 +188,8 @@
                             {% for fuel in low_stock %}
                             <tr>
                                 <td>{{ fuel.fuel_name }}</td>
-                                <td>{{ "%.1f"|format(fuel.stock_available) }} gal</td>
-                                <td>{{ "%.1f"|format(fuel.stock_min) }} gal</td>
+                                <td>{{ "%.1f"|format(fuel.stock_available) }} {% if fuel.fuel_name == 'UREA' %}lts{% else %}gal{% endif %}</td>
+                                <td>{{ "%.1f"|format(fuel.stock_min) }} {% if fuel.fuel_name == 'UREA' %}lts{% else %}gal{% endif %}</td>
                                 {% set lvl_color = 'bg-danger' if fuel.status == 'CRITICO' else ('bg-warning' if fuel.status == 'BAJO' else 'bg-success') %}
                                 <td>
                                     <div class="progress" style="height: 10px;">
