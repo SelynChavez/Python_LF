@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Editar Lectura Inicial{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-pencil"></i> Editar Lectura Inicial</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <p class="mb-1"><strong>Máquina:</strong> {{ venta.machine_number }}</p>
+                        <p class="mb-1"><strong>Turno:</strong> {{ venta.nombre }}</p>
+                        <p class="mb-0"><strong>Fecha:</strong> {{ venta.fecha.strftime('%d-%m-%Y') if venta.fecha else '-' }}</p>
+                    </div>
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="lectura_inicial" class="form-label">Lectura Inicial</label>
+                            <input type="number" class="form-control form-control-lg" id="lectura_inicial" name="lectura_inicial"
+                                   value="{{ '%.2f'|format(venta.lectura_inicial) }}" autofocus required step="0.01"
+                                   onchange="calcularDiferencia()">
+                            <small class="text-muted" id="diferencia-info"></small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="lectura_final" class="form-label">Lectura Final</label>
+                            <input type="number" class="form-control" id="lectura_final" name="lectura_final"
+                                   value="{{ '%.2f'|format(venta.lectura_final) }}" readonly step="0.01">
+                        </div>
+
+                        <div class="alert alert-info" id="resultado" style="display: none;">
+                            <p class="mb-1"><strong>Diferencia:</strong> <span id="diferencia-valor">0.00</span></p>
+                            <p class="mb-0"><strong>Total:</strong> S/. <span id="total-valor">0.00</span></p>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle"></i> Guardar Lectura
+                            </button>
+                            <a href="{{ url_for('combustibles.cargar_turnos') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cerrar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function calcularDiferencia() {
+    var lecturaInicial = parseFloat(document.getElementById('lectura_inicial').value) || 0;
+    var lecturaFinal = parseFloat(document.getElementById('lectura_final').value) || 0;
+
+    if (lecturaFinal >= lecturaInicial) {
+        var diferencia = lecturaFinal - lecturaInicial;
+        document.getElementById('diferencia-valor').textContent = diferencia.toFixed(2);
+        document.getElementById('resultado').style.display = 'block';
+    } else {
+        document.getElementById('resultado').style.display = 'none';
+    }
+}
+
+// Calcular al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    calcularDiferencia();
+    document.getElementById('lectura_inicial').focus();
+});
+</script>
+{% endblock %}

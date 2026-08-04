@@ -137,7 +137,12 @@
                         <td>{{ v.fecha.strftime('%d-%m-%Y') if v.fecha else '' }}</td>
                         <td>{{ v.nombre }}</td>
                         <td>{{ v.machine_number }}{% if v.ubicacion %} - {{ v.ubicacion }}{% endif %}</td>
-                        <td class="text-end">{{ "%.2f"|format(v.lectura_inicial) }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('combustibles.editar_lectura_inicial', venta_id=v.id) }}" class="text-decoration-none"
+                               title="Click para editar la Lect. Inicial">
+                                {{ "%.2f"|format(v.lectura_inicial) }}
+                            </a>
+                        </td>
                         <td class="text-end">
                             <a href="{{ url_for('combustibles.editar_lectura_final', venta_id=v.id) }}" class="text-decoration-none"
                                title="Click para editar la Lect. Final">
