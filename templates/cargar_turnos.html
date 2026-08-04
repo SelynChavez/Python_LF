@@ -138,7 +138,12 @@
                         <td>{{ v.nombre }}</td>
                         <td>{{ v.machine_number }}{% if v.ubicacion %} - {{ v.ubicacion }}{% endif %}</td>
                         <td class="text-end">{{ "%.2f"|format(v.lectura_inicial) }}</td>
-                        <td class="text-end">{{ "%.2f"|format(v.lectura_final) }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('combustibles.editar_lectura_final', venta_id=v.id) }}" class="text-decoration-none"
+                               title="Click para editar la Lect. Final">
+                                {{ "%.2f"|format(v.lectura_final) }}
+                            </a>
+                        </td>
                         <td class="text-end">{{ "%.2f"|format(v.galones_vendidos) }}</td>
                         <td class="text-end">{{ "%.2f"|format(v.total_precio) }}</td>
                         {% if is_admin %}<td>{{ v.webuser }}</td>{% endif %}
@@ -170,6 +175,7 @@
         {% endif %}
     </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -180,7 +186,7 @@ $(document).ready(function() {
         var machineId = $(this).data('machine');
         var initial = parseFloat($('input[name="initial_' + machineId + '"]').val()) || 0;
         var final = parseFloat($('input[name="final_' + machineId + '"]').val()) || 0;
-        
+
         if (final >= initial) {
             var gallons = final - initial;
             $('#calc_' + machineId).text(gallons.toFixed(2));

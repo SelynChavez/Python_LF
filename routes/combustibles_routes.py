@@ -671,3 +671,67 @@ def editar_combustible(nombre):
     finally:
         cursor.close()
         connection.close()
+
+
+@combustibles_bp.route('/editar_lectura_final/<int:venta_id>', methods=['GET', 'POST'])
+@login_required
+def editar_lectura_final(venta_id):
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos', 'danger')
+        return redirect(url_for('combustibles.cargar_turnos'))
+
+    cursor = connection.cursor(dictionary=True)
+
+    # Obtener datos de la venta
+    cursor.execute("""
+        SELECT v.*, m.numero as machine_number, m.tipo_combustible
+        FROM a_ventas_comb v
+        LEFT JOIN a_maquinas m ON v.maquina = m.id
+        WHERE v.id = %s
+    """, (venta_id,))
+    venta = cursor.fetchone()
+
+    if not venta:
+        cursor.close()
+        connection.close()
+        flash('Venta no encontrada', 'warning')
+        return redirect(url_for('combustibles.cargar_turnos'))
+
+    if request.method == 'POST':
+        try:
+            nueva_lectura = float(request.form.get('lectura_final', 0))
+            lectura_inicial = float(venta['lectura_inicial'])
+
+            if nueva_lectura < lectura_inicial:
+                flash('La lectura final debe ser mayor o igual a la lectura inicial', 'warning')
+            else:
+                galones_vendidos = nueva_lectura - lectura_inicial
+
+                # Obtener precio unitario
+                cursor.execute("""
+                    SELECT precio_unitario FROM a_combustible WHERE id = %s
+                """, (venta['tipo_combustible'],))
+                combustible = cursor.fetchone()
+                precio_unitario = float(combustible['precio_unitario']) if combustible else 0
+                total_precio = galones_vendidos * precio_unitario
+
+                # Actualizar venta
+                cursor.execute("""
+                    UPDATE a_ventas_comb
+                    SET lectura_final = %s, galones_vendidos = %s, total_precio = %s
+                    WHERE id = %s
+                """, (nueva_lectura, galones_vendidos, total_precio, venta_id))
+
+                connection.commit()
+                flash('Lectura actualizada correctamente', 'success')
+                cursor.close()
+                connection.close()
+                return redirect(url_for('combustibles.cargar_turnos'))
+
+        except ValueError:
+            flash('Valor inválido para la lectura', 'danger')
+
+    cursor.close()
+    connection.close()
+    return render_template('editar_lectura_final.html', venta=venta)
