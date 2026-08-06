@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash, session, send_file
+from flask import render_template, request, redirect, url_for, flash, session, send_file, jsonify
 from functools import wraps
 from mysql.connector import Error
 from decimal import Decimal
@@ -573,6 +573,32 @@ def crear_recibo_s2():
         else:
             flash('Error de conexión a la base de datos.', 'danger')
     return render_template('crear_recibo_s2.html', act='-',but='Continuar')
+
+
+@recibos_bp.route('/verificar_recibo_s2', methods=['POST'])
+@login_required
+def verificar_recibo_s2():
+    fecha = request.form.get('fecha')
+    padron = request.form.get('padron')
+
+    if not fecha or not padron:
+        return jsonify({'existe': False})
+
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        query = "SELECT id FROM a_recibos WHERE serie = '2' AND fecha = %s AND padron = %s"
+        cursor.execute(query, (fecha, padron))
+        resultado = cursor.fetchone()
+        cursor.close()
+        connection.close()
+
+        if resultado:
+            return jsonify({'existe': True})
+        else:
+            return jsonify({'existe': False})
+    else:
+        return jsonify({'existe': False, 'error': 'Conexión fallida'})
 
 
 @recibos_bp.route('/crear', methods=['GET', 'POST'])

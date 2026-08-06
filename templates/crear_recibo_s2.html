@@ -167,5 +167,59 @@ document.querySelectorAll('.monto-aporte').forEach(input => {
         background-color: #f8f9fa !important;
         border-left: 4px solid #28a745;
     }
+
+    .alerta-recibo-existe {
+        display: none;
+        margin-top: 10px;
+    }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.getElementById('fec');
+    const padronInput = document.getElementById('pad');
+
+    function verificarRecibo() {
+        const fecha = fechaInput.value;
+        const padron = padronInput.value;
+
+        if (!fecha || !padron) {
+            return;
+        }
+
+        fetch('{{ url_for("recibos.verificar_recibo_s2") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'fecha=' + encodeURIComponent(fecha) + '&padron=' + encodeURIComponent(padron)
+        })
+        .then(response => response.json())
+        .then(data => {
+            const alertaDiv = document.getElementById('alerta-recibo');
+            if (data.existe) {
+                if (!alertaDiv) {
+                    const div = document.createElement('div');
+                    div.id = 'alerta-recibo';
+                    div.className = 'alert alert-warning alerta-recibo-existe';
+                    div.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Recibo ya fue girado. Por favor verifique.';
+                    padronInput.parentElement.parentElement.appendChild(div);
+                } else {
+                    alertaDiv.style.display = 'block';
+                }
+                document.querySelector('button[type="submit"]').disabled = true;
+            } else {
+                if (alertaDiv) {
+                    alertaDiv.style.display = 'none';
+                }
+                document.querySelector('button[type="submit"]').disabled = false;
+            }
+        });
+    }
+
+    fechaInput.addEventListener('change', verificarRecibo);
+    padronInput.addEventListener('change', verificarRecibo);
+    padronInput.addEventListener('input', verificarRecibo);
+});
+</script>
 {% endblock %}
