@@ -587,14 +587,18 @@ def verificar_recibo_s2():
     connection = get_db_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        query = "SELECT id FROM a_recibos WHERE serie = '2' AND fecha = %s AND padron = %s"
+        query = "SELECT id, active FROM a_recibos WHERE serie = '2' AND DATE(fecha) = %s AND padron = %s"
         cursor.execute(query, (fecha, padron))
         resultado = cursor.fetchone()
         cursor.close()
         connection.close()
 
         if resultado:
-            return jsonify({'existe': True})
+            # Si existe y está activo (girado)
+            if resultado.get('active') == 'S':
+                return jsonify({'existe': True})
+            else:
+                return jsonify({'existe': False})
         else:
             return jsonify({'existe': False})
     else:
