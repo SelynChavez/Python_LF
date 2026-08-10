@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Historial de Ejecuciones{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> {{ tarea.nombre }}</h5>
+                        <a href="{{ url_for('configuracion.programar_tareas') }}" class="btn btn-light btn-sm">
+                            <i class="bi bi-arrow-left"></i> Volver a tareas
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Tipo:</strong> <span class="badge bg-primary">{{ tarea.tipo }}</span></p>
+                            <p><strong>Días:</strong> {{ tarea.dias_semana if tarea.dias_semana else 'Todos los días' }}</p>
+                            <p><strong>Estado:</strong>
+                                {% if tarea.activo == 'S' %}
+                                <span class="badge bg-success">Activa</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactiva</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Descripción:</strong> {{ tarea.descripcion if tarea.descripcion else '-' }}</p>
+                            <p><strong>Hora:</strong> {{ tarea.hora_ejecucion if tarea.hora_ejecucion else '-' }}</p>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('configuracion.ejecutar_tarea', id=tarea.id) }}" class="btn btn-success btn-sm">
+                                    <i class="bi bi-play"></i> Ejecutar Ahora
+                                </a>
+                                <a href="{{ url_for('configuracion.editar_tarea', id=tarea.id) }}" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="mb-2">Consulta SQL:</h6>
+                    <div class="bg-light p-3 rounded font-monospace" style="max-height: 120px; overflow-y: auto; border-left: 4px solid #0d6efd;">
+                        <small>{{ tarea.sql_query }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> Historial de Ejecuciones</h5>
+                {% if paginacion %}
+                <small class="text-muted">
+                    Mostrando {{ (paginacion.pagina_actual - 1) * paginacion.items_por_pagina + 1 }}
+                    a
+                    {{ [paginacion.pagina_actual * paginacion.items_por_pagina, paginacion.total_items]|min }}
+                    de {{ paginacion.total_items }} registros
+                </small>
+                {% endif %}
+            </div>
+
+            {% if ejecuciones %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle">
+                    <thead class="table-dark sticky-top">
+                        <tr>
+                            <th style="width: 18%"><i class="bi bi-calendar-event"></i> Fecha y Hora</th>
+                            <th style="width: 12%"><i class="bi bi-bookmark-check"></i> Estado</th>
+                            <th style="width: 12%"><i class="bi bi-hourglass-split"></i> Duración</th>
+                            <th style="width: 12%"><i class="bi bi-arrow-left-right"></i> Registros</th>
+                            <th style="width: 46%"><i class="bi bi-info-circle"></i> Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exec in ejecuciones %}
+                        <tr>
+                            <td>
+                                <div>
+                                    <small class="text-muted">{{ exec.fecha_ejecucion.strftime('%d-%m-%Y') if exec.fecha_ejecucion else '-' }}</small>
+                                </div>
+                                <strong>{{ exec.fecha_ejecucion.strftime('%H:%M:%S') if exec.fecha_ejecucion else '-' }}</strong>
+                            </td>
+                            <td>
+                                {% if exec.estado == 'EXITOSO' %}
+                                <span class="badge bg-success p-2">
+                                    <i class="bi bi-check-circle"></i> Exitosa
+                                </span>
+                                {% elif exec.estado == 'ERROR' %}
+                                <span class="badge bg-danger p-2">
+                                    <i class="bi bi-x-circle"></i> Error
+                                </span>
+                                {% elif exec.estado == 'EJECUTANDO' %}
+                                <span class="badge bg-info p-2">
+                                    <i class="bi bi-arrow-repeat"></i> Ejecutando
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary p-2">
+                                    {{ exec.estado }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if exec.tiempo_ejecucion_ms %}
+                                    <code class="bg-light p-1 rounded">
+                                        {% if exec.tiempo_ejecucion_ms < 1000 %}
+                                            {{ exec.tiempo_ejecucion_ms }}ms
+                                        {% else %}
+                                            {{ "%.2f"|format(exec.tiempo_ejecucion_ms / 1000) }}s
+                                        {% endif %}
+                                    </code>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark p-2">
+                                    {{ exec.registros_afectados or 0 }} fila{{ 's' if (exec.registros_afectados or 0) != 1 else '' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if exec.estado == 'ERROR' and exec.mensaje_error %}
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#error{{ exec.id }}" aria-expanded="false">
+                                    <i class="bi bi-exclamation-triangle"></i> Ver error ({{ exec.mensaje_error|length }} caracteres)
+                                </button>
+                                <div class="collapse mt-2" id="error{{ exec.id }}">
+                                    <div class="alert alert-danger p-2 m-0" style="font-size: 0.85rem;">
+                                        <code class="font-monospace" style="word-break: break-all;">{{ exec.mensaje_error }}</code>
+                                    </div>
+                                </div>
+                                {% elif exec.estado == 'EXITOSO' %}
+                                <span class="text-success">
+                                    <i class="bi bi-check-lg"></i> Completado correctamente
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if paginacion and paginacion.total_paginas > 1 %}
+            <nav aria-label="Paginación del historial">
+                <ul class="pagination justify-content-center">
+                    {% if paginacion.mostrar_anterior %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('configuracion.historial_ejecuciones', id=tarea.id, page=1) }}" title="Primera página">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('configuracion.historial_ejecuciones', id=tarea.id, page=paginacion.pagina_actual-1) }}">
+                            <i class="bi bi-chevron-left"></i> Anterior
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="bi bi-chevron-left"></i> Anterior
+                        </span>
+                    </li>
+                    {% endif %}
+
+                    <!-- Números de página -->
+                    {% set rango_inicio = [paginacion.pagina_actual - 2, 1]|max %}
+                    {% set rango_fin = [paginacion.pagina_actual + 2, paginacion.total_paginas]|min %}
+
+                    {% if rango_inicio > 1 %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+
+                    {% for num in range(rango_inicio, rango_fin + 1) %}
+                    {% if num == paginacion.pagina_actual %}
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">
+                            {{ num }}
+                            <span class="visually-hidden">(actual)</span>
+                        </span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('configuracion.historial_ejecuciones', id=tarea.id, page=num) }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if rango_fin < paginacion.total_paginas %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+
+                    {% if paginacion.mostrar_siguiente %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('configuracion.historial_ejecuciones', id=tarea.id, page=paginacion.pagina_actual+1) }}">
+                            Siguiente <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('configuracion.historial_ejecuciones', id=tarea.id, page=paginacion.total_paginas) }}" title="Última página">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            Siguiente <i class="bi bi-chevron-right"></i>
+                        </span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle"></i> <strong>No hay registros de ejecución aún.</strong> Haz clic en "Ejecutar Ahora" para correr esta tarea y ver el historial.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

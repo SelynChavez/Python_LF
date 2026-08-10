@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Editar Tarea{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-pencil"></i> Editar Tarea: {{ tarea.nombre }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre de la Tarea *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre"
+                                   value="{{ tarea.nombre }}" required>
+                            <small class="text-muted">Debe ser único</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion"
+                                      rows="2">{{ tarea.descripcion if tarea.descripcion else '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo" class="form-label">Tipo de Operación *</label>
+                                <select class="form-select" id="tipo" name="tipo" required>
+                                    <option value="SELECT" {{ 'selected' if tarea.tipo == 'SELECT' }}>SELECT (Consulta)</option>
+                                    <option value="UPDATE" {{ 'selected' if tarea.tipo == 'UPDATE' }}>UPDATE (Actualización)</option>
+                                    <option value="INSERT" {{ 'selected' if tarea.tipo == 'INSERT' }}>INSERT (Inserción)</option>
+                                    <option value="DELETE" {{ 'selected' if tarea.tipo == 'DELETE' }}>DELETE (Eliminación)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dias_semana" class="form-label">Días de la Semana</label>
+                                <input type="text" class="form-control" id="dias_semana" name="dias_semana"
+                                       value="{{ tarea.dias_semana if tarea.dias_semana else '' }}"
+                                       placeholder="Ej: Lun,Mié,Vie">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="hora_ejecucion" class="form-label">Hora de Ejecución</label>
+                                <input type="time" class="form-control" id="hora_ejecucion" name="hora_ejecucion"
+                                       value="{{ tarea.hora_ejecucion if tarea.hora_ejecucion else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="activo" class="form-label">Estado</label>
+                                <select class="form-select" id="activo" name="activo">
+                                    <option value="S" {{ 'selected' if tarea.activo == 'S' }}>Activa</option>
+                                    <option value="N" {{ 'selected' if tarea.activo == 'N' }}>Inactiva</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="sql_query" class="form-label">Consulta SQL *</label>
+                            <textarea class="form-control font-monospace" id="sql_query" name="sql_query"
+                                      rows="6" required>{{ tarea.sql_query }}</textarea>
+                            <small class="text-muted">Ingresa la consulta SQL a ejecutar</small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Creada:</strong> {{ tarea.fecha_creacion }}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Guardar Cambios
+                            </button>
+                            <a href="{{ url_for('configuracion.programar_tareas') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <a href="{{ url_for('configuracion.historial_ejecuciones', id=tarea.id) }}" class="btn btn-info">
+                                <i class="bi bi-clock-history"></i> Ver Historial
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

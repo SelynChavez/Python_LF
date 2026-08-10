@@ -918,3 +918,50 @@ FROM (
 LIMIT 100
 """
 
+# Task Scheduler - Programación de Tareas
+LISTAR_PROGRAMAS_TAREAS = """
+SELECT id, nombre, descripcion, tipo,
+       CONCAT(
+           IFNULL(TIME_FORMAT(hora_ejecucion, '%H:%i'), ''),
+           IF(dias_semana IS NOT NULL AND dias_semana != '',
+              CONCAT(' - ', dias_semana),
+              IF(hora_ejecucion IS NOT NULL, ' (Todos los días)', '(Sin horario)')
+           )
+       ) as frecuencia,
+       activo, DATE_FORMAT(created_at, '%d-%m-%Y %H:%i') as fecha_creacion
+FROM a_programas_tareas
+ORDER BY created_at DESC
+"""
+
+OBTENER_PROGRAMA_TAREA = "SELECT id, nombre, descripcion, tipo, sql_query, hora_ejecucion, dias_semana, activo, created_at FROM a_programas_tareas WHERE id = %s"
+
+CREAR_PROGRAMA_TAREA = """
+INSERT INTO a_programas_tareas
+(nombre, descripcion, tipo, sql_query, hora_ejecucion, dias_semana, activo, webuser)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+"""
+
+ACTUALIZAR_PROGRAMA_TAREA = """
+UPDATE a_programas_tareas
+SET nombre = %s, descripcion = %s, tipo = %s, sql_query = %s,
+    hora_ejecucion = %s, dias_semana = %s, activo = %s, modified = NOW()
+WHERE id = %s
+"""
+
+ELIMINAR_PROGRAMA_TAREA = "DELETE FROM a_programas_tareas WHERE id = %s"
+
+LISTAR_EJECUCIONES_TAREA = """
+SELECT id, tarea_id as programa_id, fecha_inicio as fecha_ejecucion,
+       estado, CEIL(TIMESTAMPDIFF(SECOND, fecha_inicio, IFNULL(fecha_fin, NOW())) * 1000) as tiempo_ejecucion_ms,
+       registros_afectados, mensaje_error, archivo_salida
+FROM a_ejecuciones_tareas
+WHERE tarea_id = %s
+ORDER BY fecha_inicio DESC
+LIMIT 50
+"""
+
+REGISTRAR_EJECUCION_TAREA = """
+INSERT INTO a_ejecuciones_tareas
+(tarea_id, estado, registros_afectados, mensaje_error, archivo_salida, fecha_inicio, fecha_fin)
+VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
+"""

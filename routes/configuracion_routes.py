@@ -42,6 +42,17 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def task_scheduler_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        username = session.get('user_username')
+        usuarios_permitidos = ['selyn', 'matias']
+        if username not in usuarios_permitidos:
+            flash('Acceso denegado. El Programador de Tareas no está disponible para tu usuario.', 'danger')
+            return redirect(url_for('dashboard.dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 @configuracion_bp.route('/tipos_deudas')
 @login_required
@@ -1463,3 +1474,308 @@ def activar_usuario(id):
     else:
         flash('Error de conexión a la base de datos.', 'danger')
     return redirect(url_for('configuracion.listar_usuarios'))
+
+
+# ========== TASK SCHEDULER ==========
+@configuracion_bp.route('/programar_tareas')
+@login_required
+@task_scheduler_required
+def programar_tareas():
+    connection = get_db_connection()
+    tareas = []
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute(sqlconstants.LISTAR_PROGRAMAS_TAREAS)
+            tareas = cursor.fetchall()
+        except Error as e:
+            flash(f'Error al cargar tareas: {str(e)}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+    return render_template('programar_tareas.html', tareas=tareas)
+
+
+@configuracion_bp.route('/crear_tarea', methods=['GET', 'POST'])
+@login_required
+@task_scheduler_required
+def crear_tarea():
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()
+        tipo = request.form.get('tipo', '').strip()
+        sql_query = request.form.get('sql_query', '').strip()
+        hora_ejecucion = request.form.get('hora_ejecucion', '').strip()
+        dias_semana = request.form.get('dias_semana', '').strip()
+
+        if not nombre or not tipo or not sql_query:
+            flash('Por favor complete los campos obligatorios', 'warning')
+            return render_template('crear_tarea.html')
+
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor()
+            try:
+                username = session.get('username') or session.get('user_name') or 'admin'
+                cursor.execute(sqlconstants.CREAR_PROGRAMA_TAREA,
+                    (nombre, descripcion, tipo, sql_query, hora_ejecucion, dias_semana, 'S', username))
+                connection.commit()
+                tarea_id = cursor.lastrowid
+
+                # Agendar la tarea
+                from task_scheduler import agendar_tarea, scheduler
+                tarea_data = {
+                    'id': tarea_id,
+                    'nombre': nombre,
+                    'hora_ejecucion': hora_ejecucion,
+                    'dias_semana': dias_semana,
+                    'activo': 'S'
+                }
+                agendar_tarea(tarea_data)
+
+                flash('Tarea creada y agendada exitosamente', 'success')
+                return redirect(url_for('configuracion.programar_tareas'))
+            except Error as e:
+                connection.rollback()
+                flash(f'Error al crear tarea: {str(e)}', 'danger')
+            finally:
+                cursor.close()
+                connection.close()
+        else:
+            flash('Error de conexión a la base de datos', 'danger')
+
+    return render_template('crear_tarea.html')
+
+
+@configuracion_bp.route('/editar_tarea/<int:id>', methods=['GET', 'POST'])
+@login_required
+@task_scheduler_required
+def editar_tarea(id):
+    connection = get_db_connection()
+    tarea = None
+
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute(sqlconstants.OBTENER_PROGRAMA_TAREA, (id,))
+            tarea = cursor.fetchone()
+        except Error as e:
+            flash(f'Error al cargar tarea: {str(e)}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+
+    if not tarea:
+        flash('Tarea no encontrada', 'danger')
+        return redirect(url_for('configuracion.programar_tareas'))
+
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()
+        tipo = request.form.get('tipo', '').strip()
+        sql_query = request.form.get('sql_query', '').strip()
+        hora_ejecucion = request.form.get('hora_ejecucion', '').strip()
+        dias_semana = request.form.get('dias_semana', '').strip()
+        activo = request.form.get('activo', 'S').strip()
+
+        if not nombre or not tipo or not sql_query:
+            flash('Por favor complete los campos obligatorios', 'warning')
+            return render_template('editar_tarea.html', tarea=tarea)
+
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor()
+            try:
+                cursor.execute(sqlconstants.ACTUALIZAR_PROGRAMA_TAREA,
+                    (nombre, descripcion, tipo, sql_query, hora_ejecucion, dias_semana, activo, id))
+                connection.commit()
+
+                # Re-agendar la tarea
+                from task_scheduler import agendar_tarea
+                tarea_data = {
+                    'id': id,
+                    'nombre': nombre,
+                    'hora_ejecucion': hora_ejecucion,
+                    'dias_semana': dias_semana,
+                    'activo': activo
+                }
+                agendar_tarea(tarea_data)
+
+                flash('Tarea actualizada y re-agendada exitosamente', 'success')
+                return redirect(url_for('configuracion.programar_tareas'))
+            except Error as e:
+                connection.rollback()
+                flash(f'Error al actualizar tarea: {str(e)}', 'danger')
+            finally:
+                cursor.close()
+                connection.close()
+        else:
+            flash('Error de conexión a la base de datos', 'danger')
+
+    return render_template('editar_tarea.html', tarea=tarea)
+
+
+@configuracion_bp.route('/eliminar_tarea/<int:id>')
+@login_required
+@task_scheduler_required
+def eliminar_tarea(id):
+    connection = get_db_connection()
+    if connection:
+        cursor = connection.cursor()
+        try:
+            cursor.execute(sqlconstants.ELIMINAR_PROGRAMA_TAREA, (id,))
+            connection.commit()
+
+            # Remover del scheduler
+            from task_scheduler import scheduler
+            try:
+                scheduler.remove_job(f"tarea_{id}")
+            except:
+                pass
+
+            flash('Tarea eliminada exitosamente', 'success')
+        except Error as e:
+            connection.rollback()
+            flash(f'Error al eliminar tarea: {str(e)}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'danger')
+    return redirect(url_for('configuracion.programar_tareas'))
+
+
+@configuracion_bp.route('/historial_ejecuciones/<int:id>')
+@login_required
+@task_scheduler_required
+def historial_ejecuciones(id):
+    from math import ceil
+
+    page = request.args.get('page', 1, type=int)
+    items_por_pagina = 10
+    total_items = 100
+
+    connection = get_db_connection()
+    tarea = None
+    ejecuciones = []
+    total_ejecuciones = 0
+
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute(sqlconstants.OBTENER_PROGRAMA_TAREA, (id,))
+            tarea = cursor.fetchone()
+            if tarea:
+                # Obtener total de ejecuciones
+                cursor.execute("SELECT COUNT(*) as total FROM a_ejecuciones_tareas WHERE tarea_id = %s", (id,))
+                result = cursor.fetchone()
+                total_ejecuciones = min(result['total'] or 0, total_items)
+
+                # Obtener ejecuciones paginadas
+                offset = (page - 1) * items_por_pagina
+                cursor.execute("""
+                    SELECT id, tarea_id as programa_id, fecha_inicio as fecha_ejecucion,
+                           estado, CEIL(TIMESTAMPDIFF(SECOND, fecha_inicio, IFNULL(fecha_fin, NOW())) * 1000) as tiempo_ejecucion_ms,
+                           registros_afectados, mensaje_error, archivo_salida
+                    FROM a_ejecuciones_tareas
+                    WHERE tarea_id = %s
+                    ORDER BY fecha_inicio DESC
+                    LIMIT %s OFFSET %s
+                """, (id, items_por_pagina, offset))
+                ejecuciones = cursor.fetchall()
+        except Error as e:
+            flash(f'Error al cargar historial: {str(e)}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+
+    if not tarea:
+        flash('Tarea no encontrada', 'danger')
+        return redirect(url_for('configuracion.programar_tareas'))
+
+    # Calcular información de paginación
+    total_paginas = ceil(total_ejecuciones / items_por_pagina) if total_ejecuciones > 0 else 1
+    if page > total_paginas:
+        page = total_paginas
+
+    paginacion = {
+        'pagina_actual': page,
+        'total_paginas': total_paginas,
+        'total_items': total_ejecuciones,
+        'items_por_pagina': items_por_pagina,
+        'mostrar_anterior': page > 1,
+        'mostrar_siguiente': page < total_paginas
+    }
+
+    return render_template('historial_ejecuciones.html', tarea=tarea, ejecuciones=ejecuciones, paginacion=paginacion)
+
+
+@configuracion_bp.route('/ejecutar_tarea/<int:id>')
+@login_required
+@task_scheduler_required
+def ejecutar_tarea(id):
+    import time
+    from datetime import datetime
+
+    connection = get_db_connection()
+    if not connection:
+        flash('Error de conexión a la base de datos', 'danger')
+        return redirect(url_for('configuracion.programar_tareas'))
+
+    exec_cursor = connection.cursor(dictionary=True)
+    try:
+        exec_cursor.execute(sqlconstants.OBTENER_PROGRAMA_TAREA, (id,))
+        tarea = exec_cursor.fetchone()
+
+        if not tarea:
+            flash('Tarea no encontrada', 'danger')
+            return redirect(url_for('configuracion.programar_tareas'))
+
+        # Ejecutar tarea
+        inicio = time.time()
+        fecha_inicio = datetime.now()
+        estado = 'EXITOSO'
+        registros_afectados = 0
+        mensaje_error = None
+
+        try:
+            # Crear un cursor separado para ejecutar la tarea
+            task_cursor = connection.cursor()
+            task_cursor.execute(tarea['sql_query'])
+            registros_afectados = task_cursor.rowcount
+            connection.commit()
+            task_cursor.close()
+            estado = 'EXITOSO'
+        except Exception as e:
+            estado = 'ERROR'
+            mensaje_error = str(e)
+            connection.rollback()
+            flash(f'Error al ejecutar tarea: {mensaje_error}', 'danger')
+
+        # Registrar ejecución
+        fecha_fin = datetime.now()
+        duracion_segundos = int((time.time() - inicio))
+
+        try:
+            reg_cursor = connection.cursor()
+            reg_cursor.execute("""
+                INSERT INTO a_ejecuciones_tareas
+                (tarea_id, fecha_inicio, fecha_fin, duracion_segundos, estado, registros_afectados, mensaje_error)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (id, fecha_inicio, fecha_fin, duracion_segundos, estado, registros_afectados, mensaje_error))
+            connection.commit()
+            reg_cursor.close()
+
+            if estado == 'EXITOSO':
+                flash(f'Tarea ejecutada en {duracion_segundos}s. Registros afectados: {registros_afectados}', 'success')
+
+        except Exception as e:
+            flash(f'Error al registrar ejecución: {str(e)}', 'danger')
+
+    except Error as e:
+        flash(f'Error en la base de datos: {str(e)}', 'danger')
+    finally:
+        exec_cursor.close()
+        connection.close()
+
+    return redirect(url_for('configuracion.historial_ejecuciones', id=id))

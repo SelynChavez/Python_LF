@@ -162,4 +162,8 @@ def imprimir_recibo(l_id):
     return render_template('menurecibos.html')
 
 if __name__ == '__main__':
+    # Iniciar Task Scheduler
+    from task_scheduler import iniciar_scheduler
+    iniciar_scheduler(app)
+
     app.run(debug=True, host='0.0.0.0', port=5000)
