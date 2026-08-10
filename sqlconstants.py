@@ -133,7 +133,6 @@ SELECT_DETALLEX = "SELECT rd.*,tt.codigo,tt.descripcion FROM a_recibos_detalle r
 DETALLE_SERIE_1 = """SELECT * FROM (SELECT t.codigo,t.descripcion,
   ROUND(COALESCE((CASE
       WHEN t.codigo='APAHORRO'  THEN p.monto2
-      WHEN t.codigo='APAPORTE'  THEN p.monto3
       ELSE t.monto1
   END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0, 1 serie
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
@@ -146,7 +145,8 @@ WHERE ( (codigo in ('APAHORRO','APAPORTE') and monto > 0) OR codigo not in ('APA
 """
 DETALLE_SERIE_2x = """SELECT * FROM (SELECT t.codigo,t.descripcion,
   ROUND(COALESCE((CASE
-      WHEN t.codigo='AP.SEGURO.X' THEN p.monto4
+      WHEN t.codigo='APAPORTE'   THEN p.monto3
+      WHEN t.codigo='REP.DE.BUS' THEN p.monto4
       ELSE t.monto1
   END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0, 2 serie, 0 slddeuda
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
