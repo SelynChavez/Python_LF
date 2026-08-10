@@ -150,7 +150,8 @@ DETALLE_SERIE_2x = """SELECT * FROM (SELECT t.codigo,t.descripcion,
       ELSE t.monto1
   END),0),2) monto, 0 prestamo, '' tipodeuda, t.id idx0, 2 serie, 0 slddeuda
 FROM a_tipos t left outer join a_padrones p on t.tipo='APORTE' and p.id='$pad$'
-WHERE t.tipo='APORTE' and t.atributo1='2' and (t.codigo not in ('PRESTAMO'))
+WHERE t.tipo='APORTE' and t.atributo1='2' and (t.codigo not in ('PRESTAMO')) and 
+      ((t.codigo='REP.DE.BUS' AND p.monto4>0) OR (t.codigo<>'REP.DE.BUS'))
 UNION ALL
 SELECT codigo,descripcion,if(slddeuda>0,if(slddeuda<monto,slddeuda,monto),0) monto,prestamo,tipodeuda,idx,serie,slddeuda FROM
 (
