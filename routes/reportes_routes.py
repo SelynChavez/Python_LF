@@ -1856,12 +1856,13 @@ def generar_reporte_plan_contable():
 
 
 class ReciboTicket(FPDF):
-    def __init__(self):
+    def __init__(self, fecha_impresion=None):
         super().__init__(orientation='P', unit='mm', format=(80, 140))
         self.set_auto_page_break(auto=True, margin=10)
         self.set_margins(5, 5, 5)
         self.width = 80
         self.max_chars = 30
+        self.fecha_impresion = fecha_impresion or datetime.datetime.now()
 
     def header(self):
         self.set_font('Arial', 'B', 10)
@@ -1877,7 +1878,9 @@ class ReciboTicket(FPDF):
         self.set_font('Arial', 'I', 7)
         self.cell(0, 4, 'Gracias por su pago', 0, 1, 'C')
         self.cell(0, 4, 'Documento válido como comprobante de pago', 0, 1, 'C')
-        self.cell(0, 4, f'Impreso el: {datetime.datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'C')
+        fecha_str = self.fecha_impresion.strftime("%d/%m/%Y %H:%M") if hasattr(self.fecha_impresion, 'strftime') else str(self.fecha_impresion)
+        print(f"[ReciboTicket.footer] Usando fecha_impresion={self.fecha_impresion} -> {fecha_str}")
+        self.cell(0, 4, f'Invertido al: {fecha_str}', 0, 1, 'C')
 
     def add_receipt_info(self, data):
         self.set_font('Arial', 'B', 10)
@@ -1895,7 +1898,7 @@ class ReciboTicket(FPDF):
         self.ln(1)
         self.set_font('Arial', 'B', 7)
         self.cell(20, 4, 'Padron/Socio:', 0, 0)
-        self.set_font('Arial', '', 7)
+        self.set_font('Arial', 'B', 7)
         nombre = data['nombre_socio'] if data['nombre_socio'] else ""
         if len(nombre) > self.max_chars:
             nombre_line1 = nombre[:self.max_chars]
@@ -1916,12 +1919,12 @@ class ReciboTicket(FPDF):
 
     def add_items_table(self, items, data):
         self.set_font('Courier', 'B', 7)
-        self.cell(15, 6, 'COD', 0, 0, 'L')
-        self.cell(30, 6, 'DESCRIPCION', 0, 0, 'L')
-        self.cell(15, 6, 'MONTO', 0, 1, 'R')
+        self.cell(20, 6, 'COD', 0, 0, 'L')
+        self.cell(32, 6, 'DESCRIPCION', 0, 0, 'L')
+        self.cell(18, 6, 'MONTO', 0, 1, 'R')
         self.line(5, self.get_y(), self.width - 5, self.get_y())
         self.ln(2)
-        self.set_font('Courier', '', 6)
+        self.set_font('Courier', 'B', 8)
         total = 0
         for item in items:
             codigo = item['codigo']
@@ -1929,17 +1932,17 @@ class ReciboTicket(FPDF):
             monto = item['monto'] if item['monto'] else 0
             if float(monto) > 0:
                 total += monto
-                self.cell(15, 4, codigo, 0, 0, 'L')
-                if len(descripcion) > 22:
-                    desc_line1 = descripcion[:22]
-                    self.cell(30, 4, desc_line1, 0, 0, 'L')
+                self.cell(20, 4, codigo, 0, 0, 'L')
+                if len(descripcion) > 23:
+                    desc_line1 = descripcion[:23]
+                    self.cell(32, 4, desc_line1, 0, 0, 'L')
                 else:
-                    self.cell(30, 4, descripcion, 0, 0, 'L')
-                self.cell(15, 4, f"S/. {monto:.2f}", 0, 1, 'R')
+                    self.cell(32, 4, descripcion, 0, 0, 'L')
+                self.cell(18, 4, f"S/. {monto:.2f}", 0, 1, 'R')
         self.ln(1)
         self.line(5, self.get_y(), self.width - 5, self.get_y())
         self.ln(1)
-        self.set_font('Courier', 'B', 8)
+        self.set_font('Courier', 'B', 10)
         self.cell(40, 8, 'TOTAL PAGADO:______', 0, 0, 'R')
         self.cell(15, 8, f"S/. {total:.2f}", 0, 1, 'R')
         self.ln(6)
@@ -1949,8 +1952,10 @@ class ReciboTicket(FPDF):
         return total
 
 
-def generar_recibo(tipo_doc, serie, numero_doc, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items, nombre_archivo=None):
-    pdf = ReciboTicket()
+def generar_recibo(tipo_doc, serie, numero_doc, codigo_padron, nombre_socio, fecha_recibo, fecha_giro, items, nombre_archivo=None, fecha_impresion=None):
+    print(f"[generar_recibo] Recibió fecha_impresion={fecha_impresion} (tipo: {type(fecha_impresion).__name__ if fecha_impresion else 'None'})")
+    pdf = ReciboTicket(fecha_impresion=fecha_impresion)
+    print(f"[generar_recibo] ReciboTicket.fecha_impresion={pdf.fecha_impresion} (tipo: {type(pdf.fecha_impresion).__name__})")
     pdf.add_page()
     igv = 'N'
     datos = {

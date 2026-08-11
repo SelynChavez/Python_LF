@@ -93,9 +93,9 @@
                                     <td>{{ r3.d10 }}</td>
                                     <td class="d-print-none">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ url_for('imprimir_recibo', l_id=r3.d10 ) }}"  target="_blank"
-                                               class="btn btn-outline-primary" 
-                                               title="Imprimir Recibo">
+                                            <a href="{{ url_for('recibos.regenerar_pdf_recibo', recibo_id=r3.d10 ) }}"  target="_blank"
+                                               class="btn btn-outline-primary"
+                                               title="Re-imprimir Recibo con fecha correcta">
                                                 <i class="bi-eye"></i>
                                             </a>
                                             {% if session.get('user_rol') == 'ADMIN' and r3.d8 == 'S' %}

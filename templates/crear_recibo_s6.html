@@ -90,6 +90,11 @@
                             <i class="bi bi-printer"></i> Imprimir Recibo
                         </a>
                         {% endif %}
+                        {% if lid %}
+                        <a href="{{ url_for('recibos.regenerar_pdf_recibo', recibo_id=lid) }}" target="_blank" class="btn btn-warning" title="Re-imprimir con fecha actualizada">
+                            <i class="bi bi-arrow-clockwise"></i> Re-imprimir
+                        </a>
+                        {% endif %}
                         <a href="{{ url_for('aportes.aportes_series') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>

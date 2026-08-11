@@ -1,19 +1,19 @@
 {% extends "base.html" %}
-{% block title %}ETLF - Crear Recibo Serie 3{% endblock %}
+{% block title %}ETLF - Recibo Cobranza de Comb.{% endblock %}
 {% block content %}
 <div class="row">
     <div class="col-md-8 mx-auto">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Recibo Padron Serie #3</h4>
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Recibo Cobranza de Comb.</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('recibos.crear_recibo_s3') }}">
+                <form method="POST" action="{{ url_for('recibos.crear_recibo_s5') }}">
                     <input type="hidden" id="act" name="act" value="{{act}}">
                     <input type="hidden" id="lid" name="lid" value="{{lid}}">
                     <input type="hidden" id="num" name="num" value="{{num}}">
                     <input type="hidden" id="nom" name="nom" value="{{nom}}">
-                    <input type="hidden" id="ser" name="ser" value="3">
+                    <input type="hidden" id="ser" name="ser" value="5">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="fec" class="form-label">Fecha *</label>
@@ -32,6 +32,14 @@
                             <input type="text" class="form-control" id="com" name="com" value="{{com}}" maxlength="99">
                         </div>
                     </div>
+
+                    {% if items %}
+                    <!-- Saldo pendiente de combustible del padrón -->
+                    <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-fuel-pump"></i> <strong>Saldo pendiente de combustible del padrón:</strong></span>
+                        <span class="h5 mb-0">S/ {{ "%.2f"|format(saldo or 0) }}</span>
+                    </div>
+                    {% endif %}
 
                     <!-- Suma Total de Aportes -->
                     <div class="row mb-3">
@@ -90,14 +98,11 @@
                             <i class="bi bi-printer"></i> Imprimir Recibo
                         </a>
                         {% endif %}
-                        {% if lid %}
-                        <a href="{{ url_for('recibos.regenerar_pdf_recibo', recibo_id=lid) }}" target="_blank" class="btn btn-warning" title="Re-imprimir con fecha actualizada">
-                            <i class="bi bi-arrow-clockwise"></i> Re-imprimir
-                        </a>
-                        {% endif %}
-                        <a href="{{ url_for('aportes.aportes_series') }}" class="btn btn-secondary">
+                        {% if session.user_rol != 'GRIFERO' %}
+                        <a href="{{ url_for('aportes.aportes_s5') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
+                        {% endif %}
                     </div>
                 </form>
             </div>

@@ -150,7 +150,11 @@ def imprimir_recibo(l_id):
                 titulo = 'Recibo Cot.x Padron'
             if (recibo['serie']=='5'):
                 titulo = 'Recibo Cobranza de Comb.'
-            archivo = generar_recibo(titulo, recibo['serie'], recibo['numero'], recibo['padron'], recibo['nombre'], fec, gir, items)
+
+            # Obtener fecha de modificación del recibo
+            fecha_impresion = recibo.get('modified') if 'modified' in recibo else None
+
+            archivo = generar_recibo(titulo, recibo['serie'], recibo['numero'], recibo['padron'], recibo['nombre'], fec, gir, items, fecha_impresion=fecha_impresion)
             print(f"Recibo guardado en: {os.path.abspath(archivo)}")
             try:
                 with open(archivo, 'rb') as archivobin:

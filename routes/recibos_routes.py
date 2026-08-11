@@ -47,19 +47,61 @@ def _saldo_cobro_comb(connection, pad):
         return 0.0
 
 
-def _generar_pdf_recibo(ser, num, pad, nom, fec, items):
+def _generar_pdf_recibo(ser, num, pad, nom, fec, items, recibo_id=None):
     """Genera el PDF del recibo y devuelve solo el nombre del archivo (basename).
 
     Devuelve None si ocurre un error, para no interrumpir el registro del recibo.
     """
     try:
         from .reportes_routes import generar_recibo
+        from utils.database import get_db_connection
+
+        print(f"\n{'='*60}")
+        print(f"[_generar_pdf_recibo] INICIO - recibo_id={recibo_id} (tipo: {type(recibo_id).__name__})")
+
         fecha_reg = datetime.datetime.now().strftime('%Y-%m-%d')
         titulo = TITULOS_SERIE.get(str(ser), 'RECIBO')
-        ruta = generar_recibo(titulo, str(ser), num, pad, nom, fecha_reg, fec, items)
+
+        # Obtener fecha de modificación del recibo si existe
+        fecha_impresion = None
+
+        if recibo_id:
+            print(f"[_generar_pdf_recibo] recibo_id NO es None, intentando obtener de BD...")
+            try:
+                conn = get_db_connection()
+                if conn:
+                    print(f"[_generar_pdf_recibo] Conexión a BD exitosa")
+                    cursor = conn.cursor(dictionary=True)
+                    query = "SELECT id, modified FROM a_recibos WHERE id = %s"
+                    print(f"[_generar_pdf_recibo] Ejecutando: {query} con id={recibo_id}")
+                    cursor.execute(query, (recibo_id,))
+                    result = cursor.fetchone()
+                    print(f"[_generar_pdf_recibo] Query result: {result}")
+                    if result:
+                        fecha_impresion = result.get('modified')
+                        print(f"[_generar_pdf_recibo] ✓ fecha_impresion obtenida: {fecha_impresion} (tipo: {type(fecha_impresion).__name__})")
+                    else:
+                        print(f"[_generar_pdf_recibo] ✗ No se encontró recibo con id={recibo_id}")
+                    cursor.close()
+                    conn.close()
+                else:
+                    print(f"[_generar_pdf_recibo] ✗ No se pudo conectar a BD")
+            except Exception as e:
+                print(f"[_generar_pdf_recibo] ✗ Error en BD: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print(f"[_generar_pdf_recibo] ✗ recibo_id es None, usando hora del sistema")
+
+        print(f"[_generar_pdf_recibo] Pasando a generar_recibo: fecha_impresion={fecha_impresion}")
+        ruta = generar_recibo(titulo, str(ser), num, pad, nom, fecha_reg, fec, items, fecha_impresion=fecha_impresion)
+        print(f"[_generar_pdf_recibo] FIN - PDF generado")
+        print(f"{'='*60}\n")
         return os.path.basename(ruta)
     except Exception as e:
-        print(f"Error al generar PDF del recibo: {e}")
+        print(f"[_generar_pdf_recibo] ✗ EXCEPCIÓN: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -79,6 +121,98 @@ def ver_recibo_pdf(filename):
 def imprimir_recibo(filename):
     """Pagina que carga el PDF y lanza el dialogo de impresion del navegador."""
     return render_template('imprimir_recibo.html', filename=os.path.basename(filename))
+
+
+@recibos_bp.route('/regenerar_pdf/<int:recibo_id>')
+@login_required
+def regenerar_pdf_recibo(recibo_id):
+    """Regenera el PDF de un recibo con la fecha correcta del campo modified."""
+    print(f"\n{'='*60}")
+    print(f"[regenerar_pdf_recibo] INICIO - recibo_id={recibo_id}")
+
+    conn = get_db_connection()
+    if not conn:
+        print(f"[regenerar_pdf_recibo] ✗ Error: No se pudo conectar a BD")
+        flash('Error de conexión a la base de datos', 'danger')
+        return redirect(url_for('recibos.crear_recibo_s2'))
+
+    print(f"[regenerar_pdf_recibo] ✓ Conexión exitosa")
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT r.id, r.serie, r.numero, r.padron, r.fecha, r.modified,
+                   (SELECT CONCAT(p.id, ':', p.placa, ':', s.nombre)
+                    FROM a_padrones p, a_socios s
+                    WHERE p.socio=s.id AND r.padron=p.id) as nombre_padron
+            FROM a_recibos r
+            WHERE r.id = %s
+        """, (recibo_id,))
+        recibo = cursor.fetchone()
+        print(f"[regenerar_pdf_recibo] Query recibo: {recibo}")
+
+        if not recibo:
+            print(f"[regenerar_pdf_recibo] ✗ Recibo no encontrado")
+            flash('Recibo no encontrado', 'danger')
+            return redirect(url_for('recibos.crear_recibo_s2'))
+
+        print(f"[regenerar_pdf_recibo] ✓ Recibo encontrado: id={recibo['id']}, modified={recibo['modified']}")
+
+        # Obtener detalles del recibo
+        cursor.execute("""
+            SELECT d.aporte as codigo, t.descripcion, d.monto
+            FROM a_recibos_detalle d
+            LEFT JOIN a_tipos t ON t.codigo = d.aporte AND t.tipo = 'APORTE'
+            WHERE d.recibo = %s
+            ORDER BY d.id
+        """, (recibo_id,))
+        items = cursor.fetchall()
+
+        # Convertir items al formato esperado
+        items_formateados = []
+        for item in items:
+            items_formateados.append({
+                'codigo': item['codigo'] or '',
+                'descripcion': item['descripcion'] or '',
+                'monto': float(item['monto']) if item['monto'] else 0
+            })
+
+        # Regenerar PDF con la fecha correcta
+        from .reportes_routes import generar_recibo
+        nombre_padron = recibo['nombre_padron'] if recibo['nombre_padron'] else ''
+        titulo = TITULOS_SERIE.get(str(recibo['serie']), 'RECIBO')
+
+        # Convertir la fecha de modificación para pasarla al PDF
+        fecha_impresion = recibo['modified']
+        print(f"[regenerar_pdf_recibo] Usando fecha_impresion={fecha_impresion} (tipo: {type(fecha_impresion).__name__})")
+
+        # Generar el PDF en una ubicación temporal
+        pdf_file = generar_recibo(
+            titulo,
+            str(recibo['serie']),
+            recibo['numero'],
+            recibo['padron'],
+            nombre_padron,
+            recibo['fecha'].strftime('%Y-%m-%d'),
+            recibo['fecha'].strftime('%Y-%m-%d'),
+            items_formateados,
+            fecha_impresion=fecha_impresion
+        )
+
+        print(f"[regenerar_pdf_recibo] ✓ PDF generado: {pdf_file}")
+        print(f"[regenerar_pdf_recibo] FIN")
+        print(f"{'='*60}\n")
+        return send_file(pdf_file, mimetype='application/pdf', as_attachment=False)
+
+    except Exception as e:
+        print(f"[regenerar_pdf_recibo] ✗ EXCEPCIÓN: {e}")
+        import traceback
+        traceback.print_exc()
+        print(f"{'='*60}\n")
+        flash(f'Error al regenerar PDF: {str(e)}', 'danger')
+        return redirect(url_for('recibos.crear_recibo_s2'))
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @recibos_bp.route('/crear_s6', methods=['GET', 'POST'])
@@ -161,7 +295,9 @@ def crear_recibo_s6():
                     connection.commit()
                     cursor.close()
                     connection.close()
-                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
+                    print(f"\n>>> ANTES de llamar _generar_pdf_recibo: lid={lid}, ser={ser}, num={num}")
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items, recibo_id=lid)
+                    print(f"<<< DESPUES de llamar _generar_pdf_recibo: pdf_file={pdf_file}\n")
                     flash('Recibo registrado.', 'success')
                     return render_template('crear_recibo_s6.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
@@ -261,7 +397,9 @@ def crear_recibo_s5():
                     connection.commit()
                     cursor.close()
                     connection.close()
-                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
+                    print(f"\n>>> ANTES de llamar _generar_pdf_recibo: lid={lid}, ser={ser}, num={num}")
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items, recibo_id=lid)
+                    print(f"<<< DESPUES de llamar _generar_pdf_recibo: pdf_file={pdf_file}\n")
                     flash('Recibo registrado.', 'success')
                     return render_template('crear_recibo_s5.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
@@ -357,7 +495,9 @@ def crear_recibo_s4():
                     connection.commit()
                     cursor.close()
                     connection.close()
-                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
+                    print(f"\n>>> ANTES de llamar _generar_pdf_recibo: lid={lid}, ser={ser}, num={num}")
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items, recibo_id=lid)
+                    print(f"<<< DESPUES de llamar _generar_pdf_recibo: pdf_file={pdf_file}\n")
                     flash('Recibo registrado.', 'success')
                     return render_template('crear_recibo_s4.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
@@ -453,7 +593,9 @@ def crear_recibo_s3():
                     connection.commit()
                     cursor.close()
                     connection.close()
-                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
+                    print(f"\n>>> ANTES de llamar _generar_pdf_recibo: lid={lid}, ser={ser}, num={num}")
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items, recibo_id=lid)
+                    print(f"<<< DESPUES de llamar _generar_pdf_recibo: pdf_file={pdf_file}\n")
                     flash('Recibo registrado.', 'success')
                     return render_template('crear_recibo_s3.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
@@ -559,7 +701,9 @@ def crear_recibo_s2():
                     connection.commit()
                     cursor.close()
                     connection.close()
-                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
+                    print(f"\n>>> ANTES de llamar _generar_pdf_recibo: lid={lid}, ser={ser}, num={num}")
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items, recibo_id=lid)
+                    print(f"<<< DESPUES de llamar _generar_pdf_recibo: pdf_file={pdf_file}\n")
                     flash('Recibo registrado.', 'success')
                     return render_template('crear_recibo_s2.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
@@ -702,7 +846,9 @@ def crear_recibo():
                     connection.commit()
                     cursor.close()
                     connection.close()
-                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items)
+                    print(f"\n>>> ANTES de llamar _generar_pdf_recibo: lid={lid}, ser={ser}, num={num}")
+                    pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items, recibo_id=lid)
+                    print(f"<<< DESPUES de llamar _generar_pdf_recibo: pdf_file={pdf_file}\n")
                     flash('Recibo registrado.', 'success')
                     return render_template('crear_recibo.html', act='-', fec=fec, pad=0, com='', nom='', but='Continuar', pdf_file=pdf_file)
                 except Error as e:
