@@ -310,7 +310,7 @@ def crear_recibo_s6():
                     connection.close()
         else:
             flash('Error de conexión a la base de datos.', 'danger')
-    return render_template('crear_recibo_s6.html', act='-',but='Continuar')
+    return render_template('crear_recibo_s6.html', act='-', fec=datetime.datetime.now().strftime('%Y-%m-%d'), pad=0, com='', nom='', but='Continuar')
 
 
 @recibos_bp.route('/crear_s5', methods=['GET', 'POST'])
@@ -412,7 +412,7 @@ def crear_recibo_s5():
                     connection.close()
         else:
             flash('Error de conexión a la base de datos.', 'danger')
-    return render_template('crear_recibo_s5.html', act='-',but='Continuar')
+    return render_template('crear_recibo_s5.html', act='-', fec=datetime.datetime.now().strftime('%Y-%m-%d'), pad=0, com='', nom='', but='Continuar')
 
 
 @recibos_bp.route('/crear_s4', methods=['GET', 'POST'])
@@ -510,7 +510,7 @@ def crear_recibo_s4():
                     connection.close()
         else:
             flash('Error de conexión a la base de datos.', 'danger')
-    return render_template('crear_recibo_s4.html', act='-',but='Continuar')
+    return render_template('crear_recibo_s4.html', act='-', fec=datetime.datetime.now().strftime('%Y-%m-%d'), pad=0, com='', nom='', but='Continuar')
 
 
 @recibos_bp.route('/crear_s3', methods=['GET', 'POST'])
@@ -608,7 +608,7 @@ def crear_recibo_s3():
                     connection.close()
         else:
             flash('Error de conexión a la base de datos.', 'danger')
-    return render_template('crear_recibo_s3.html', act='-',but='Continuar')
+    return render_template('crear_recibo_s3.html', act='-', fec=datetime.datetime.now().strftime('%Y-%m-%d'), pad=0, com='', nom='', but='Continuar')
 
 
 @recibos_bp.route('/crear_s2', methods=['GET', 'POST'])
@@ -716,7 +716,7 @@ def crear_recibo_s2():
                     connection.close()
         else:
             flash('Error de conexión a la base de datos.', 'danger')
-    return render_template('crear_recibo_s2.html', act='-',but='Continuar')
+    return render_template('crear_recibo_s2.html', act='-', fec=datetime.datetime.now().strftime('%Y-%m-%d'), pad=0, com='', nom='', but='Continuar')
 
 
 @recibos_bp.route('/verificar_recibo_s2', methods=['POST'])
@@ -861,4 +861,4 @@ def crear_recibo():
                     connection.close()
             else:
                 flash('Error de conexión a la base de datos.', 'danger')
-    return render_template('crear_recibo.html', act='-',but='Continuar')
+    return render_template('crear_recibo.html', act='-', fec=datetime.datetime.now().strftime('%Y-%m-%d'), pad=0, com='', nom='', but='Continuar')
