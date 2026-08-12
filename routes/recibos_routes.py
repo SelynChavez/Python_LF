@@ -731,7 +731,7 @@ def verificar_recibo_s2():
     connection = get_db_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        query = "SELECT id, active FROM a_recibos WHERE serie = '2' AND DATE(fecha) = %s AND padron = %s"
+        query = "SELECT id, active FROM a_recibos WHERE serie = '2' AND DATE(giro) = %s AND padron = %s"
         cursor.execute(query, (fecha, padron))
         resultado = cursor.fetchone()
         cursor.close()
