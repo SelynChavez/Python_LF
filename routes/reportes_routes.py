@@ -282,6 +282,10 @@ def rep_control_pagos_prestamos():
 @reportes_bp.route('/rep_consumo_pagos_combustible_credito')
 @login_required
 def rep_consumo_pagos_combustible_credito():
+    if session.get('user_rol') not in ('ADMIN', 'GRIFERO'):
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
     padron = "0"
     connection = get_db_connection()
     padrones = []
@@ -297,34 +301,56 @@ def rep_consumo_pagos_combustible_credito():
                          padron=padron, padrones=padrones)
 
 
+class PDFConsumoCredito(FPDF):
+    def __init__(self, padron, usuario):
+        super().__init__()
+        self.padron = padron
+        self.usuario = usuario
+        self.hora = str(datetime.datetime.now())[0:19]
+
+    def header(self):
+        # Encabezado izquierdo
+        self.set_font("Arial", 'B', 10)
+        self.cell(0, 8, f"E.T.Las Flores :: [{self.usuario}] :: {self.hora}", 0, 0, 'L')
+        # Número de página en esquina superior derecha
+        self.set_xy(self.w - 30, 10)
+        self.set_font("Arial", 'B', 10)
+        self.cell(0, 8, f"Pag. {self.page_no()}", 0, 1, 'R')
+
+        # Título
+        self.set_font("Arial", 'B', 14)
+        self.cell(0, 8, "Reporte de Control de Consumo y Pagos de Combustible a Crédito", 0, 1, 'C')
+        # Subtítulo
+        self.set_font("Arial", '', 9)
+        self.cell(0, 5, f"Padrón: {self.padron} | Desde: 2026-06-19", 0, 1, 'C')
+        self.ln(4)
+
+
 def generar_pdf_consumo_pagos_combustible_credito(padron):
     """Genera PDF del reporte de Consumo y Pagos de Combustible a Crédito con saldo histórico."""
     buffer = BytesIO()
-    pdf = FPDF()
-    pdf.add_page()
+    usr = session['user_username']
+    pdf = PDFConsumoCredito(padron, usr)
     pdf.set_left_margin(8)
     pdf.set_right_margin(8)
+    pdf.add_page()
 
-    # Cabecera
-    pdf.set_font("Arial", 'B', 10)
-    hora = str(datetime.datetime.now())[0:19]
-    usr = session['user_username']
-    pdf.cell(0, 8, f"E.T.Las Flores :: [{usr}] :: {hora}", 0, 1, 'L')
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 8, "Reporte de Control de Consumo y Pagos de Combustible a Crédito", 0, 1, 'C')
-    pdf.set_font("Arial", '', 9)
-    pdf.cell(0, 5, f"Padrón: {padron} | Desde: 2026-06-19", 0, 1, 'C')
-    pdf.ln(4)
+    # Función para dibujar encabezados de tabla
+    def dibujar_encabezados():
+        pdf.set_font("Arial", 'B', 9)
+        pdf.set_fill_color(200, 200, 200)
+        pdf.cell(10, 6, "#", 1, 0, 'C', True)
+        pdf.cell(25, 6, "Fecha", 1, 0, 'C', True)
+        pdf.cell(15, 6, "Padrón", 1, 0, 'C', True)
+        pdf.cell(30, 6, "Consumo", 1, 0, 'R', True)
+        pdf.cell(30, 6, "Pagos", 1, 0, 'R', True)
+        pdf.cell(30, 6, "Diferencia", 1, 0, 'R', True)
+        pdf.cell(30, 6, "Saldo Acumulado", 1, 1, 'R', True)
+        # Volver a fuente normal para datos
+        pdf.set_font("Arial", '', 8)
 
-    # Encabezados
-    pdf.set_font("Arial", 'B', 9)
-    pdf.set_fill_color(200, 200, 200)
-    pdf.cell(25, 6, "Fecha", 1, 0, 'C', True)
-    pdf.cell(15, 6, "Padrón", 1, 0, 'C', True)
-    pdf.cell(30, 6, "Consumo", 1, 0, 'R', True)
-    pdf.cell(30, 6, "Pagos", 1, 0, 'R', True)
-    pdf.cell(30, 6, "Diferencia", 1, 0, 'R', True)
-    pdf.cell(30, 6, "Saldo Acumulado", 1, 1, 'R', True)
+    # Dibujar encabezados iniciales
+    dibujar_encabezados()
 
     # Obtener datos
     connection = get_db_connection()
@@ -344,34 +370,30 @@ def generar_pdf_consumo_pagos_combustible_credito(padron):
     connection.close()
 
     # Procesar datos y calcular saldo histórico
-    pdf.set_font("Arial", '', 8)
     saldo_historico = 0
     lin = 0
+    contador = 0
+    MAX_ROWS = 40  # Máximo de filas por página
 
     for row in datos:
+        # Verificar si necesita nueva página
+        if lin >= MAX_ROWS:
+            pdf.add_page()  # Esto automáticamente llama a header()
+            dibujar_encabezados()  # Dibujar encabezados en la nueva página (también resetea fuente)
+            lin = 0
+
         lin += 1
+        contador += 1
         saldo_historico += float(row['col3']) if row['col3'] else 0
 
         fecha_str = row['fec'].strftime('%d-%m-%Y') if hasattr(row['fec'], 'strftime') else str(row['fec'])
+        pdf.cell(10, 5, str(contador), 1, 0, 'C')
         pdf.cell(25, 5, fecha_str, 1, 0, 'C')
         pdf.cell(15, 5, str(row['pad']), 1, 0, 'C')
         pdf.cell(30, 5, f"S/. {float(row['col1']):.2f}", 1, 0, 'R')
         pdf.cell(30, 5, f"S/. {float(row['col2']):.2f}", 1, 0, 'R')
         pdf.cell(30, 5, f"S/. {float(row['col3']):.2f}", 1, 0, 'R')
         pdf.cell(30, 5, f"S/. {saldo_historico:.2f}", 1, 1, 'R')
-
-        if lin == 35:
-            pdf.ln(2)
-            lin = 0
-            pdf.set_font("Arial", 'B', 9)
-            pdf.set_fill_color(200, 200, 200)
-            pdf.cell(25, 6, "Fecha", 1, 0, 'C', True)
-            pdf.cell(15, 6, "Padrón", 1, 0, 'C', True)
-            pdf.cell(30, 6, "Consumo", 1, 0, 'R', True)
-            pdf.cell(30, 6, "Pagos", 1, 0, 'R', True)
-            pdf.cell(30, 6, "Diferencia", 1, 0, 'R', True)
-            pdf.cell(30, 6, "Saldo", 1, 1, 'R', True)
-            pdf.set_font("Arial", '', 8)
 
     pdf_output = pdf.output(dest='S').encode('latin-1')
     buffer.write(pdf_output)
@@ -2330,25 +2352,26 @@ def generar_rep_saldos_retiros():
         saldos_por_padron[key]['total_recibos'] += row['monto_recibo']
         saldos_por_padron[key]['total_retiros'] += row['monto_retiro']
 
-    # Crear tabla con PageBreak cada 35 filas
+    # Crear tabla con PageBreak cada 45 filas (datos, sin contar encabezado ni subtotal)
     from reportlab.platypus import PageBreak
 
-    MAX_ROWS_PER_PAGE = 35
-    es_primer_tabla = True
+    MAX_ROWS_PER_PAGE = 45
     prev_pad = None
     prev_placa = None
     prev_socio = None
     prev_aporte = None
-    row_count = 0
     data = [['Pad', 'Placa', 'Socio', 'Aporte', 'Fecha', '+Recibo', '-Retiro', 'Saldo']]
+    data_row_count = 0  # Contar solo filas de datos (sin encabezado ni subtotal)
 
     for key in sorted(saldos_por_padron.keys()):
         grupo = saldos_por_padron[key]
         saldo_acum = 0
 
         for mov in sorted(grupo['movimientos'], key=lambda x: x['fecha_movimiento'] or ''):
-            # Si se alcanzó el límite de filas, crear tabla y hacer PageBreak
-            if row_count >= MAX_ROWS_PER_PAGE and row_count > 1:
+            # Verificar si la tabla excedería el límite (len(data)-1 = filas de datos sin encabezado)
+            if len(data) - 1 >= MAX_ROWS_PER_PAGE and len(data) > 1:
+                print(f"[PageBreak] Tabla tiene {len(data)-1} filas de datos. Haciendo PageBreak")
+                # Crear tabla y PageBreak
                 tabla = Table(data, colWidths=[0.5*inch, 0.65*inch, 1.8*inch, 0.8*inch, 0.85*inch, 0.85*inch, 0.85*inch, 0.85*inch])
                 tabla.setStyle(TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
@@ -2373,9 +2396,8 @@ def generar_rep_saldos_retiros():
                 Story.append(Paragraph(filtros_text, styles['Subtitle']))
                 Story.append(Spacer(1, 0.1*inch))
 
-                # Reiniciar tabla
+                # Reiniciar tabla con encabezado
                 data = [['Pad', 'Placa', 'Socio', 'Aporte', 'Fecha', '+Recibo', '-Retiro', 'Saldo']]
-                row_count = 1
                 # Resetear para mostrar datos en primera fila de nueva página
                 prev_pad = None
                 prev_placa = None
@@ -2415,7 +2437,6 @@ def generar_rep_saldos_retiros():
                 retiro,
                 saldo
             ])
-            row_count += 1
 
         # Fila de subtotal
         subtotal = grupo['total_recibos'] - grupo['total_retiros']
@@ -2423,7 +2444,6 @@ def generar_rep_saldos_retiros():
                     f"{grupo['total_recibos']:.2f}",
                     f"{grupo['total_retiros']:.2f}",
                     f"{subtotal:.2f}"])
-        row_count += 1
 
         # Resetear para siguiente grupo
         prev_pad = None

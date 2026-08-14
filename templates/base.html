@@ -58,6 +58,11 @@
                                     <i class="bi bi-fuel-pump"></i> Rep. Ventas de UREA
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('reportes.rep_consumo_pagos_combustible_credito') }}">
+                                    <i class="bi bi-fuel-pump"></i> Consumo & Pagos Comb.
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     {% elif session.user_rol == 'CAJA' %}
