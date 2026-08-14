@@ -2168,3 +2168,295 @@ def generar_pdf_retiro(retiro_id):
     response.headers['Content-Disposition'] = f'inline; filename=solicitud_retiro_{retiro_id}.pdf'
 
     return response
+
+
+@reportes_bp.route('/rep_saldos_retiros')
+@login_required
+def rep_saldos_retiros():
+    """Formulario para reporte de saldos por retiros."""
+    if session.get('user_rol') not in ('ADMIN', 'CAJA'):
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
+    conn = get_db_connection()
+    aportes = []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(sqlconstants.DROPLIST_APORTES_RETIRADOS)
+        aportes = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+    return render_template('rep_saldos_retiros.html', aportes=aportes)
+
+
+@reportes_bp.route('/generar_rep_saldos_retiros', methods=['POST'])
+@login_required
+def generar_rep_saldos_retiros():
+    """Genera el reporte de saldos por retiros en PDF."""
+    if session.get('user_rol') not in ('ADMIN', 'CAJA'):
+        return jsonify({'error': 'Acceso denegado'}), 403
+
+    padron = int(request.form.get('padron', '0'))
+    aporte = request.form.get('aporte', '')
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+    cursor = conn.cursor(dictionary=True)
+
+    # Obtener recibos
+    query_recibos = """
+    SELECT
+      p.id as padron,
+      p.placa,
+      s.nombre as socio,
+      t.codigo,
+      t.descripcion as aporte_desc,
+      r.fecha as fecha_movimiento,
+      rd.monto as monto_recibo,
+      0 as monto_retiro
+    FROM a_padrones p
+    JOIN a_socios s ON p.socio = s.id
+    JOIN a_tipos t ON t.tipo = 'APORTE' AND t.atributo4 = 'S'
+    LEFT JOIN a_recibos r ON r.padron = p.id AND r.active = 'S'
+    LEFT JOIN a_recibos_detalle rd ON rd.recibo = r.id AND rd.aporte = t.codigo
+    WHERE p.active = 'S'
+      AND COALESCE(rd.monto, 0) > 0
+      AND (IF(%s = 0, TRUE, p.id = %s))
+      AND (IF(%s = '', TRUE, t.codigo = %s))
+    """
+
+    # Obtener retiros
+    query_retiros = """
+    SELECT
+      p.id as padron,
+      p.placa,
+      s.nombre as socio,
+      rt.tipo_aporte as codigo,
+      t.descripcion as aporte_desc,
+      rt.fecha_retiro as fecha_movimiento,
+      0 as monto_recibo,
+      rt.monto_retirado as monto_retiro
+    FROM a_retiros rt
+    JOIN a_padrones p ON rt.padron = p.id
+    JOIN a_socios s ON p.socio = s.id
+    JOIN a_tipos t ON t.codigo = rt.tipo_aporte AND t.tipo = 'APORTE'
+    WHERE p.active = 'S' AND rt.estado = 'aprobado'
+      AND (IF(%s = 0, TRUE, p.id = %s))
+      AND (IF(%s = '', TRUE, rt.tipo_aporte = %s))
+    """
+
+    params = (padron, padron, aporte, aporte)
+
+    print(f"[REP_SALDOS_RETIROS] Ejecutando query_recibos con params: {params}")
+    cursor.execute(query_recibos, params)
+    recibos = cursor.fetchall()
+    print(f"[REP_SALDOS_RETIROS] Recibos obtenidos: {len(recibos)}")
+
+    print(f"[REP_SALDOS_RETIROS] Ejecutando query_retiros con params: {params}")
+    cursor.execute(query_retiros, params)
+    retiros = cursor.fetchall()
+    print(f"[REP_SALDOS_RETIROS] Retiros obtenidos: {len(retiros)}")
+
+    # Combinar datos
+    datos = recibos + retiros
+    datos.sort(key=lambda x: (x['padron'], x['codigo'], x['fecha_movimiento'] or ''))
+
+    cursor.close()
+    conn.close()
+
+    if not datos:
+        return jsonify({'error': 'No hay datos para el reporte'}), 404
+
+    # Generar PDF con encabezado personalizado
+    buffer = BytesIO()
+    from reportlab.platypus import PageTemplate, Frame, PageBreak
+
+    usuario = session.get('user_username')
+    fecha_hora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    def header_footer(canvas, doc):
+        canvas.saveState()
+        canvas.setFont("Helvetica", 8)
+        # Encabezado izquierdo
+        canvas.drawString(30, A4[1] - 20, f"E.T.Las Flores :: [REP_SALDOS_RETIROS] - [{usuario}] -")
+        # Encabezado derecho
+        canvas.drawRightString(A4[0] - 30, A4[1] - 20, f"{fecha_hora} - Pag. # {doc.page}")
+        # Línea separadora
+        canvas.setLineWidth(0.5)
+        canvas.line(30, A4[1] - 25, A4[0] - 30, A4[1] - 25)
+        canvas.restoreState()
+
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                           rightMargin=30, leftMargin=30,
+                           topMargin=45, bottomMargin=30)
+    doc.build_page_templates = []
+
+    Story = []
+    styles = getSampleStyleSheet()
+
+    # Encabezado
+    styles.add(ParagraphStyle(name='CompanyName', alignment=TA_CENTER, fontSize=11, spaceAfter=2, textColor=colors.black))
+    styles.add(ParagraphStyle(name='ReportTitle', alignment=TA_CENTER, fontSize=12, spaceAfter=4, textColor=colors.HexColor('#1f4788'), leading=14))
+    styles.add(ParagraphStyle(name='Subtitle', alignment=TA_CENTER, fontSize=8, spaceAfter=6, textColor=colors.black))
+
+    Story.append(Paragraph("<b>E.T. LAS FLORES</b>", styles['CompanyName']))
+    Story.append(Paragraph("<b>REPORTE DE SALDOS POR RETIROS</b>", styles['ReportTitle']))
+
+    # Subtítulo con filtros
+    filtros_text = f"::Aporte: {aporte if aporte else 'Todos'} - Padrón: {padron if padron else 'Todos'} - Usuario: {session.get('user_username')}"
+    Story.append(Paragraph(filtros_text, styles['Subtitle']))
+    Story.append(Spacer(1, 0.1*inch))
+
+    # Agrupar datos por padron y aporte
+    saldos_por_padron = {}
+    for row in datos:
+        key = (row['padron'], row['codigo'])
+        if key not in saldos_por_padron:
+            saldos_por_padron[key] = {
+                'padron': row['padron'],
+                'placa': row['placa'],
+                'socio': row['socio'],
+                'codigo': row['codigo'],
+                'aporte_desc': row['aporte_desc'],
+                'movimientos': [],
+                'total_recibos': 0,
+                'total_retiros': 0
+            }
+
+        saldos_por_padron[key]['movimientos'].append(row)
+        saldos_por_padron[key]['total_recibos'] += row['monto_recibo']
+        saldos_por_padron[key]['total_retiros'] += row['monto_retiro']
+
+    # Crear tabla con PageBreak cada 35 filas
+    from reportlab.platypus import PageBreak
+
+    MAX_ROWS_PER_PAGE = 35
+    es_primer_tabla = True
+    prev_pad = None
+    prev_placa = None
+    prev_socio = None
+    prev_aporte = None
+    row_count = 0
+    data = [['Pad', 'Placa', 'Socio', 'Aporte', 'Fecha', '+Recibo', '-Retiro', 'Saldo']]
+
+    for key in sorted(saldos_por_padron.keys()):
+        grupo = saldos_por_padron[key]
+        saldo_acum = 0
+
+        for mov in sorted(grupo['movimientos'], key=lambda x: x['fecha_movimiento'] or ''):
+            # Si se alcanzó el límite de filas, crear tabla y hacer PageBreak
+            if row_count >= MAX_ROWS_PER_PAGE and row_count > 1:
+                tabla = Table(data, colWidths=[0.5*inch, 0.65*inch, 1.8*inch, 0.8*inch, 0.85*inch, 0.85*inch, 0.85*inch, 0.85*inch])
+                tabla.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('ALIGN', (5, 0), (-1, -1), 'RIGHT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f7f1')),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                    ('FONTSIZE', (0, 1), (-1, -1), 7.5),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f7f1')]),
+                ]))
+                Story.append(tabla)
+                Story.append(PageBreak())
+
+                # Agregar encabezado en nueva página
+                Story.append(Paragraph("<b>E.T. LAS FLORES</b>", styles['CompanyName']))
+                Story.append(Paragraph("<b>REPORTE DE SALDOS POR RETIROS</b>", styles['ReportTitle']))
+                Story.append(Paragraph(filtros_text, styles['Subtitle']))
+                Story.append(Spacer(1, 0.1*inch))
+
+                # Reiniciar tabla
+                data = [['Pad', 'Placa', 'Socio', 'Aporte', 'Fecha', '+Recibo', '-Retiro', 'Saldo']]
+                row_count = 1
+                # Resetear para mostrar datos en primera fila de nueva página
+                prev_pad = None
+                prev_placa = None
+                prev_socio = None
+                prev_aporte = None
+
+            fecha = mov['fecha_movimiento'].strftime('%d/%m/%Y') if mov['fecha_movimiento'] else ''
+            recibo = f"{mov['monto_recibo']:.2f}" if mov['monto_recibo'] > 0 else ""
+            retiro = f"{mov['monto_retiro']:.2f}" if mov['monto_retiro'] > 0 else ""
+            saldo_acum += mov['monto_recibo'] - mov['monto_retiro']
+            saldo = f"{saldo_acum:.2f}"
+
+            # Mostrar datos solo si cambian o es primera fila
+            if prev_pad != str(grupo['padron']) or prev_placa != grupo['placa'][:6] or prev_socio != grupo['socio'][:20] or prev_aporte != grupo['codigo']:
+                pad_cell = str(grupo['padron'])
+                placa_cell = grupo['placa'][:6]
+                socio_cell = grupo['socio'][:20]
+                aporte_cell = grupo['codigo']
+            else:
+                pad_cell = ""
+                placa_cell = ""
+                socio_cell = ""
+                aporte_cell = ""
+
+            prev_pad = str(grupo['padron'])
+            prev_placa = grupo['placa'][:6]
+            prev_socio = grupo['socio'][:20]
+            prev_aporte = grupo['codigo']
+
+            data.append([
+                pad_cell,
+                placa_cell,
+                socio_cell,
+                aporte_cell,
+                fecha,
+                recibo,
+                retiro,
+                saldo
+            ])
+            row_count += 1
+
+        # Fila de subtotal
+        subtotal = grupo['total_recibos'] - grupo['total_retiros']
+        data.append(['', '', '', 'SUBTOTAL', '',
+                    f"{grupo['total_recibos']:.2f}",
+                    f"{grupo['total_retiros']:.2f}",
+                    f"{subtotal:.2f}"])
+        row_count += 1
+
+        # Resetear para siguiente grupo
+        prev_pad = None
+        prev_placa = None
+        prev_socio = None
+        prev_aporte = None
+
+    # Agregar última tabla
+    if len(data) > 1:
+        tabla = Table(data, colWidths=[0.5*inch, 0.65*inch, 1.8*inch, 0.8*inch, 0.85*inch, 0.85*inch, 0.85*inch, 0.85*inch])
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('ALIGN', (5, 0), (-1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f7f1')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('FONTSIZE', (0, 1), (-1, -1), 7.5),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f7f1')]),
+        ]))
+        Story.append(tabla)
+
+    doc.build(Story, onFirstPage=header_footer, onLaterPages=header_footer)
+
+    pdf = buffer.getvalue()
+    buffer.close()
+
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'inline; filename=reporte_saldos_retiros.pdf'
+
+    return response

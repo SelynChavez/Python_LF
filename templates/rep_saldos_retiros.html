@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}ETLF - Reporte de Saldos por Retiros{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-file-earmark-pdf"></i> Reporte de Saldos por Retiros</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('reportes.generar_rep_saldos_retiros') }}" target="_blank">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label for="aporte" class="form-label">Tipo de Aporte *</label>
+                            <select class="form-select" id="aporte" name="aporte" required>
+                                <option value="">-- Todos --</option>
+                                {% for aporte in aportes %}
+                                <option value="{{ aporte.codigo }}">{{ aporte.descripcion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="padron" class="form-label">Padrón</label>
+                            <input type="number" class="form-control" id="padron" name="padron" value="0" min="0">
+                            <small class="form-text text-muted">0 = Todos los padrones</small>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-file-earmark-pdf"></i> Generar y Ver Reporte
+                        </button>
+                        <a href="{{ url_for('reportes.reportes') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

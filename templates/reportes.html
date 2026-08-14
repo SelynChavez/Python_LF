@@ -59,6 +59,17 @@
 
     <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
+            <p><b>Reporte de Saldos por Retiros</b></p>
+            <small class="text-muted">Saldos de aportes con movimientos de retiros</small>
+            <a href="{{ url_for('reportes.rep_saldos_retiros') if session.user_rol in ['ADMIN', 'CAJA'] else '#' }}"
+               class="btn btn-info {{ 'disabled' if session.user_rol not in ['ADMIN', 'CAJA'] }}">
+                <i class="bi bi-file-earmark-pdf"></i> Saldos Retiros
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card dashboard-card">
             <p><b>Ventas de Combustible por Máquina</b></p>
             <small class="text-muted">Detalle de ventas por máquina</small>
             <a href="{{ url_for('reportes.rep_ventas_comb_maquina') if session.user_rol in ['ADMIN', 'GRIFERO'] else '#' }}"

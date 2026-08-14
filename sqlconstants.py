@@ -965,3 +965,56 @@ INSERT INTO a_ejecuciones_tareas
 (tarea_id, estado, registros_afectados, mensaje_error, archivo_salida, fecha_inicio, fecha_fin)
 VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
 """
+
+# Reporte de Saldos por Retiros
+DROPLIST_APORTES_RETIRADOS = """
+SELECT codigo, descripcion FROM a_tipos
+WHERE tipo = 'APORTE' AND atributo4 = 'S'
+ORDER BY descripcion
+"""
+
+REP_SALDOS_RETIROS = """
+SELECT
+  p.id as padron,
+  p.placa,
+  s.nombre as socio,
+  t.codigo,
+  t.descripcion as aporte_desc,
+  r.fecha as fecha_movimiento,
+  COALESCE(rd.monto, 0) as monto_recibo,
+  0 as monto_retiro,
+  'Recibo' as tipo_movimiento,
+  r.id as id_recibo
+FROM a_padrones p
+JOIN a_socios s ON p.socio = s.id
+JOIN a_tipos t ON t.tipo = 'APORTE' AND t.atributo4 = 'S'
+LEFT JOIN a_recibos r ON r.padron = p.id AND r.active = 'S'
+LEFT JOIN a_recibos_detalle rd ON rd.recibo = r.id AND rd.aporte = t.codigo
+WHERE p.active = 'S'
+  AND (COALESCE(rd.monto, 0) > 0)
+  AND (? = 0 OR p.id = ?)
+  AND (? = '' OR t.codigo = ?)
+
+UNION ALL
+
+SELECT
+  p.id as padron,
+  p.placa,
+  s.nombre as socio,
+  rt.tipo_aporte as codigo,
+  t.descripcion as aporte_desc,
+  rt.fecha_retiro as fecha_movimiento,
+  0 as monto_recibo,
+  rt.monto_retirado as monto_retiro,
+  'Retiro' as tipo_movimiento,
+  rt.id as id_recibo
+FROM a_retiros rt
+JOIN a_padrones p ON rt.padron = p.id
+JOIN a_socios s ON p.socio = s.id
+JOIN a_tipos t ON t.codigo = rt.tipo_aporte AND t.tipo = 'APORTE'
+WHERE p.active = 'S' AND rt.estado = 'aprobado'
+  AND (? = 0 OR p.id = ?)
+  AND (? = '' OR rt.tipo_aporte = ?)
+
+ORDER BY padron, codigo, fecha_movimiento
+"""

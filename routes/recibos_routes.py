@@ -845,6 +845,18 @@ def crear_recibo():
                     cursor.execute(query9)
                     connection.commit()
                     cursor.close()
+
+                    # Obtener items nuevamente con los montos editados desde la BD
+                    conn_refresh = get_db_connection()
+                    if conn_refresh:
+                        cursor_refresh = conn_refresh.cursor(dictionary=True)
+                        query_refresh = sqlconstants.SELECT_DETALLEX
+                        query_refresh = query_refresh.replace("$pX$", lid)
+                        cursor_refresh.execute(query_refresh)
+                        items = cursor_refresh.fetchall()
+                        cursor_refresh.close()
+                        conn_refresh.close()
+
                     connection.close()
                     print(f"\n>>> ANTES de llamar _generar_pdf_recibo: lid={lid}, ser={ser}, num={num}")
                     pdf_file = _generar_pdf_recibo(ser, num, pad, nom, fec, items, recibo_id=lid)
