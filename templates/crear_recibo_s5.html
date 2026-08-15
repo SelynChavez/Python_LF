@@ -78,7 +78,7 @@
                                         <td>
                                             <div class="input-group">
                                                 <span class="input-group-text">S/</span>
-                                                <input type="number" class="form-control monto-aporte" id="{{ ii.codigo }}" name="{{ ii.codigo }}" value="{{ ii.monto }}" min="0" max="9999.99" step="0.01" maxlength="7" onchange="calcularTotalAportes()" onkeyup="calcularTotalAportes()">
+                                                <input type="number" class="form-control monto-aporte" id="monto_{{ loop.index0 }}" name="monto_{{ loop.index0 }}" value="{{ ii.monto }}" min="0" max="9999.99" step="0.01" maxlength="7" onchange="calcularTotalAportes()" onkeyup="calcularTotalAportes()">
                                             </div>
                                         </td>
                                         <td>{{ ii.prestamo }}</td>
@@ -97,6 +97,14 @@
                         <a href="{{ url_for('recibos.imprimir_recibo', filename=pdf_file) }}" target="_blank" class="btn btn-info" id="btnImprimir">
                             <i class="bi bi-printer"></i> Imprimir Recibo
                         </a>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const btnImprimir = document.getElementById('btnImprimir');
+                                if (btnImprimir) {
+                                    btnImprimir.click();
+                                }
+                            });
+                        </script>
                         {% endif %}
                         {% if lid %}
                         <a href="{{ url_for('recibos.regenerar_pdf_recibo', recibo_id=lid) }}" target="_blank" class="btn btn-warning" title="Re-imprimir con fecha actualizada">
