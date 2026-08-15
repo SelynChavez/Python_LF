@@ -272,9 +272,9 @@ def crear_recibo_s6():
                     total = 0
                     nom = request.form.get('nom')
                     cursor = connection.cursor()
-                    for i0 in items:
+                    for idx, i0 in enumerate(items):
                         lin += 1
-                        mnt = request.form.get(i0['codigo'])
+                        mnt = request.form.get(f"monto_{idx}")
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
@@ -374,9 +374,9 @@ def crear_recibo_s5():
                     total = 0
                     nom = request.form.get('nom')
                     cursor = connection.cursor()
-                    for i0 in items:
+                    for idx, i0 in enumerate(items):
                         lin += 1
-                        mnt = request.form.get(i0['codigo'])
+                        mnt = request.form.get(f"monto_{idx}")
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
@@ -472,9 +472,9 @@ def crear_recibo_s4():
                     total = 0
                     nom = request.form.get('nom')
                     cursor = connection.cursor()
-                    for i0 in items:
+                    for idx, i0 in enumerate(items):
                         lin += 1
-                        mnt = request.form.get(i0['codigo'])
+                        mnt = request.form.get(f"monto_{idx}")
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
@@ -570,9 +570,9 @@ def crear_recibo_s3():
                     total = 0
                     nom = request.form.get('nom')
                     cursor = connection.cursor()
-                    for i0 in items:
+                    for idx, i0 in enumerate(items):
                         lin += 1
-                        mnt = request.form.get(i0['codigo'])
+                        mnt = request.form.get(f"monto_{idx}")
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
@@ -667,9 +667,9 @@ def crear_recibo_s2():
                     total = 0
                     nom = request.form.get('nom')
                     cursor = connection.cursor()
-                    for i0 in items:
+                    for idx, i0 in enumerate(items):
                         lin += 1
-                        mnt = request.form.get(i0['codigo'])
+                        mnt = request.form.get(f"monto_{idx}")
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
@@ -814,9 +814,9 @@ def crear_recibo():
                     consulta = consulta.replace("$pad$", pad)
                     cursor.execute(consulta)
                     items = cursor.fetchall()
-                    for i0 in items:
+                    for idx, i0 in enumerate(items):
                         lin += 1
-                        mnt = request.form.get(i0['codigo'])
+                        mnt = request.form.get(f"monto_{idx}")
                         if (not mnt):
                             mnt = "0"
                         mnt0 = float(mnt)
