@@ -89,6 +89,15 @@
                         <a href="{{ url_for('recibos.imprimir_recibo', filename=pdf_file) }}" target="_blank" class="btn btn-info" id="btnImprimir">
                             <i class="bi bi-printer"></i> Imprimir Recibo
                         </a>
+                        <script>
+                            // Lanzar automáticamente el evento de imprimir al cargar la página
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const btnImprimir = document.getElementById('btnImprimir');
+                                if (btnImprimir) {
+                                    btnImprimir.click();
+                                }
+                            });
+                        </script>
                         {% endif %}
                         {% if lid %}
                         <a href="{{ url_for('recibos.regenerar_pdf_recibo', recibo_id=lid) }}" target="_blank" class="btn btn-warning" title="Re-imprimir con fecha actualizada">
@@ -225,6 +234,17 @@ document.addEventListener('DOMContentLoaded', function() {
     fechaInput.addEventListener('change', verificarRecibo);
     padronInput.addEventListener('change', verificarRecibo);
     padronInput.addEventListener('input', verificarRecibo);
+
+    // Ejecutar validación al cargar la página si hay valores
+    verificarRecibo();
+
+    // Deshabilitar botón si hay mensaje de error de recibo duplicado
+    const alertas = document.querySelectorAll('.alert-danger');
+    alertas.forEach(alerta => {
+        if (alerta.textContent.includes('Recibo ya fue girado')) {
+            document.querySelector('button[type="submit"]').disabled = true;
+        }
+    });
 });
 </script>
 {% endblock %}

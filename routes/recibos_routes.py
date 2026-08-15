@@ -637,6 +637,20 @@ def crear_recibo_s2():
             cursor.close()
             if act == '-':
                 try:
+                    # Verificar si ya existe un recibo con misma serie, fecha de giro y padrón
+                    cursor_check = connection.cursor(dictionary=True)
+                    cursor_check.execute(
+                        "SELECT id FROM a_recibos WHERE serie = %s AND DATE(giro) = %s AND padron = %s AND active = 'S'",
+                        (ser, fec, pad)
+                    )
+                    existe = cursor_check.fetchone()
+                    cursor_check.close()
+
+                    if existe:
+                        flash('Recibo ya fue girado. Por favor verifique.', 'danger')
+                        connection.close()
+                        return render_template('crear_recibo_s2.html', act='-', fec=fec, pad=pad, com=com, nom='', but='Continuar', items=items)
+
                     curs0r = connection.cursor()
                     quer0 = sqlconstants.INSERT_CORREL_X
                     quer0 = quer0.replace("$serie$", ser)
@@ -650,17 +664,19 @@ def crear_recibo_s2():
                     connection.commit()
                     act = '*'
                     nom = get_nombre_padron(pad)
+                    cursor.close()
                     connection.close()
                     flash('Continuar ingresando montos del detalle.', 'success')
                     return render_template('crear_recibo_s2.html', act=act, fec=fec, pad=pad, com=com, nom=nom, but='Registrar', items=items, lid=lid, num=num)
                 except Error as e:
-                    if 'Duplicate entry' in str(e):
-                        flash('1.El recibo serie/fecha/padron ya existe.', 'danger')
-                    else:
-                        flash(f'2.Error al crear recibo(29): {str(e)}', 'danger')
+                    flash('Recibo ya fue girado. Por favor verifique.', 'danger')
                     connection.rollback()
-                    cursor.close()
+                    try:
+                        cursor.close()
+                    except:
+                        pass
                     connection.close()
+                    return render_template('crear_recibo_s2.html', act='-', fec=fec, pad=pad, com=com, nom='', but='Continuar', items=items)
             if act == '*':
                 try:
                     lin = 0
