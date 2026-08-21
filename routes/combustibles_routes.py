@@ -127,9 +127,13 @@ def cargar_turnos():
                 flash(error, 'warning')
         return redirect(url_for('combustibles.cargar_turnos'))
 
-    is_admin = (session.get('user_rol') == 'ADMIN')
-    if is_admin:
-        # El administrador ve las últimas 10 ventas de cualquier usuario/rol.
+    user_rol = session.get('user_rol')
+    is_admin = (user_rol == 'ADMIN')
+    is_caja = (user_rol == 'CAJA')
+    is_grifero = (user_rol == 'GRIFERO')
+
+    if is_admin or is_caja:
+        # El administrador y cajero ven todas las ventas
         cursor.execute(sqlconstants.COUNT_VENTAS_TODAS)
         total_ventas = cursor.fetchone()['total']
         cursor.execute(sqlconstants.LISTA_VENTAS_TODAS)
@@ -156,7 +160,7 @@ def cargar_turnos():
     return render_template('cargar_turnos.html', machines=machines, shifts=shifts,
                            today=datetime.datetime.now().strftime('%Y-%m-%d'), usr=usr,
                            ventas=ventas, page=page, total_pages=total_pages,
-                           total_ventas=total_ventas, is_admin=is_admin)
+                           total_ventas=total_ventas, is_admin=is_admin, is_caja=is_caja, is_grifero=is_grifero)
 
 
 @combustibles_bp.route('/ventas_combustible', methods=['GET', 'POST'])
