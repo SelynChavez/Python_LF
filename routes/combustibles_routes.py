@@ -858,7 +858,7 @@ def obtener_venta(venta_id):
             'turno': venta.get('turno') or '',
             'machine_number': venta.get('machine_number') or '',
             'ubicacion': venta.get('ubicacion') or '',
-            'usuario': venta.get('nombre') or venta.get('webuser') or ''
+            'usuario': venta.get('webuser') or ''
         }
 
         print(f"Venta obtenida: {resultado}")
