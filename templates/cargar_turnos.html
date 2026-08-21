@@ -129,7 +129,8 @@
                         <th class="text-end">Galones o Litros</th>
                         <th class="text-end">Total</th>
                         {% if is_admin %}<th>Usuario</th>{% endif %}
-                        <th>Envios</th>
+                        <th>ID</th>
+                        <th>Envio a Boveda</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -153,6 +154,7 @@
                         <td class="text-end">{{ "%.2f"|format(v.galones_vendidos) }}</td>
                         <td class="text-end">{{ "%.2f"|format(v.total_precio) }}</td>
                         {% if is_admin %}<td>{{ v.webuser }}</td>{% endif %}
+                        <td><strong>{{ v.id }}</strong></td>
                         <td>
                             <div class="btn-group btn-group-sm" role="group">
                                 <button type="button" class="btn btn-outline-success btn-nuevo-envio"
@@ -238,7 +240,7 @@ $(document).ready(function() {
         const usuario = $(this).data('usuario');
 
         console.log('Abriendo modal para venta:', ventaId);
-        abrirModalEnvio(ventaId, fecha, turno, maquina, usuario, null);
+        abrirModalEnvio(ventaId, fecha, turno, maquina, usuario, null, null);
     });
 
     // Evento para editar envío
@@ -248,13 +250,30 @@ $(document).ready(function() {
         const ventaId = $(this).data('venta-id');
         const envioId = $(this).data('envio-id');
         const numeroEnvio = $(this).data('numero-envio');
-        const fecha = $(this).data('fecha');
-        const turno = $(this).data('turno');
-        const maquina = $(this).data('maquina');
-        const usuario = $(this).data('usuario');
 
         console.log('Abriendo modal para editar envío:', envioId);
-        abrirModalEnvio(ventaId, fecha, turno, maquina, usuario, envioId);
+
+        // Obtener datos de la venta desde la BD
+        $.ajax({
+            url: '/obtener_venta/' + ventaId,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                console.log('Datos obtenidos de la venta:', data);
+                const fecha = data.fecha || 'N/A';
+                const turno = data.turno || 'N/A';
+                const maquina = (data.machine_number || 'N/A') + (data.ubicacion ? ' - ' + data.ubicacion : '');
+                const usuario = data.usuario || 'N/A';
+
+                console.log('Abriendo modal con:', { fecha, turno, maquina, usuario });
+                abrirModalEnvio(ventaId, fecha, turno, maquina, usuario, envioId, numeroEnvio);
+            },
+            error: function(err) {
+                console.error('Error al obtener datos de la venta:', err);
+                console.error('Response:', err.responseJSON);
+                alert('Error al cargar datos de la venta: ' + (err.responseJSON?.error || err.statusText));
+            }
+        });
     });
 });
 
@@ -287,7 +306,7 @@ function cargarEnvios(container) {
     });
 }
 
-function abrirModalEnvio(ventaId, fecha, turno, maquina, usuario, envioId) {
+function abrirModalEnvio(ventaId, fecha, turno, maquina, usuario, envioId, numeroEnvio) {
     // Crear modal dinámicamente
     const modalId = 'modalEnvio_' + ventaId + '_' + (envioId || 'new');
 
@@ -301,7 +320,7 @@ function abrirModalEnvio(ventaId, fecha, turno, maquina, usuario, envioId) {
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
-                                ${envioId ? 'Editar Envío a Bóveda' : 'Nuevo Envío a Bóveda'}
+                                ${envioId ? 'Editar Envío #' + numeroEnvio + ' a Bóveda' : 'Nuevo Envío a Bóveda'}
                             </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>

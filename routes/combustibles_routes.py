@@ -820,6 +820,55 @@ def obtener_envios(venta_id):
         connection.close()
 
 
+@combustibles_bp.route('/obtener_venta/<int:venta_id>')
+@login_required
+def obtener_venta(venta_id):
+    """Obtiene los datos de una venta para llenar la cabecera del modal de envío"""
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión'}), 500
+
+    cursor = connection.cursor(dictionary=True)
+    try:
+        # Obtener datos de la venta (turno, nombre están guardados como strings en a_ventas_comb)
+        query = """
+            SELECT v.id, v.fecha, v.turno, v.nombre, v.webuser, v.maquina,
+                   m.numero AS machine_number, m.ubicacion
+            FROM a_ventas_comb v
+            LEFT JOIN a_maquinas m ON v.maquina = m.id
+            WHERE v.id = %s
+        """
+        cursor.execute(query, (venta_id,))
+        venta = cursor.fetchone()
+
+        if not venta:
+            print(f"Venta {venta_id} no encontrada")
+            return jsonify({'error': 'Venta no encontrada'}), 404
+
+        # Preparar respuesta
+        fecha_str = venta['fecha'].strftime('%Y-%m-%d') if venta['fecha'] else ''
+
+        resultado = {
+            'id': venta['id'],
+            'fecha': fecha_str,
+            'turno': venta.get('turno') or '',
+            'machine_number': venta.get('machine_number') or '',
+            'ubicacion': venta.get('ubicacion') or '',
+            'usuario': venta.get('nombre') or venta.get('webuser') or ''
+        }
+
+        print(f"Venta obtenida: {resultado}")
+        return jsonify(resultado)
+    except Error as e:
+        print(f"Error en obtener_venta: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
 @combustibles_bp.route('/obtener_envio/<int:envio_id>')
 @login_required
 def obtener_envio(envio_id):
