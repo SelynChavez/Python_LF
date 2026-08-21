@@ -186,11 +186,6 @@ def ventas_combustible():
                         else url_for('combustibles.cargar_turnos'))
 
     cursor = connection.cursor(dictionary=True)
-    # Asegurar que la tabla y la columna forma_pago existan (idempotente).
-    cursor.execute(sqlconstants.CREATE_VENTAS_COMB_PADRON)
-    cursor.execute(sqlconstants.COLCHECK_VCP_FORMA_PAGO)
-    if cursor.fetchone()['c'] == 0:
-        cursor.execute(sqlconstants.ALTER_VCP_ADD_FORMA_PAGO)
 
     if request.method == 'POST':
         fecha = request.form.get('fecha')
@@ -294,7 +289,6 @@ def actualizar_venta_combustible(venta_id):
         return jsonify({'success': False, 'error': 'Error de conexión a la base de datos.'}), 500
     try:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute(sqlconstants.CREATE_VENTAS_COMB_PADRON)
         cursor.execute(sqlconstants.SELECT_VENTA_COMB_PADRON, (venta_id,))
         venta = cursor.fetchone()
         if not venta:
@@ -350,7 +344,6 @@ def eliminar_venta_combustible(venta_id):
         return jsonify({'success': False, 'error': 'Error de conexión a la base de datos.'}), 500
     try:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute(sqlconstants.CREATE_VENTAS_COMB_PADRON)
         cursor.execute(sqlconstants.SELECT_VENTA_COMB_PADRON, (venta_id,))
         venta = cursor.fetchone()
         if not venta:
