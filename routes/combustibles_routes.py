@@ -799,3 +799,95 @@ def editar_lectura_inicial(venta_id):
     cursor.close()
     connection.close()
     return render_template('editar_lectura_inicial.html', venta=venta)
+
+
+@combustibles_bp.route('/obtener_envios/<int:venta_id>')
+@login_required
+def obtener_envios(venta_id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión'}), 500
+
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute(sqlconstants.LISTA_ENVIOS_DINERO, (venta_id,))
+        envios = cursor.fetchall()
+        return jsonify({'envios': envios})
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
+@combustibles_bp.route('/obtener_envio/<int:envio_id>')
+@login_required
+def obtener_envio(envio_id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión'}), 500
+
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute(sqlconstants.SELECT_ENVIO_DINERO, (envio_id,))
+        envio = cursor.fetchone()
+        if not envio:
+            return jsonify({'error': 'Envío no encontrado'}), 404
+        return jsonify(envio)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
+@combustibles_bp.route('/guardar_envio', methods=['POST'])
+@login_required
+def guardar_envio():
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error de conexión'}), 500
+
+    cursor = connection.cursor()
+    try:
+        data = request.get_json()
+        venta_id = data.get('venta_id')
+        envio_id = data.get('envio_id')
+
+        moneda_5_soles = float(data.get('moneda_5_soles', 0))
+        moneda_2_soles = float(data.get('moneda_2_soles', 0))
+        moneda_1_sol = float(data.get('moneda_1_sol', 0))
+        moneda_0_50_cent = float(data.get('moneda_0_50_cent', 0))
+        moneda_0_20_cent = float(data.get('moneda_0_20_cent', 0))
+        moneda_0_10_cent = float(data.get('moneda_0_10_cent', 0))
+        billete = float(data.get('billete', 0))
+
+        if envio_id:
+            # Actualizar envío existente
+            cursor.execute(sqlconstants.UPDATE_ENVIO_DINERO, (
+                moneda_5_soles, moneda_2_soles, moneda_1_sol,
+                moneda_0_50_cent, moneda_0_20_cent, moneda_0_10_cent,
+                billete, session.get('user_username', 'unknown'), envio_id
+            ))
+        else:
+            # Crear nuevo envío
+            cursor.execute(sqlconstants.GET_MAX_NUMERO_ENVIO, (venta_id,))
+            result = cursor.fetchone()
+            numero_envio = result[0] if result else 1
+
+            cursor.execute(sqlconstants.INSERT_ENVIO_DINERO, (
+                venta_id, numero_envio,
+                moneda_5_soles, moneda_2_soles, moneda_1_sol,
+                moneda_0_50_cent, moneda_0_20_cent, moneda_0_10_cent,
+                billete, session.get('user_username', 'unknown')
+            ))
+
+        connection.commit()
+        return jsonify({'success': True, 'message': 'Envío guardado exitosamente'})
+
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()

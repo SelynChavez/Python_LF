@@ -276,6 +276,20 @@ UPD_1_COMBUSTIBLE = "UPDATE a_combustible SET nombre = %s, descripcion = %s, pre
 INS_1_COMBUSTIBLE = 'INSERT INTO a_combustible (nombre, descripcion, precio_compra, precio_unitario, stock_actual, stock_minimo, modified) VALUES (%s, %s, %s, %s, %s, %s, NOW())'
 SELECT_1_COMBUSTIBLE = 'SELECT * FROM a_combustible WHERE id = %s'
 LISTA_COMBUSTIBLE_TODOS = "SELECT id,nombre name, descripcion description,precio_compra purchase_price,precio_promedio average_price,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock FROM a_combustible"
+
+
+LISTA_ENVIOS_DINERO = "SELECT * FROM a_envios_dinero WHERE venta_id = %s ORDER BY numero_envio"
+SELECT_ENVIO_DINERO = "SELECT * FROM a_envios_dinero WHERE id = %s"
+INSERT_ENVIO_DINERO = """INSERT INTO a_envios_dinero
+(venta_id, numero_envio, moneda_5_soles, moneda_2_soles, moneda_1_sol,
+moneda_0_50_cent, moneda_0_20_cent, moneda_0_10_cent, billete, webuser)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+UPDATE_ENVIO_DINERO = """UPDATE a_envios_dinero SET
+moneda_5_soles = %s, moneda_2_soles = %s, moneda_1_sol = %s,
+moneda_0_50_cent = %s, moneda_0_20_cent = %s, moneda_0_10_cent = %s,
+billete = %s, modified = NOW(), webuser = %s WHERE id = %s"""
+DELETE_ENVIO_DINERO = "DELETE FROM a_envios_dinero WHERE id = %s"
+GET_MAX_NUMERO_ENVIO = "SELECT COALESCE(MAX(numero_envio), 0) + 1 as proximo FROM a_envios_dinero WHERE venta_id = %s"
 INS_MAQUINAS = "INSERT INTO a_maquinas (numero,tipo_combustible,lectura_inicial,capacidad_stock,disponible_stock,ubicacion) VALUES (%s, %s, %s, %s, %s, %s)"
 SEL_COMBUSTIBLE = "SELECT id,nombre name,descripcion,precio_compra purchase_price,precio_promedio average_price,precio_unitario unit_price,stock_actual current_stock,stock_minimo min_stock,modified FROM a_combustible ORDER BY nombre"
 SEL_1_MAQUINA = """
@@ -445,21 +459,6 @@ SEL_PROVEEDOR_POR_RUC = "SELECT id, nombre, ruc FROM a_proveedores WHERE ruc = %
 LISTA_COMB_PARA_COMPRA = "SELECT id, nombre, precio_compra FROM a_combustible ORDER BY nombre"
 LISTA_MAQUINAS_COMPRA = "SELECT m.id, m.numero machine_number, COALESCE(c.nombre,'') fuel_name FROM a_maquinas m LEFT JOIN a_combustible c ON m.tipo_combustible = c.id ORDER BY m.numero"
 
-# ===== Ventas de Combustible por Padron =====
-CREATE_VENTAS_COMB_PADRON = """
-CREATE TABLE IF NOT EXISTS a_ventas_comb_padron (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    fecha DATE NOT NULL,
-    padron INT NOT NULL,
-    monto DECIMAL(12,2) NOT NULL,
-    observacion VARCHAR(255) DEFAULT NULL,
-    forma_pago VARCHAR(10) NOT NULL DEFAULT 'Contado',
-    webuser VARCHAR(50) NOT NULL,
-    created DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_vcp_webuser (webuser),
-    INDEX idx_vcp_fecha (fecha)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-"""
 # Migración idempotente: agrega la columna forma_pago si la tabla ya existía sin ella.
 COLCHECK_VCP_FORMA_PAGO = """
 SELECT COUNT(*) AS c FROM information_schema.COLUMNS
@@ -638,23 +637,6 @@ WHERE v.fecha >= date('$p1$')
   AND m.numero = 'MQ1U'
   AND (v.webuser = '$p5$' OR '0' = '$p5$')
 ORDER BY m.numero, v.fecha DESC, v.id DESC
-"""
-
-# Tabla de precios históricos de compra de combustible
-CREATE_PRECIOS_HISTORICOS_COMB = """
-CREATE TABLE IF NOT EXISTS a_precios_historicos_comb (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    producto_nombre VARCHAR(100) NOT NULL,
-    fecha_compra DATE NOT NULL,
-    precio_unitario DECIMAL(10,5) NOT NULL,
-    cantidad DECIMAL(12,2) NOT NULL,
-    moneda VARCHAR(10) DEFAULT 'PEN',
-    factura_id INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_producto (producto_nombre),
-    INDEX idx_fecha (fecha_compra),
-    FOREIGN KEY (factura_id) REFERENCES a_compras_comb(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 """
 
 INS_PRECIO_HISTORICO_COMB = """

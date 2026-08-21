@@ -129,6 +129,7 @@
                         <th class="text-end">Galones o Litros</th>
                         <th class="text-end">Total</th>
                         {% if is_admin %}<th>Usuario</th>{% endif %}
+                        <th>Envios</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -152,6 +153,19 @@
                         <td class="text-end">{{ "%.2f"|format(v.galones_vendidos) }}</td>
                         <td class="text-end">{{ "%.2f"|format(v.total_precio) }}</td>
                         {% if is_admin %}<td>{{ v.webuser }}</td>{% endif %}
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-success btn-nuevo-envio"
+                                        data-venta-id="{{ v.id }}" data-fecha="{{ v.fecha.strftime('%Y-%m-%d') }}"
+                                        data-turno="{{ v.nombre }}" data-maquina="{{ v.machine_number }}"
+                                        data-usuario="{{ v.webuser }}" title="Nuevo envío">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                                <div class="envios-container" data-venta-id="{{ v.id }}">
+                                    <!-- Los botones de envíos se cargarán aquí -->
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -183,9 +197,13 @@
 
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
+console.log('Script cargar_turnos cargado');
+
 $(document).ready(function() {
+    console.log('Document ready');
+
     // Calcular diferencia para cada máquina
     $('.initial-reading, .final-reading').on('input', function() {
         var machineId = $(this).data('machine');
@@ -201,6 +219,254 @@ $(document).ready(function() {
             $('#calc_' + machineId).removeClass('bg-success').addClass('bg-danger');
         }
     });
+
+    // Cargar envíos existentes para cada venta
+    console.log('Buscando envios-container:', $('.envios-container').length);
+    $('.envios-container').each(function() {
+        console.log('Cargando envíos para venta:', $(this).data('venta-id'));
+        cargarEnvios($(this));
+    });
+
+    // Evento para nuevo envío
+    $(document).on('click', '.btn-nuevo-envio', function(e) {
+        console.log('Nuevo envío clickeado');
+        e.preventDefault();
+        const ventaId = $(this).data('venta-id');
+        const fecha = $(this).data('fecha');
+        const turno = $(this).data('turno');
+        const maquina = $(this).data('maquina');
+        const usuario = $(this).data('usuario');
+
+        console.log('Abriendo modal para venta:', ventaId);
+        abrirModalEnvio(ventaId, fecha, turno, maquina, usuario, null);
+    });
+
+    // Evento para editar envío
+    $(document).on('click', '.btn-editar-envio', function(e) {
+        console.log('Editar envío clickeado');
+        e.preventDefault();
+        const ventaId = $(this).data('venta-id');
+        const envioId = $(this).data('envio-id');
+        const numeroEnvio = $(this).data('numero-envio');
+        const fecha = $(this).data('fecha');
+        const turno = $(this).data('turno');
+        const maquina = $(this).data('maquina');
+        const usuario = $(this).data('usuario');
+
+        console.log('Abriendo modal para editar envío:', envioId);
+        abrirModalEnvio(ventaId, fecha, turno, maquina, usuario, envioId);
+    });
 });
+
+function cargarEnvios(container) {
+    const ventaId = container.data('venta-id');
+
+    $.ajax({
+        url: '/obtener_envios/' + ventaId,
+        method: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.envios && data.envios.length > 0) {
+                let html = '';
+                data.envios.forEach(function(envio) {
+                    html += `<button type="button" class="btn btn-outline-info btn-sm btn-editar-envio"
+                                data-venta-id="${ventaId}"
+                                data-envio-id="${envio.id}"
+                                data-numero-envio="${envio.numero_envio}"
+                                data-fecha="${envio.fecha}"
+                                data-turno="${envio.turno}"
+                                data-maquina="${envio.maquina}"
+                                data-usuario="${envio.usuario}"
+                                title="Editar envío #${envio.numero_envio}">
+                                ${envio.numero_envio}
+                            </button>`;
+                });
+                container.html(html);
+            }
+        }
+    });
+}
+
+function abrirModalEnvio(ventaId, fecha, turno, maquina, usuario, envioId) {
+    // Crear modal dinámicamente
+    const modalId = 'modalEnvio_' + ventaId + '_' + (envioId || 'new');
+
+    // Si el modal ya existe, simplemente mostrarlo
+    let modal = $('#' + modalId);
+    if (modal.length === 0) {
+        // Crear el modal
+        const modalHTML = `
+            <div class="modal fade" id="${modalId}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                ${envioId ? 'Editar Envío a Bóveda' : 'Nuevo Envío a Bóveda'}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form class="form-envio" data-venta-id="${ventaId}" data-envio-id="${envioId || ''}">
+                            <div class="modal-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Fecha</label>
+                                        <input type="text" class="form-control" value="${fecha}" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Turno</label>
+                                        <input type="text" class="form-control" value="${turno}" readonly>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Máquina</label>
+                                        <input type="text" class="form-control" value="${maquina}" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Usuario</label>
+                                        <input type="text" class="form-control" value="${usuario}" readonly>
+                                    </div>
+                                </div>
+
+                                <hr>
+                                <h6>Monedas</h6>
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">5 Soles <small>(qty)</small></label>
+                                        <input type="number" class="form-control form-control-sm moneda" name="moneda_5_soles" min="0" step="0.01" value="0">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">2 Soles <small>(qty)</small></label>
+                                        <input type="number" class="form-control form-control-sm moneda" name="moneda_2_soles" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">1 Sol <small>(qty)</small></label>
+                                        <input type="number" class="form-control form-control-sm moneda" name="moneda_1_sol" min="0" step="0.01" value="0">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">0.50 Cent <small>(qty)</small></label>
+                                        <input type="number" class="form-control form-control-sm moneda" name="moneda_0_50_cent" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">0.20 Cent <small>(qty)</small></label>
+                                        <input type="number" class="form-control form-control-sm moneda" name="moneda_0_20_cent" min="0" step="0.01" value="0">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">0.10 Cent <small>(qty)</small></label>
+                                        <input type="number" class="form-control form-control-sm moneda" name="moneda_0_10_cent" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+
+                                <hr>
+                                <div class="mb-3">
+                                    <label class="form-label">Billete (Monto Total)</label>
+                                    <input type="number" class="form-control" name="billete" min="0" step="0.01" value="0">
+                                </div>
+
+                                <hr>
+                                <div class="alert alert-info mb-0">
+                                    <strong>Total:</strong> <span class="total-envio">S/. 0.00</span>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Guardar Envío</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        $('body').append(modalHTML);
+        modal = $('#' + modalId);
+    }
+
+    // Si es edición, cargar datos del envío
+    if (envioId) {
+        $.ajax({
+            url: '/obtener_envio/' + envioId,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                modal.find('input[name="moneda_5_soles"]').val(data.moneda_5_soles);
+                modal.find('input[name="moneda_2_soles"]').val(data.moneda_2_soles);
+                modal.find('input[name="moneda_1_sol"]').val(data.moneda_1_sol);
+                modal.find('input[name="moneda_0_50_cent"]').val(data.moneda_0_50_cent);
+                modal.find('input[name="moneda_0_20_cent"]').val(data.moneda_0_20_cent);
+                modal.find('input[name="moneda_0_10_cent"]').val(data.moneda_0_10_cent);
+                modal.find('input[name="billete"]').val(data.billete);
+
+                calcularTotal(modal);
+                modal.modal('show');
+            }
+        });
+    } else {
+        modal.modal('show');
+    }
+
+    // Evento para calcular total
+    modal.on('input', '.moneda, input[name="billete"]', function() {
+        calcularTotal(modal);
+    });
+
+    // Evento para guardar
+    modal.on('submit', '.form-envio', function(e) {
+        e.preventDefault();
+        guardarEnvio($(this), modal);
+    });
+}
+
+function calcularTotal(modal) {
+    const m5 = parseFloat(modal.find('input[name="moneda_5_soles"]').val()) || 0;
+    const m2 = parseFloat(modal.find('input[name="moneda_2_soles"]').val()) || 0;
+    const m1 = parseFloat(modal.find('input[name="moneda_1_sol"]').val()) || 0;
+    const m050 = parseFloat(modal.find('input[name="moneda_0_50_cent"]').val()) || 0;
+    const m020 = parseFloat(modal.find('input[name="moneda_0_20_cent"]').val()) || 0;
+    const m010 = parseFloat(modal.find('input[name="moneda_0_10_cent"]').val()) || 0;
+    const billete = parseFloat(modal.find('input[name="billete"]').val()) || 0;
+
+    const total = (m5 * 5) + (m2 * 2) + (m1 * 1) + (m050 * 0.50) + (m020 * 0.20) + (m010 * 0.10) + billete;
+
+    modal.find('.total-envio').text('S/. ' + total.toFixed(2));
+}
+
+function guardarEnvio(form, modal) {
+    const ventaId = form.data('venta-id');
+    const envioId = form.data('envio-id') || null;
+
+    const data = {
+        venta_id: ventaId,
+        envio_id: envioId,
+        moneda_5_soles: form.find('input[name="moneda_5_soles"]').val(),
+        moneda_2_soles: form.find('input[name="moneda_2_soles"]').val(),
+        moneda_1_sol: form.find('input[name="moneda_1_sol"]').val(),
+        moneda_0_50_cent: form.find('input[name="moneda_0_50_cent"]').val(),
+        moneda_0_20_cent: form.find('input[name="moneda_0_20_cent"]').val(),
+        moneda_0_10_cent: form.find('input[name="moneda_0_10_cent"]').val(),
+        billete: form.find('input[name="billete"]').val()
+    };
+
+    $.ajax({
+        url: '/guardar_envio',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+            modal.modal('hide');
+            // Recargar los envíos
+            const container = $('.envios-container[data-venta-id="' + ventaId + '"]');
+            cargarEnvios(container);
+            alert('Envío guardado exitosamente');
+        },
+        error: function(err) {
+            alert('Error al guardar envío: ' + (err.responseJSON?.error || err.statusText));
+        }
+    });
+}
 </script>
 {% endblock %}
