@@ -127,7 +127,7 @@ def cargar_turnos():
                 flash(error, 'warning')
         return redirect(url_for('combustibles.cargar_turnos'))
 
-    user_rol = session.get('user_rol')
+    user_rol = session.get('user_rol', '').upper()
     is_admin = (user_rol == 'ADMIN')
     is_caja = (user_rol == 'CAJA')
     is_grifero = (user_rol == 'GRIFERO')

@@ -3,11 +3,12 @@
 {% block content %}
 <!-- Variables globales para control de permisos -->
 <script>
-    const isCaja = {% if is_caja %}true{% else %}false{% endif %};
-    const isGrifero = {% if is_grifero %}true{% else %}false{% endif %};
+    const isAdmin = {% if session.user_rol and session.user_rol.upper() == 'ADMIN' %}true{% else %}false{% endif %};
+    const isCaja = {% if session.user_rol and session.user_rol.upper() == 'CAJA' %}true{% else %}false{% endif %};
+    const isGrifero = {% if session.user_rol and session.user_rol.upper() == 'GRIFERO' %}true{% else %}false{% endif %};
 </script>
 
-{% if session.user_rol == 'GRIFERO' %}
+{% if session.user_rol == 'ADMIN' or session.user_rol == 'GRIFERO' %}
 <div class="card">
     <div class="card-header bg-primary text-white">
         <i class="bi-arrow-clockwise"></i> Actualización / Carga Masiva de Turnos
@@ -166,23 +167,18 @@
                         {% if is_admin %}<td>{{ v.webuser }}</td>{% endif %}
                         <td><strong>{{ v.id }}</strong></td>
                         <td>
-                            {% if not is_grifero %}
-                            <div class="btn-group btn-group-sm" role="group">
+                            <div class="btn-group btn-group-sm" role="group" id="envio-group-{{ v.id }}">
                                 <button type="button" class="btn btn-outline-success btn-nuevo-envio"
                                         data-venta-id="{{ v.id }}" data-fecha="{{ v.fecha.strftime('%Y-%m-%d') }}"
                                         data-turno="{{ v.nombre }}" data-maquina="{{ v.machine_number }}"
-                                        data-usuario="{{ v.webuser }}" title="Nuevo envío">
+                                        data-usuario="{{ v.webuser }}" title="Nuevo envío"
+                                        style="display: none;">
                                     <i class="bi bi-plus"></i>
                                 </button>
                                 <div class="envios-container" data-venta-id="{{ v.id }}">
                                     <!-- Los botones de envíos se cargarán aquí -->
                                 </div>
                             </div>
-                            {% else %}
-                            <div class="envios-container" data-venta-id="{{ v.id }}">
-                                <!-- Los griferos no pueden crear ni editar envíos -->
-                            </div>
-                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -221,6 +217,15 @@ console.log('Script cargar_turnos cargado');
 
 $(document).ready(function() {
     console.log('Document ready');
+    console.log('isAdmin:', isAdmin, 'isCaja:', isCaja, 'isGrifero:', isGrifero);
+
+    // Mostrar botón + solo para ADMIN y CAJA
+    if (isAdmin || isCaja) {
+        $('.btn-nuevo-envio').css('display', 'inline-block');
+        console.log('Mostrando botones de envío');
+    } else {
+        console.log('Botones de envío ocultos para este usuario');
+    }
 
     // Calcular diferencia para cada máquina
     $('.initial-reading, .final-reading').on('input', function() {
@@ -261,8 +266,8 @@ $(document).ready(function() {
 
     // Evento para editar envío
     $(document).on('click', '.btn-editar-envio', function(e) {
-        // Los griferos no pueden editar envíos
-        if (isGrifero) {
+        // Solo los griferos no pueden editar envíos (ADMIN y CAJA sí pueden)
+        if (isGrifero && !isAdmin) {
             e.preventDefault();
             alert('Los griferos no tienen permiso para editar envíos.');
             return;
