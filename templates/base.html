@@ -128,6 +128,13 @@
                                 </a>
                             </li>
                             {% endif %}
+                            {% if session.get('user_username') == 'selyn' %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('envios.envios_dinero_cajero') }}">
+                                    <i class="bi bi-cash-stack"></i> Envios de Dinero a Boveda
+                                </a>
+                            </li>
+                            {% endif %}
                         </ul>
                     </li>
                     {% endif %}
