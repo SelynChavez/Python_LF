@@ -41,6 +41,7 @@ from routes import (
     prestamos_bp, retiros_bp, recibos_bp,
     compras_comb_bp, facturacion_bp
 )
+from routes.envios_dinero_routes import envios_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(contabilidad_bp)
@@ -48,6 +49,7 @@ app.register_blueprint(configuracion_bp)
 app.register_blueprint(reportes_bp)
 app.register_blueprint(io_cash_bp)
 app.register_blueprint(combustibles_bp)
+app.register_blueprint(envios_bp)
 app.register_blueprint(productos_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(aportes_bp)
