@@ -2480,3 +2480,183 @@ def generar_rep_saldos_retiros():
     response.headers['Content-Disposition'] = 'inline; filename=reporte_saldos_retiros.pdf'
 
     return response
+
+
+@reportes_bp.route('/rep_envios_boveda')
+@login_required
+def rep_envios_boveda():
+    """Formulario para reporte de envíos a bóveda."""
+    if session.get('user_rol') not in ('ADMIN', 'CAJA'):
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "0"
+
+    conn = get_db_connection()
+    usuarios = []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT DISTINCT webuser FROM a_envios_dinero WHERE webuser IS NOT NULL ORDER BY webuser")
+        usuarios = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+    return render_template('rep_envios_boveda.html', p1=p1, p2=p2, p3=p3, usuarios=usuarios)
+
+
+@reportes_bp.route('/generar_pdf_envios_boveda', methods=['POST'])
+@login_required
+def generar_pdf_envios_boveda():
+    """Genera el reporte de envíos a bóveda en PDF con formato estándar."""
+    if session.get('user_rol') not in ('ADMIN', 'CAJA'):
+        return jsonify({'error': 'Acceso denegado'}), 403
+
+    p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
+    p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
+    p3 = request.form.get('p3', '0')
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+    cursor = conn.cursor(dictionary=True)
+
+    # Construir query
+    query = """
+    SELECT
+        e.id,
+        e.fecha,
+        e.numero_envio,
+        e.webuser,
+        e.venta_id,
+        e.moneda_5_soles,
+        e.moneda_2_soles,
+        e.moneda_1_sol,
+        e.moneda_0_50_cent,
+        e.moneda_0_20_cent,
+        e.moneda_0_10_cent,
+        e.billete,
+        (e.moneda_5_soles + e.moneda_2_soles + e.moneda_1_sol + e.moneda_0_50_cent +
+         e.moneda_0_20_cent + e.moneda_0_10_cent + e.billete) as total,
+        CASE WHEN e.venta_id = -1 THEN 'No aplica' ELSE COALESCE(v.nombre, 'N/A') END as turno
+    FROM a_envios_dinero e
+    LEFT JOIN a_ventas_comb v ON e.venta_id = v.id
+    WHERE e.fecha BETWEEN %s AND %s
+    """
+
+    params = [p1, p2]
+
+    if p3 != '0':
+        query += " AND e.webuser = %s"
+        params.append(p3)
+
+    query += " ORDER BY e.fecha, e.numero_envio"
+
+    cursor.execute(query, params)
+    envios = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    # Generar PDF con FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_left_margin(8)
+    pdf.set_right_margin(8)
+
+    # Cabecera superior
+    pdf.set_font("Arial", '', 9)
+    usuario = session.get('user_username', 'Unknown')
+    fecha_hora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    pdf.cell(100, 5, f"E.T.Las Flores :: [REP_ENVIOS_BOVEDA] - [{usuario}] -", 0, 0, 'L')
+    pdf.cell(0, 5, f"{fecha_hora} - Pag. # 1", 0, 1, 'R')
+
+    # Título
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 6, "Reporte de Envios a Boveda", 0, 1, 'C')
+
+    # Subtítulo
+    usuario_label = "Todos" if p3 == '0' else p3
+    pdf.set_font("Arial", '', 9)
+    pdf.cell(0, 4, f"::Desde {p1} a {p2} - Usuario: {usuario_label}::", 0, 1, 'C')
+    pdf.ln(2)
+
+    # Encabezados de columna
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(17, 5, "Fecha", 1)
+    pdf.cell(10, 5, "#Env", 1)
+    pdf.cell(15, 5, "Usuario", 1)
+    pdf.cell(15, 5, "Turno", 1)
+    pdf.cell(13, 5, "Billete", 1, 0, 'R')
+    pdf.cell(14, 5, "5 Soles", 1, 0, 'R')
+    pdf.cell(14, 5, "2 Soles", 1, 0, 'R')
+    pdf.cell(11, 5, "1 Sol", 1, 0, 'R')
+    pdf.cell(14, 5, "0.5 cent", 1, 0, 'R')
+    pdf.cell(14, 5, "0.2 cent", 1, 0, 'R')
+    pdf.cell(14, 5, "0.1 cent", 1, 0, 'R')
+    pdf.cell(15, 5, "Total", 1, 1, 'R')
+
+    # Datos
+    pdf.set_font("Arial", '', 7)
+    total_general = 0
+    total_por_dia = {}
+    fecha_actual = None
+    num_registros = 0
+
+    for envio in envios:
+        fecha_str = envio['fecha'].strftime('%d-%m-%Y') if envio['fecha'] else ''
+        total_envio = envio['total'] or 0
+        turno_str = '--' if envio['turno'] == 'No aplica' else (envio['turno'][:8] if envio['turno'] else '')
+
+        if fecha_str != fecha_actual:
+            if fecha_actual and fecha_actual in total_por_dia:
+                pdf.set_font("Arial", 'B', 7)
+                pdf.cell(93, 4, f"SUBTOTAL {fecha_actual}", 1, 0, 'R')
+                pdf.cell(15, 4, f"{total_por_dia[fecha_actual]:.2f}", 1, 1, 'R')
+                pdf.set_font("Arial", '', 7)
+            fecha_actual = fecha_str
+            if fecha_str not in total_por_dia:
+                total_por_dia[fecha_str] = 0
+
+        total_por_dia[fecha_str] += total_envio
+        total_general += total_envio
+        num_registros += 1
+
+        pdf.cell(17, 4, fecha_str, 1)
+        pdf.cell(10, 4, str(envio['numero_envio']), 1, 0, 'C')
+        pdf.cell(15, 4, envio['webuser'] or '', 1)
+        pdf.cell(15, 4, turno_str, 1)
+        pdf.cell(13, 4, f"{envio['billete'] or 0:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{envio['moneda_5_soles'] or 0:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{envio['moneda_2_soles'] or 0:.2f}", 1, 0, 'R')
+        pdf.cell(11, 4, f"{envio['moneda_1_sol'] or 0:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{envio['moneda_0_50_cent'] or 0:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{envio['moneda_0_20_cent'] or 0:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{envio['moneda_0_10_cent'] or 0:.2f}", 1, 0, 'R')
+        pdf.cell(15, 4, f"{total_envio:.2f}", 1, 1, 'R')
+
+    # Último subtotal
+    if fecha_actual and fecha_actual in total_por_dia:
+        pdf.set_font("Arial", 'B', 7)
+        pdf.cell(93, 4, f"SUBTOTAL {fecha_actual}", 1, 0, 'R')
+        pdf.cell(15, 4, f"{total_por_dia[fecha_actual]:.2f}", 1, 1, 'R')
+
+    # Total general
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(93, 4, "TOTAL GENERAL", 1, 0, 'R')
+    pdf.cell(15, 4, f"{total_general:.2f}", 1, 1, 'R')
+
+    # Pie de página
+    pdf.ln(2)
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(0, 4, f"#REGS:...{num_registros} :: TOTAL MONTO:... {total_general:.2f}", 0, 1)
+
+    # Retornar PDF
+    pdf_bytes = pdf.output(dest='S').encode('latin-1')
+
+    response = make_response(pdf_bytes)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'inline; filename=reporte_envios_boveda.pdf'
+
+    return response
