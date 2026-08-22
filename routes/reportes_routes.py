@@ -2600,7 +2600,16 @@ def generar_pdf_envios_boveda():
     # Datos
     pdf.set_font("Arial", '', 7)
     total_general = 0
+    total_billete_general = 0
+    total_5soles_general = 0
+    total_2soles_general = 0
+    total_1sol_general = 0
+    total_050cent_general = 0
+    total_020cent_general = 0
+    total_010cent_general = 0
+
     total_por_dia = {}
+    totales_denominacion_dia = {}
     fecha_actual = None
     num_registros = 0
 
@@ -2612,39 +2621,96 @@ def generar_pdf_envios_boveda():
         if fecha_str != fecha_actual:
             if fecha_actual and fecha_actual in total_por_dia:
                 pdf.set_font("Arial", 'B', 7)
-                pdf.cell(93, 4, f"SUBTOTAL {fecha_actual}", 1, 0, 'R')
+                pdf.cell(17, 4, '', 1)
+                pdf.cell(10, 4, '', 1)
+                pdf.cell(15, 4, '', 1)
+                pdf.cell(15, 4, f"SUBTOTAL {fecha_actual}", 1, 0, 'R')
+                pdf.cell(13, 4, f"{totales_denominacion_dia[fecha_actual]['billete']:.2f}", 1, 0, 'R')
+                pdf.cell(14, 4, f"{totales_denominacion_dia[fecha_actual]['5soles']:.2f}", 1, 0, 'R')
+                pdf.cell(14, 4, f"{totales_denominacion_dia[fecha_actual]['2soles']:.2f}", 1, 0, 'R')
+                pdf.cell(11, 4, f"{totales_denominacion_dia[fecha_actual]['1sol']:.2f}", 1, 0, 'R')
+                pdf.cell(14, 4, f"{totales_denominacion_dia[fecha_actual]['050cent']:.2f}", 1, 0, 'R')
+                pdf.cell(14, 4, f"{totales_denominacion_dia[fecha_actual]['020cent']:.2f}", 1, 0, 'R')
+                pdf.cell(14, 4, f"{totales_denominacion_dia[fecha_actual]['010cent']:.2f}", 1, 0, 'R')
                 pdf.cell(15, 4, f"{total_por_dia[fecha_actual]:.2f}", 1, 1, 'R')
                 pdf.set_font("Arial", '', 7)
             fecha_actual = fecha_str
             if fecha_str not in total_por_dia:
                 total_por_dia[fecha_str] = 0
+                totales_denominacion_dia[fecha_str] = {
+                    'billete': 0, '5soles': 0, '2soles': 0, '1sol': 0,
+                    '050cent': 0, '020cent': 0, '010cent': 0
+                }
+
+        billete = envio['billete'] or 0
+        m5soles = envio['moneda_5_soles'] or 0
+        m2soles = envio['moneda_2_soles'] or 0
+        m1sol = envio['moneda_1_sol'] or 0
+        m050cent = envio['moneda_0_50_cent'] or 0
+        m020cent = envio['moneda_0_20_cent'] or 0
+        m010cent = envio['moneda_0_10_cent'] or 0
 
         total_por_dia[fecha_str] += total_envio
+        totales_denominacion_dia[fecha_str]['billete'] += billete
+        totales_denominacion_dia[fecha_str]['5soles'] += m5soles
+        totales_denominacion_dia[fecha_str]['2soles'] += m2soles
+        totales_denominacion_dia[fecha_str]['1sol'] += m1sol
+        totales_denominacion_dia[fecha_str]['050cent'] += m050cent
+        totales_denominacion_dia[fecha_str]['020cent'] += m020cent
+        totales_denominacion_dia[fecha_str]['010cent'] += m010cent
+
         total_general += total_envio
+        total_billete_general += billete
+        total_5soles_general += m5soles
+        total_2soles_general += m2soles
+        total_1sol_general += m1sol
+        total_050cent_general += m050cent
+        total_020cent_general += m020cent
+        total_010cent_general += m010cent
         num_registros += 1
 
         pdf.cell(17, 4, fecha_str, 1)
         pdf.cell(10, 4, str(envio['numero_envio']), 1, 0, 'C')
         pdf.cell(15, 4, envio['webuser'] or '', 1)
         pdf.cell(15, 4, turno_str, 1)
-        pdf.cell(13, 4, f"{envio['billete'] or 0:.2f}", 1, 0, 'R')
-        pdf.cell(14, 4, f"{envio['moneda_5_soles'] or 0:.2f}", 1, 0, 'R')
-        pdf.cell(14, 4, f"{envio['moneda_2_soles'] or 0:.2f}", 1, 0, 'R')
-        pdf.cell(11, 4, f"{envio['moneda_1_sol'] or 0:.2f}", 1, 0, 'R')
-        pdf.cell(14, 4, f"{envio['moneda_0_50_cent'] or 0:.2f}", 1, 0, 'R')
-        pdf.cell(14, 4, f"{envio['moneda_0_20_cent'] or 0:.2f}", 1, 0, 'R')
-        pdf.cell(14, 4, f"{envio['moneda_0_10_cent'] or 0:.2f}", 1, 0, 'R')
+        pdf.cell(13, 4, f"{billete:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{m5soles:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{m2soles:.2f}", 1, 0, 'R')
+        pdf.cell(11, 4, f"{m1sol:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{m050cent:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{m020cent:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{m010cent:.2f}", 1, 0, 'R')
         pdf.cell(15, 4, f"{total_envio:.2f}", 1, 1, 'R')
 
     # Último subtotal
     if fecha_actual and fecha_actual in total_por_dia:
         pdf.set_font("Arial", 'B', 7)
-        pdf.cell(93, 4, f"SUBTOTAL {fecha_actual}", 1, 0, 'R')
+        pdf.cell(17, 4, '', 1)
+        pdf.cell(10, 4, '', 1)
+        pdf.cell(15, 4, '', 1)
+        pdf.cell(15, 4, f"SUBTOTAL {fecha_actual}", 1, 0, 'R')
+        pdf.cell(13, 4, f"{totales_denominacion_dia[fecha_actual]['billete']:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{totales_denominacion_dia[fecha_actual]['5soles']:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{totales_denominacion_dia[fecha_actual]['2soles']:.2f}", 1, 0, 'R')
+        pdf.cell(11, 4, f"{totales_denominacion_dia[fecha_actual]['1sol']:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{totales_denominacion_dia[fecha_actual]['050cent']:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{totales_denominacion_dia[fecha_actual]['020cent']:.2f}", 1, 0, 'R')
+        pdf.cell(14, 4, f"{totales_denominacion_dia[fecha_actual]['010cent']:.2f}", 1, 0, 'R')
         pdf.cell(15, 4, f"{total_por_dia[fecha_actual]:.2f}", 1, 1, 'R')
 
     # Total general
     pdf.set_font("Arial", 'B', 8)
-    pdf.cell(93, 4, "TOTAL GENERAL", 1, 0, 'R')
+    pdf.cell(17, 4, '', 1)
+    pdf.cell(10, 4, '', 1)
+    pdf.cell(15, 4, '', 1)
+    pdf.cell(15, 4, "TOTAL GENERAL", 1, 0, 'R')
+    pdf.cell(13, 4, f"{total_billete_general:.2f}", 1, 0, 'R')
+    pdf.cell(14, 4, f"{total_5soles_general:.2f}", 1, 0, 'R')
+    pdf.cell(14, 4, f"{total_2soles_general:.2f}", 1, 0, 'R')
+    pdf.cell(11, 4, f"{total_1sol_general:.2f}", 1, 0, 'R')
+    pdf.cell(14, 4, f"{total_050cent_general:.2f}", 1, 0, 'R')
+    pdf.cell(14, 4, f"{total_020cent_general:.2f}", 1, 0, 'R')
+    pdf.cell(14, 4, f"{total_010cent_general:.2f}", 1, 0, 'R')
     pdf.cell(15, 4, f"{total_general:.2f}", 1, 1, 'R')
 
     # Pie de página
