@@ -325,7 +325,7 @@ FROM a_prestamos p
   JOIN a_socios s ON pr.socio = s.id
   JOIN a_tipos tp ON tp.tipo='DEUDA' and p.tipo_prestamo = tp.codigo
 WHERE (p.fecha_solicitud>=date('$p1$') AND p.fecha_solicitud<=date('$p2$')) AND
-      (p.padron='$p3$' OR '$p3$'='0') AND (('$p4$'='on' AND estado='aprobado') OR ('$p4$'!='on'))
+      (p.padron='$p3$' OR '$p3$'='0') AND (('$p4$'='on' AND (estado='aprobado' OR estado='pagado')) OR ('$p4$'!='on'))
 ORDER BY p.id DESC, p.fecha_solicitud DESC
 """
 SELECT_RETIROS_1 = """

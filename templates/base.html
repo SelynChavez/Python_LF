@@ -21,7 +21,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-center">
                     {% if session.user_rol == 'GRIFERO' %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="griferoDropdown" role="button" data-bs-toggle="dropdown">
@@ -138,6 +138,11 @@
                         </ul>
                     </li>
                     {% endif %}
+                    <li class="nav-item">
+                        <span class="navbar-text text-light" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+                            <i class="bi bi-clock"></i> {{ session.get('login_time', 'N/A') }}
+                        </span>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle"></i> {{ session.user_name }}

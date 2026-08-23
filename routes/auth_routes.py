@@ -3,6 +3,7 @@ from functools import wraps
 from flask import current_app
 from mysql.connector import Error
 import sqlconstants
+import datetime
 from .auth import bp as auth_bp
 
 def get_db_connection():
@@ -55,6 +56,7 @@ def login():
                 session['user_name'] = user['fullname']
                 session['user_username'] = user['username']
                 session['user_rol'] = user['roles']
+                session['login_time'] = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
                 connection = get_db_connection()
                 if connection:
                     cursor = connection.cursor()
