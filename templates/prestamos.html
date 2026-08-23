@@ -121,6 +121,12 @@
                                                 <i class="bi bi-file-pdf"></i>
                                             </a>
                                         {% endif %}
+                                        <!-- Botón para ver detalles de pagos -->
+                                        <button type="button" class="btn btn-outline-info btn-sm"
+                                                onclick="abrirDetallePagos({{ prestamo.id }})"
+                                                title="Detalle de Pagos">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
                                     </td>
                                 </tr>        
                     {% endfor %}
@@ -135,6 +141,42 @@
                     </tr>
                 </tfoot>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Detalle de Pagos -->
+<div class="modal fade" id="detallePagosModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-receipt"></i> Detalle de Pagos - Préstamo #<span id="prestamoNumero"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover" id="tablaPagos">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Recibo</th>
+                                <th class="text-end">Monto</th>
+                                <th>Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyPagos">
+                            <tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cerrar
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -186,10 +228,52 @@
 
 <script>
 let editarPrestamoModalObj = null;
+let detallePagosModalObj = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     editarPrestamoModalObj = new bootstrap.Modal(document.getElementById('editarPrestamoModal'));
+    detallePagosModalObj = new bootstrap.Modal(document.getElementById('detallePagosModal'));
 });
+
+function abrirDetallePagos(prestamoId) {
+    document.getElementById('prestamoNumero').textContent = prestamoId;
+    document.getElementById('bodyPagos').innerHTML = '<tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr>';
+
+    fetch(`/api/prestamos/${prestamoId}/pagos`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.pagos.length > 0) {
+                let html = '';
+                let totalMonto = 0;
+
+                data.pagos.forEach(pago => {
+                    html += `<tr>
+                        <td>${pago.fecha}</td>
+                        <td><strong>${pago.recibo}</strong></td>
+                        <td class="text-end">S/. ${parseFloat(pago.monto).toFixed(2)}</td>
+                        <td>${pago.usuario}</td>
+                    </tr>`;
+                    totalMonto += parseFloat(pago.monto);
+                });
+
+                html += `<tr class="table-secondary">
+                    <td colspan="2" class="text-end"><strong>Total:</strong></td>
+                    <td class="text-end"><strong>S/. ${totalMonto.toFixed(2)}</strong></td>
+                    <td></td>
+                </tr>`;
+
+                document.getElementById('bodyPagos').innerHTML = html;
+            } else {
+                document.getElementById('bodyPagos').innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay pagos registrados</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('bodyPagos').innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error al cargar los pagos</td></tr>';
+        });
+
+    detallePagosModalObj.show();
+}
 
 function abrirModalEditar(prestamoId, cuota, estado) {
     document.getElementById('prestamoId').value = prestamoId;

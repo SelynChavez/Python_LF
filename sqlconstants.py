@@ -312,7 +312,14 @@ UPD_PRESTAMO_CUOTA = "UPDATE a_prestamos SET cuota=%s WHERE id=%s"
 DROPLIST_DEUDAS = "SELECT tp.* FROM a_tipos tp WHERE tp.tipo='DEUDA' "
 DROPLIST_APORTES_SALDO_X_PADRON = "SELECT aporte codigo,descripcion,aportado,retirado,(aportado-retirado) saldo FROM av_total_aportes_x_padron WHERE padron='$pad$' and aporte in (select codigo from a_tipos where tipo='APORTE' and atributo4='S') ORDER by 1"
 SELECT_PRESTAMOS_1 = """
-SELECT p.*, pr.placa, s.nombre, tp.descripcion as tipo_nombre, coalesce(p.monto_aprobado,0) mnt_aprobado, coalesce(saldo_pendiente,0) sld_pendiente
+SELECT p.*, pr.placa, s.nombre, tp.descripcion as tipo_nombre,
+       coalesce(p.monto_aprobado,0) mnt_aprobado,
+       coalesce(p.monto_aprobado,0) - coalesce((
+           SELECT SUM(rd.monto)
+           FROM a_recibos_detalle rd
+           INNER JOIN a_recibos r ON r.id = rd.recibo
+           WHERE rd.prestamo = p.id AND rd.monto > 0 AND r.active = 'S'
+       ), 0) as sld_pendiente
 FROM a_prestamos p
   JOIN a_padrones pr ON p.padron = pr.id
   JOIN a_socios s ON pr.socio = s.id

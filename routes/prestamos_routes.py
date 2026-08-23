@@ -229,3 +229,46 @@ def actualizar_prestamo(prestamo_id):
         return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@prestamos_bp.route('/api/prestamos/<int:prestamo_id>/pagos', methods=['GET'])
+def obtener_pagos_prestamo(prestamo_id):
+    """Obtiene todos los pagos de un préstamo desde a_recibos y a_recibos_detalle"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'error': 'Error de conexión'}), 500
+
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+        SELECT
+            r.fecha,
+            r.numero as recibo,
+            rd.monto as monto,
+            r.webuser
+        FROM a_recibos r
+        INNER JOIN a_recibos_detalle rd ON r.id = rd.recibo
+        WHERE rd.prestamo = %s AND rd.monto > 0 AND r.active = 'S'
+        ORDER BY r.fecha, r.numero
+        """
+
+        cursor.execute(query, (prestamo_id,))
+        pagos = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        pagos_list = []
+        for pago in pagos:
+            pagos_list.append({
+                'fecha': pago['fecha'].strftime('%d/%m/%Y') if pago['fecha'] else '',
+                'recibo': pago['recibo'],
+                'monto': float(pago['monto']) if pago['monto'] else 0,
+                'usuario': pago['webuser'] or ''
+            })
+
+        return jsonify({'success': True, 'pagos': pagos_list})
+    except Error as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
