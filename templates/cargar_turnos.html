@@ -470,7 +470,7 @@ function calcularTotal(modal) {
     const m010 = parseFloat(modal.find('input[name="moneda_0_10_cent"]').val()) || 0;
     const billete = parseFloat(modal.find('input[name="billete"]').val()) || 0;
 
-    const total = (m5 * 5) + (m2 * 2) + (m1 * 1) + (m050 * 0.50) + (m020 * 0.20) + (m010 * 0.10) + billete;
+    const total = m5 + m2 + m1 + m050 + m020 + m010 + billete;
 
     modal.find('.total-envio').text('S/. ' + total.toFixed(2));
 }
