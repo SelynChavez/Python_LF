@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 {% block title %}ETLF - Envíos de Dinero a Bóveda{% endblock %}
 {% block content %}
-<div class="row" style="height: 100vh;">
+<div class="row" style="margin-top: -1rem; margin-bottom: -1rem;">
     <!-- Panel izquierdo: Lista de envíos -->
-    <div class="col-md-6" style="border-right: 1px solid #ddd; overflow-y: auto; padding-right: 20px;">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-safe"></i> Envíos Registrados</h5>
+    <div class="col-md-6" style="border-right: 1px solid #ddd; overflow-y: auto; padding-right: 10px; max-height: calc(100vh - 180px);">
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header bg-primary text-white" style="padding: 8px 12px;">
+                <h5 class="mb-0" style="font-size: 0.95rem;"><i class="bi bi-safe"></i> Envíos Registrados</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body" style="padding: 10px;">
                 <!-- Filtros -->
-                <form method="GET" class="mb-3">
+                <form method="GET" class="mb-2">
                     <div class="row">
                         <div class="col-md-6">
                             <label class="form-label">Fecha</label>
@@ -32,29 +32,39 @@
                 <hr>
 
                 <div class="table-responsive">
-                    <table class="table table-sm table-striped table-hover">
+                    <table class="table table-sm table-striped table-hover" style="margin-bottom: 0; font-size: 0.85rem;">
                         <thead class="table-dark">
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Envío #</th>
-                                <th class="text-end">Total S/.</th>
-                                <th>Usuario</th>
+                            <tr style="height: 30px;">
+                                <th style="padding: 5px 8px; vertical-align: middle;">Fecha</th>
+                                <th style="padding: 5px 8px; vertical-align: middle;">Envío #</th>
+                                <th class="text-end" style="padding: 5px 8px; vertical-align: middle;">Total S/.</th>
+                                <th style="padding: 5px 8px; vertical-align: middle;">Usuario</th>
+                                <th style="width: 50px; padding: 5px 8px; vertical-align: middle;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="lista-envios">
                             {% if envios %}
                                 {% for envio in envios %}
-                                <tr class="envio-row" data-envio-id="{{ envio.id }}" data-numero="{{ envio.numero_envio }}">
-                                    <td><small>{{ envio.fecha }}</small></td>
-                                    <td><strong>#{{ envio.numero_envio }}</strong></td>
-                                    <td class="text-end">S/. {{ "%.2f"|format(envio.total or 0) }}</td>
-                                    <td><small class="text-muted">{{ envio.webuser }}</small></td>
+                                <tr class="envio-row" data-envio-id="{{ envio.id }}" data-numero="{{ envio.numero_envio }}" style="cursor: pointer; height: 28px;">
+                                    <td style="padding: 4px 8px; vertical-align: middle;"><small>{{ envio.fecha }}</small></td>
+                                    <td style="padding: 4px 8px; vertical-align: middle;"><strong>#{{ envio.numero_envio }}</strong></td>
+                                    <td class="text-end" style="padding: 4px 8px; vertical-align: middle;">S/. {{ "%.2f"|format(envio.total or 0) }}</td>
+                                    <td style="padding: 4px 8px; vertical-align: middle;"><small class="text-muted">{{ envio.webuser }}</small></td>
+                                    <td style="padding: 4px 8px; vertical-align: middle;">
+                                        {% if session.user_rol == 'ADMIN' or (session.user_rol == 'CAJA' and envio.fecha == fecha_hoy) %}
+                                        <button type="button" class="btn btn-sm btn-primary btn-editar-envio" style="padding: 2px 6px; font-size: 0.75rem;"
+                                                onclick="editarEnvio({{ envio.id }})" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 {% endfor %}
                                 <!-- Fila de sumatoria -->
-                                <tr class="table-warning">
-                                    <td colspan="3"><strong>TOTAL</strong></td>
-                                    <td class="text-end"><strong>S/. {{ "%.2f"|format(suma_total) }}</strong></td>
+                                <tr class="table-warning" style="height: 30px;">
+                                    <td colspan="3" style="padding: 4px 8px; vertical-align: middle;"><strong>TOTAL</strong></td>
+                                    <td class="text-end" style="padding: 4px 8px; vertical-align: middle;"><strong>S/. {{ "%.2f"|format(suma_total) }}</strong></td>
+                                    <td style="padding: 4px 8px;"></td>
                                 </tr>
                             {% else %}
                             <tr>
@@ -90,14 +100,14 @@
     </div>
 
     <!-- Panel derecho: Formulario de nuevo envío -->
-    <div class="col-md-6" style="padding-left: 20px; overflow-y: auto;">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Nuevo Envío a Bóveda</h5>
+    <div class="col-md-6" style="padding-left: 10px; overflow-y: auto; max-height: calc(100vh - 180px);" id="panel-derecho">
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header bg-success text-white" style="padding: 8px 12px;">
+                <h5 class="mb-0" style="font-size: 0.95rem;"><i class="bi bi-plus-circle"></i> Nuevo Envío a Bóveda</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body" style="padding: 10px;">
                 <!-- Cabecera de información -->
-                <div class="row mb-4">
+                <div class="row mb-2">
                     <div class="col-md-6">
                         <label class="form-label"><strong>Fecha</strong></label>
                         <input type="text" class="form-control" value="{{ fecha_hoy }}" readonly>
@@ -108,62 +118,62 @@
                     </div>
                 </div>
 
-                <hr>
+                <hr style="margin: 8px 0;">
 
                 <!-- Monedas -->
-                <h6>Monedas</h6>
-                <div class="row mb-2">
+                <h6 style="margin-bottom: 8px; font-size: 0.9rem;">Monedas</h6>
+                <div class="row mb-1">
                     <div class="col-md-6">
-                        <label class="form-label">5 Soles (monto S/.)</label>
-                        <input type="number" class="form-control form-control-sm moneda" id="moneda_5_soles" name="moneda_5_soles" min="0" step="0.01" value="0">
+                        <label class="form-label" style="font-size: 0.85rem; margin-bottom: 2px;">5 Soles (monto S/.)</label>
+                        <input type="number" class="form-control form-control-sm moneda" id="moneda_5_soles" name="moneda_5_soles" min="0" step="0.01" value="0" style="font-size: 0.85rem; height: 28px;">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">2 Soles (monto S/.)</label>
-                        <input type="number" class="form-control form-control-sm moneda" id="moneda_2_soles" name="moneda_2_soles" min="0" step="0.01" value="0">
-                    </div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-6">
-                        <label class="form-label">1 Sol (monto S/.)</label>
-                        <input type="number" class="form-control form-control-sm moneda" id="moneda_1_sol" name="moneda_1_sol" min="0" step="0.01" value="0">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">0.50 Cent (monto S/.)</label>
-                        <input type="number" class="form-control form-control-sm moneda" id="moneda_0_50_cent" name="moneda_0_50_cent" min="0" step="0.01" value="0">
+                        <label class="form-label" style="font-size: 0.85rem; margin-bottom: 2px;">2 Soles (monto S/.)</label>
+                        <input type="number" class="form-control form-control-sm moneda" id="moneda_2_soles" name="moneda_2_soles" min="0" step="0.01" value="0" style="font-size: 0.85rem; height: 28px;">
                     </div>
                 </div>
-                <div class="row mb-3">
+                <div class="row mb-1">
                     <div class="col-md-6">
-                        <label class="form-label">0.20 Cent (monto S/.)</label>
-                        <input type="number" class="form-control form-control-sm moneda" id="moneda_0_20_cent" name="moneda_0_20_cent" min="0" step="0.01" value="0">
+                        <label class="form-label" style="font-size: 0.85rem; margin-bottom: 2px;">1 Sol (monto S/.)</label>
+                        <input type="number" class="form-control form-control-sm moneda" id="moneda_1_sol" name="moneda_1_sol" min="0" step="0.01" value="0" style="font-size: 0.85rem; height: 28px;">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">0.10 Cent (monto S/.)</label>
-                        <input type="number" class="form-control form-control-sm moneda" id="moneda_0_10_cent" name="moneda_0_10_cent" min="0" step="0.01" value="0">
+                        <label class="form-label" style="font-size: 0.85rem; margin-bottom: 2px;">0.50 Cent (monto S/.)</label>
+                        <input type="number" class="form-control form-control-sm moneda" id="moneda_0_50_cent" name="moneda_0_50_cent" min="0" step="0.01" value="0" style="font-size: 0.85rem; height: 28px;">
+                    </div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 0.85rem; margin-bottom: 2px;">0.20 Cent (monto S/.)</label>
+                        <input type="number" class="form-control form-control-sm moneda" id="moneda_0_20_cent" name="moneda_0_20_cent" min="0" step="0.01" value="0" style="font-size: 0.85rem; height: 28px;">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 0.85rem; margin-bottom: 2px;">0.10 Cent (monto S/.)</label>
+                        <input type="number" class="form-control form-control-sm moneda" id="moneda_0_10_cent" name="moneda_0_10_cent" min="0" step="0.01" value="0" style="font-size: 0.85rem; height: 28px;">
                     </div>
                 </div>
 
-                <hr>
+                <hr style="margin: 8px 0;">
 
                 <!-- Billete -->
-                <div class="mb-3">
-                    <label class="form-label"><strong>Billete (Monto Total)</strong></label>
-                    <input type="number" class="form-control" id="billete" name="billete" min="0" step="0.01" value="0">
+                <div class="mb-2">
+                    <label class="form-label" style="font-size: 0.85rem; margin-bottom: 2px;"><strong>Billete (Monto Total)</strong></label>
+                    <input type="number" class="form-control" id="billete" name="billete" min="0" step="0.01" value="0" style="font-size: 0.85rem; height: 28px;">
                 </div>
 
-                <hr>
+                <hr style="margin: 8px 0;">
 
                 <!-- Total -->
-                <div class="alert alert-info mb-3">
+                <div class="alert alert-info mb-2" style="padding: 8px; font-size: 0.9rem;">
                     <strong>Total:</strong> <span id="total-envio">S/. 0.00</span>
                 </div>
 
                 <!-- Botones -->
                 <div class="d-grid gap-2 d-md-flex">
-                    <button type="button" class="btn btn-success" id="btn-guardar">
+                    <button type="button" class="btn btn-success btn-sm" id="btn-guardar" style="font-size: 0.85rem; padding: 4px 8px;">
                         <i class="bi bi-check-circle"></i> Guardar Envío
                     </button>
-                    <button type="reset" class="btn btn-secondary" id="btn-limpiar">
+                    <button type="reset" class="btn btn-secondary btn-sm" id="btn-limpiar" style="font-size: 0.85rem; padding: 4px 8px;">
                         <i class="bi bi-arrow-clockwise"></i> Limpiar
                     </button>
                 </div>
@@ -175,6 +185,39 @@
 
 {% block extra_js %}
 <script>
+let envio_id_actual = null;
+
+function editarEnvio(envioId) {
+    console.log('Editando envío con ID:', envioId);
+    console.log('URL:', `/api/envios/${envioId}`);
+
+    $.ajax({
+        url: `/envios/api/envios/${envioId}`,
+        method: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            console.log('Datos recibidos:', data);
+            // Cargar datos en el formulario
+            $('#moneda_5_soles').val(data.moneda_5_soles || 0);
+            $('#moneda_2_soles').val(data.moneda_2_soles || 0);
+            $('#moneda_1_sol').val(data.moneda_1_sol || 0);
+            $('#moneda_0_50_cent').val(data.moneda_0_50_cent || 0);
+            $('#moneda_0_20_cent').val(data.moneda_0_20_cent || 0);
+            $('#moneda_0_10_cent').val(data.moneda_0_10_cent || 0);
+            $('#billete').val(data.billete || 0);
+
+            envio_id_actual = envioId;
+            $('#btn-guardar').text('Actualizar Envío').removeClass('btn-success').addClass('btn-warning');
+
+            calcularTotal();
+            $('html, body').animate({scrollTop: $('#panel-derecho').offset().top}, 500);
+        },
+        error: function(err) {
+            alert('Error al cargar el envío: ' + (err.responseJSON?.error || err.statusText));
+        }
+    });
+}
+
 $(document).ready(function() {
     console.log('Script cargado');
 
@@ -219,20 +262,53 @@ $(document).ready(function() {
 
         console.log('Datos a enviar:', data);
 
-        $.ajax({
-            url: '{{ url_for("envios.guardar_envio_cajero") }}',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(data),
-            success: function(response) {
-                alert('✓ ' + response.message);
-                location.reload();
-            },
-            error: function(err) {
-                console.error('Error:', err);
-                alert('❌ Error: ' + (err.responseJSON?.error || err.statusText));
-            }
-        });
+        if (envio_id_actual) {
+            // Actualizar envío existente
+            $.ajax({
+                url: `/envios/api/envios/${envio_id_actual}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    alert('✓ ' + response.message);
+                    envio_id_actual = null;
+                    $('#btn-guardar').text('Guardar Envío').removeClass('btn-warning').addClass('btn-success');
+                    location.reload();
+                },
+                error: function(err) {
+                    console.error('Error:', err);
+                    alert('❌ Error: ' + (err.responseJSON?.error || err.statusText));
+                }
+            });
+        } else {
+            // Crear nuevo envío
+            $.ajax({
+                url: '{{ url_for("envios.guardar_envio_cajero") }}',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    alert('✓ ' + response.message);
+                    location.reload();
+                },
+                error: function(err) {
+                    console.error('Error:', err);
+                    alert('❌ Error: ' + (err.responseJSON?.error || err.statusText));
+                }
+            });
+        }
+    });
+
+    // Doble-click en fila para editar
+    $(document).on('dblclick', '.envio-row', function() {
+        const envioId = $(this).data('envio-id');
+        editarEnvio(envioId);
+    });
+
+    // Limpiar al hacer clic en Limpiar
+    $('#btn-limpiar').on('click', function() {
+        envio_id_actual = null;
+        $('#btn-guardar').text('Guardar Envío').removeClass('btn-warning').addClass('btn-success');
     });
 
     // Calcular total al cargar

@@ -96,6 +96,11 @@ def envios_dinero_cajero():
         cursor.execute(query, params)
         envios = cursor.fetchall()
 
+        # Formatear fechas a string para comparación en template
+        for envio in envios:
+            if envio['fecha']:
+                envio['fecha'] = envio['fecha'].strftime('%Y-%m-%d') if hasattr(envio['fecha'], 'strftime') else str(envio['fecha'])[:10]
+
         # Obtener suma total
         sum_query = f"""
             SELECT SUM(moneda_5_soles + moneda_2_soles + moneda_1_sol +
@@ -200,3 +205,74 @@ def guardar_envio_cajero():
             cursor.close()
         if connection:
             connection.close()
+
+
+@envios_bp.route('/api/envios/<int:envio_id>', methods=['GET'])
+def obtener_envio(envio_id):
+    """Obtiene los datos de un envío específico"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Error de conexión'}), 500
+
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM a_envios_dinero WHERE id = %s", (envio_id,))
+        envio = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not envio:
+            return jsonify({'error': 'Envío no encontrado'}), 404
+
+        return jsonify({
+            'id': envio['id'],
+            'moneda_5_soles': float(envio['moneda_5_soles']) if envio['moneda_5_soles'] else 0,
+            'moneda_2_soles': float(envio['moneda_2_soles']) if envio['moneda_2_soles'] else 0,
+            'moneda_1_sol': float(envio['moneda_1_sol']) if envio['moneda_1_sol'] else 0,
+            'moneda_0_50_cent': float(envio['moneda_0_50_cent']) if envio['moneda_0_50_cent'] else 0,
+            'moneda_0_20_cent': float(envio['moneda_0_20_cent']) if envio['moneda_0_20_cent'] else 0,
+            'moneda_0_10_cent': float(envio['moneda_0_10_cent']) if envio['moneda_0_10_cent'] else 0,
+            'billete': float(envio['billete']) if envio['billete'] else 0
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@envios_bp.route('/api/envios/<int:envio_id>', methods=['PUT'])
+def actualizar_envio(envio_id):
+    """Actualiza un envío existente"""
+    try:
+        data = request.get_json()
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Error de conexión'}), 500
+
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE a_envios_dinero SET
+                moneda_5_soles = %s,
+                moneda_2_soles = %s,
+                moneda_1_sol = %s,
+                moneda_0_50_cent = %s,
+                moneda_0_20_cent = %s,
+                moneda_0_10_cent = %s,
+                billete = %s
+            WHERE id = %s
+        """, (
+            float(data.get('moneda_5_soles', 0)),
+            float(data.get('moneda_2_soles', 0)),
+            float(data.get('moneda_1_sol', 0)),
+            float(data.get('moneda_0_50_cent', 0)),
+            float(data.get('moneda_0_20_cent', 0)),
+            float(data.get('moneda_0_10_cent', 0)),
+            float(data.get('billete', 0)),
+            envio_id
+        ))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Envío actualizado correctamente'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
