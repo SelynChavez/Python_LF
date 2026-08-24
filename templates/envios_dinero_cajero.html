@@ -18,12 +18,17 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Usuario</label>
+                            {% if session.user_rol == 'ADMIN' %}
                             <select class="form-select form-select-sm" name="filtro_usuario">
                                 <option value="">Todos</option>
                                 {% for usuario in usuarios_unicos %}
                                 <option value="{{ usuario.webuser }}" {% if filtro_usuario == usuario.webuser %}selected{% endif %}>{{ usuario.webuser }}</option>
                                 {% endfor %}
                             </select>
+                            {% else %}
+                            <input type="text" class="form-control form-control-sm" value="{{ usuario_sesion }}" readonly>
+                            <input type="hidden" name="filtro_usuario" value="{{ usuario_sesion }}">
+                            {% endif %}
                         </div>
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary mt-2">Filtrar</button>

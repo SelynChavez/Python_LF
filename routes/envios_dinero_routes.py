@@ -55,6 +55,11 @@ def envios_dinero_cajero():
     # Obtener filtros (fecha por defecto es hoy)
     filtro_fecha = request.args.get('filtro_fecha', fecha_hoy)
     filtro_usuario = request.args.get('filtro_usuario', '')
+
+    # Si no es ADMIN, filtrar automáticamente por usuario de sesión
+    if rol != 'ADMIN':
+        filtro_usuario = usuario_sesion
+
     page = request.args.get('page', 1, type=int)
     per_page = 10
 
