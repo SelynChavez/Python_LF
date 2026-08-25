@@ -2284,7 +2284,7 @@ def generar_rep_saldos_retiros():
 
     # Combinar datos
     datos = recibos + retiros
-    datos.sort(key=lambda x: (x['padron'], x['codigo'], x['fecha_movimiento'] or ''))
+    datos.sort(key=lambda x: (x['padron'], x['codigo'], str(x['fecha_movimiento']) if x['fecha_movimiento'] else ''))
 
     cursor.close()
     conn.close()
@@ -2367,7 +2367,7 @@ def generar_rep_saldos_retiros():
         grupo = saldos_por_padron[key]
         saldo_acum = 0
 
-        for mov in sorted(grupo['movimientos'], key=lambda x: x['fecha_movimiento'] or ''):
+        for mov in sorted(grupo['movimientos'], key=lambda x: str(x['fecha_movimiento']) if x['fecha_movimiento'] else ''):
             # Verificar si la tabla excedería el límite (len(data)-1 = filas de datos sin encabezado)
             if len(data) - 1 >= MAX_ROWS_PER_PAGE and len(data) > 1:
                 print(f"[PageBreak] Tabla tiene {len(data)-1} filas de datos. Haciendo PageBreak")
