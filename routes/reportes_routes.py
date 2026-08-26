@@ -2797,7 +2797,7 @@ def generar_pdf_control_envios_boveda():
 
     # Título y subtítulo
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 6, 'Reporte de Control de Envíos a Bóveda', 0, 1, 'C')
+    pdf.cell(0, 6, 'Reporte de Control de Ingresos Salidas Cajero', 0, 1, 'C')
 
     pdf.set_font("Arial", '', 9)
     subtitulo = f"Desde: {p1} | Hasta: {p2} | Cajero: {cajero_nombre}"
