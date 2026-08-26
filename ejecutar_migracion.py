@@ -16,7 +16,7 @@ def ejecutar_migracion():
             password=Config.MYSQL_PASSWORD,
             database=Config.MYSQL_DATABASE,
             port=Config.MYSQL_PORT
-        )
+        ).     
 
         cursor = connection.cursor()
 

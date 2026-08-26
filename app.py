@@ -60,7 +60,7 @@ app.register_blueprint(compras_comb_bp)
 app.register_blueprint(facturacion_bp)
 
 # ==================== CONTROL DE ACCESO POR ROL ====================
-# El rol GRIFERO solo puede acceder a la pantalla de Registrar Turno.
+# El rol GRIFERO solo puede acceder a la pantalla de Registrar Turno.   sss
 GRIFERO_ALLOWED_ENDPOINTS = {
     'combustibles.cargar_turnos',
     'combustibles.ventas_combustible',
@@ -164,7 +164,7 @@ def imprimir_recibo(l_id):
                     pdf_base64 = base64.b64encode(pdf_buffer).decode('utf-8')
                     return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod='Recibo')    
             except FileNotFoundError:
-                print("El archivo no existe.")
+                print("El archivo no existe por ahora.")
     return render_template('menurecibos.html')
 
 if __name__ == '__main__':
