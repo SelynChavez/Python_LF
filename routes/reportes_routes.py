@@ -485,7 +485,7 @@ def rep_detalle_pagos_prestamos():
 @reportes_bp.route('/rep_ventas_comb')
 @login_required
 def rep_ventas_comb():
-    if session.get('user_rol') not in ('ADMIN', 'GRIFERO'):
+    if session.get('user_rol') not in ('ADMIN', 'GRIFERO', 'CAJA'):
         flash('Acceso denegado.', 'danger')
         return redirect(url_for('dashboard.dashboard'))
     p1 = datetime.datetime.now().strftime('%Y-%m-%d')
