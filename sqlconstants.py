@@ -1032,3 +1032,4 @@ WHERE p.active = 'S' AND rt.estado = 'aprobado'
 
 ORDER BY padron, codigo, fecha_movimiento
 """
+  

@@ -5,7 +5,7 @@ import logging
 
 scheduler = BackgroundScheduler()
 logger = logging.getLogger(__name__)
-
+  
 
 def ejecutar_tarea_programada(tarea_id):
     """Ejecuta una tarea programada y registra el resultado"""
