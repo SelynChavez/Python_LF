@@ -2829,31 +2829,31 @@ def generar_pdf_control_envios_boveda():
 
     UNION ALL
 
-    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, fecha_solicitud fecha, concat('SALIDAS ',tipo_caja) concepto, sum(monto) salidas, 0 ingresos
+    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('SALIDAS ',tipo_caja) concepto, sum(monto) salidas, 0 ingresos
     FROM a_salidas
     WHERE estado in ('CONFIRMADO','PENDIENTE') and fecha_solicitud>=%s and fecha_solicitud<=%s
-    group by cajero, fecha_solicitud, tipo_caja
+    group by cajero, DATE(fecha_solicitud), tipo_caja
 
     UNION ALL
 
-    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, fecha_solicitud fecha, concat('RETIRO ',tipo_aporte) concepto, sum(monto_retirado) salidas, 0 ingresos
+    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('RETIRO ',tipo_aporte) concepto, sum(monto_retirado) salidas, 0 ingresos
     FROM a_retiros
     WHERE estado in ('aprobado') and fecha_solicitud>=%s and fecha_solicitud<=%s
-    group by cajero, fecha_solicitud, tipo_aporte
+    group by cajero, DATE(fecha_solicitud), tipo_aporte
 
     UNION ALL
 
-    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, fecha_solicitud fecha, concat('PRESTAMO ',tipo_prestamo) concepto, sum(monto_aprobado) salidas, 0 ingresos
+    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('PRESTAMO ',tipo_prestamo) concepto, sum(monto_aprobado) salidas, 0 ingresos
     FROM a_prestamos
     WHERE estado in ('aprobado','pagado') and tipo_prestamo='EFECTIVO' and fecha_solicitud>=%s and fecha_solicitud<=%s
-    group by cajero, fecha_solicitud, tipo_prestamo
+    group by cajero, DATE(fecha_solicitud), tipo_prestamo
 
     UNION ALL
 
-    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, fecha_solicitud fecha, concat('INGRESOS VARIOS') concepto, 0 salidas, sum(monto) ingresos
+    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('INGRESOS VARIOS') concepto, 0 salidas, sum(monto) ingresos
     FROM a_ingresos
     WHERE estado in ('CONFIRMADO','PENDIENTE') and fecha_solicitud>=%s and fecha_solicitud<=%s
-    group by cajero, fecha_solicitud
+    group by cajero, DATE(fecha_solicitud)
 
     ORDER BY cajero, fecha, concepto
     """
