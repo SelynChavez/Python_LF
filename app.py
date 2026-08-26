@@ -151,7 +151,7 @@ def imprimir_recibo(l_id):
             if (recibo['serie']=='2'):
                 titulo = 'Recibo Cot.x Padron'
             if (recibo['serie']=='5'):
-                titulo = 'Recibo Cobranza de Comb.'
+                titulo = 'Recibo Cobranza de Combust.'
 
             # Obtener fecha de modificación del recibo
             fecha_impresion = recibo.get('modified') if 'modified' in recibo else None
