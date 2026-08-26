@@ -303,12 +303,12 @@ INS_VENTAS_COMB = "INSERT INTO a_ventas_comb (maquina,turno,nombre,fecha,lectura
 UPD_MAQUINAS_VTAS_COMB = "UPDATE a_maquinas SET disponible_stock = disponible_stock - %s, lectura_actual = %s WHERE id = %s"
 UPD_COMBUSTIBLE_CTAS_COMB = "UPDATE a_combustible SET stock_actual = stock_actual - %s WHERE id = %s"
 PRECIO_U_COMB = "SELECT precio_unitario unit_price FROM a_combustible WHERE id = %s"
-INS_PRESTAMO = "INSERT INTO a_prestamos (padron,fecha_solicitud,tipo_prestamo,monto_solicitado,saldo_pendiente,descripcion,cuota,garantia_aporte,estado) VALUES (%s, %s, %s, %s, 0, %s, %s, %s, %s)"
+INS_PRESTAMO = "INSERT INTO a_prestamos (padron,fecha_solicitud,tipo_prestamo,monto_solicitado,saldo_pendiente,descripcion,cuota,garantia_aporte,estado,webuser) VALUES (%s, %s, %s, %s, 0, %s, %s, %s, %s, %s)"
 ACT_PRESTAMO = "UPDATE a_prestamos SET estado='pendiente',modified=now(),webuser='$usr$' WHERE id='$lid$' "
 APR_PRESTAMO = "UPDATE a_prestamos SET estado='aprobado',fecha_aprobacion=curdate(),monto_aprobado=monto_solicitado,saldo_pendiente=monto_solicitado WHERE id = %s"
 RCH_PRESTAMO = "UPDATE a_prestamos SET estado='rechazado' WHERE id = %s"
-UPD_PRESTAMO_CUOTA_ESTADO = "UPDATE a_prestamos SET cuota=%s, estado=%s WHERE id=%s"
-UPD_PRESTAMO_CUOTA = "UPDATE a_prestamos SET cuota=%s WHERE id=%s"
+UPD_PRESTAMO_CUOTA_ESTADO = "UPDATE a_prestamos SET cuota=%s, estado=%s, cajero=%s, webuser=%s, modified=NOW() WHERE id=%s"
+UPD_PRESTAMO_CUOTA = "UPDATE a_prestamos SET cuota=%s, cajero=%s, webuser=%s, modified=NOW() WHERE id=%s"
 DROPLIST_DEUDAS = "SELECT tp.* FROM a_tipos tp WHERE tp.tipo='DEUDA' "
 DROPLIST_APORTES_SALDO_X_PADRON = "SELECT aporte codigo,descripcion,aportado,retirado,(aportado-retirado) saldo FROM av_total_aportes_x_padron WHERE padron='$pad$' and aporte in (select codigo from a_tipos where tipo='APORTE' and atributo4='S') ORDER by 1"
 SELECT_PRESTAMOS_1 = """
@@ -325,7 +325,8 @@ FROM a_prestamos p
   JOIN a_socios s ON pr.socio = s.id
   JOIN a_tipos tp ON tp.tipo='DEUDA' and p.tipo_prestamo = tp.codigo
 WHERE (p.fecha_solicitud>=date('$p1$') AND p.fecha_solicitud<=date('$p2$')) AND
-      (p.padron='$p3$' OR '$p3$'='0') AND (('$p4$'='on' AND (estado='aprobado' OR estado='pagado')) OR ('$p4$'!='on'))
+      (p.padron='$p3$' OR '$p3$'='0') AND (('$p4$'='on' AND (estado='aprobado' OR estado='pagado')) OR ('$p4$'!='on')) AND
+      (p.tipo_prestamo='$p5$' OR '$p5$'='')
 ORDER BY p.id DESC, p.fecha_solicitud DESC
 """
 SELECT_RETIROS_1 = """
@@ -427,14 +428,15 @@ SET fecha_solicitud = %s,
     numero_doc = %s,
     periodo = %s,
     tipo_caja = %s,
+    cajero = %s,
     modified = CURRENT_TIMESTAMP,
     webuser = %s,
     estado = 'CONFIRMADO'
 WHERE id = %s """
 INS_9_SALIDAS = """
 INSERT INTO a_salidas
-(fecha_solicitud, tipo_salida, tipo_beneficiario, beneficiario,beneficiario_nombre, monto, estado, observaciones, tipo_doc, numero_doc, periodo, tipo_caja, webuser)
-VALUES (%s, %s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s, %s)
+(fecha_solicitud, tipo_salida, tipo_beneficiario, beneficiario,beneficiario_nombre, monto, estado, observaciones, tipo_doc, numero_doc, periodo, tipo_caja, cajero, webuser)
+VALUES (%s, %s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s, %s, %s)
 """
 UPD_9_INGRESOS = """UPDATE a_ingresos
 SET fecha_solicitud = %s,
@@ -446,14 +448,15 @@ SET fecha_solicitud = %s,
     tipo_doc = %s,
     numero_doc = %s,
     periodo = %s,
+    cajero = %s,
     estado = 'CONFIRMADO',
     modified = CURRENT_TIMESTAMP,
     webuser = %s
 WHERE id = %s """
 INS_9_INGRESOS = """
 INSERT INTO a_ingresos
-(fecha_solicitud, tipo_ingreso, tipo_tercero, tercero, monto, estado, observaciones, tipo_doc, numero_doc, periodo, webuser)
-VALUES (%s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s)
+(fecha_solicitud, tipo_ingreso, tipo_tercero, tercero, monto, estado, observaciones, tipo_doc, numero_doc, periodo, cajero, webuser)
+VALUES (%s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s, %s)
 """
 
 # Compras de Combustible

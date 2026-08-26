@@ -60,34 +60,36 @@
                         <table class="table table-compact table-hover">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Fecha</th>
-                                    <th>Tercero</th>
-                                    <th>Monto</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
+                                    <th style="padding: 4px 4px;">ID</th>
+                                    <th style="padding: 4px 4px;">Fecha</th>
+                                    <th style="padding: 4px 4px;">Tercero</th>
+                                    <th style="padding: 4px 4px;">Monto</th>
+                                    <th style="padding: 4px 4px;">Estado</th>
+                                    <th style="padding: 4px 4px;">Cajero</th>
+                                    <th style="padding: 4px 4px;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-ingresos">
                                 {% for ingreso in ingresos %}
-                                <tr>
-                                    <td><strong>#{{ ingreso.id }}</strong></td>
-                                    <td>{{ ingreso.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
-                                    <td>
+                                <tr style="height: 28px;">
+                                    <td style="padding: 2px 4px; font-size: 0.85rem;"><strong>#{{ ingreso.id }}</strong></td>
+                                    <td style="padding: 2px 4px; font-size: 0.85rem;">{{ ingreso.fecha_solicitud.strftime('%d/%m/%y') }}</td>
+                                    <td style="padding: 2px 4px; font-size: 0.85rem;">
                                         {{ ingreso.tercero }}
                                         <br><small class="beneficiario-info">{{ ingreso.tipo_tercero|upper }}</small>
                                     </td>
-                                    <td class="monto-cell" style="text-align:right">S/{{ "{:,.2f}".format(ingreso.monto) }} </td>
-                                    <td>
-                                        <span class="badge-estado 
+                                    <td style="padding: 2px 4px; font-size: 0.85rem; text-align:right;">S/{{ "{:,.2f}".format(ingreso.monto) }}</td>
+                                    <td style="padding: 2px 4px; font-size: 0.85rem;">
+                                        <span class="badge-estado
                                             {% if ingreso.estado == 'PENDIENTE' %}badge-pendiente
                                             {% elif ingreso.estado == 'APROBADO' %}badge-aprobado
                                             {% else %}badge-anulado{% endif %}">
-                                            {{ ingreso.estado }}
+                                            {{ ingreso.estado[:4] }}
                                         </span>
                                     </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary" onclick="editarIngreso({{ ingreso.id }})" title="Editar">
+                                    <td style="padding: 2px 4px; font-size: 0.85rem;"><small class="text-muted">{{ ingreso.cajero or '—' }}</small></td>
+                                    <td style="padding: 2px 4px;">
+                                        <button class="btn btn-sm btn-primary" onclick="editarIngreso({{ ingreso.id }})" title="Editar" style="padding: 2px 4px; font-size: 0.75rem;">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                     </td>
@@ -222,7 +224,17 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
+                            <div class="form-group">
+                                <label><i class="bi bi-person-badge"></i>Cajero <small class="text-muted">(Opcional)</small></label>
+                                <select class="form-select" id="cajero">
+                                    <option value="">— Sin asignar —</option>
+                                    {% for usuario in usuarios_caja_grifero %}
+                                    <option value="{{ usuario.username }}">{{ usuario.fullname }} ({{ usuario.roles }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
                             <div class="form-group">
                                 <label><i class="bi bi-chat-text"></i>Observaciones</label>
                                 <textarea class="form-control observaciones-field" id="observaciones" placeholder="Ingrese observaciones (opcional)"></textarea>
@@ -331,7 +343,8 @@
                 periodo: document.getElementById('periodo').value,
                 tipo_doc: document.getElementById('tipo_doc').value,
                 numero_doc: document.getElementById('numero_doc').value,
-                observaciones: document.getElementById('observaciones').value
+                observaciones: document.getElementById('observaciones').value,
+                cajero: document.getElementById('cajero').value
             };
             
             // Validaciones
@@ -427,6 +440,7 @@
                 document.getElementById('periodo').value = data.periodo;
                 document.getElementById('monto').value = data.monto;
                 document.getElementById('observaciones').value = data.observaciones || '';
+                document.getElementById('cajero').value = data.cajero || '';
                 
                 // Disparar cambio en tipo_tercero para mostrar el campo correcto
                 const event = new Event('change');

@@ -31,6 +31,21 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf'}
 
 
+def get_usuarios_caja_grifero():
+    """Obtiene lista de usuarios con rol CAJA o GRIFERO"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, username, fullname, roles FROM applicationuser WHERE roles IN ('CAJA', 'GRIFERO') AND status = 'ACTIVE' ORDER BY fullname")
+        usuarios = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return usuarios
+    except Exception as e:
+        print(f"Error obteniendo usuarios: {e}")
+        return []
+
+
 @io_cash_bp.route('/reg_salidas', methods=['GET', 'POST'])
 def reg_salidas():
     hoy = datetime.datetime.now().date()
@@ -85,6 +100,8 @@ def reg_salidas():
         cursor.close()
         conn.close()
 
+    usuarios_caja_grifero = get_usuarios_caja_grifero()
+
     return render_template(
         "reg_salidas.html",
         salidas_hoy=salidas_hoy,
@@ -98,7 +115,8 @@ def reg_salidas():
         total_dia=total_dia,
         periodo_seleccionado=periodo,
         fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin
+        fecha_fin=fecha_fin,
+        usuarios_caja_grifero=usuarios_caja_grifero
     )
 
 
@@ -127,7 +145,8 @@ def guardar_salida():
                 data['numero_doc'],
                 data['periodo'],
                 data.get('tipo_caja', 'EFECTIVO'),
-                'webuser',
+                data.get('cajero', ''),
+                session.get('user_username', 'sistema'),
                 data['id']
             )
         else:
@@ -144,7 +163,8 @@ def guardar_salida():
                 data['numero_doc'],
                 data['periodo'],
                 data.get('tipo_caja', 'EFECTIVO'),
-                'webuser'
+                data.get('cajero', ''),
+                session.get('user_username', 'sistema')
             )
 
         current_app.logger.debug(f"SQL: {sql}")
@@ -383,6 +403,8 @@ def reg_ingresos():
         cursor.close()
         conn.close()
 
+    usuarios_caja_grifero = get_usuarios_caja_grifero()
+
     return render_template(
         "reg_ingresos.html",
         ingresos=ingresos,
@@ -396,7 +418,8 @@ def reg_ingresos():
         total_periodo=total_periodo,
         periodo_seleccionado=periodo,
         fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin
+        fecha_fin=fecha_fin,
+        usuarios_caja_grifero=usuarios_caja_grifero
     )
 
 
@@ -423,7 +446,8 @@ def guardar_ingreso():
                 data['tipo_doc'],
                 data['numero_doc'],
                 data['periodo'],
-                session.get('username', 'webuser'),
+                data.get('cajero', ''),
+                session.get('user_username', 'sistema'),
                 data['id']
             )
         else:
@@ -438,7 +462,8 @@ def guardar_ingreso():
                 data['tipo_doc'],
                 data['numero_doc'],
                 data['periodo'],
-                session.get('username', 'webuser')
+                data.get('cajero', ''),
+                session.get('user_username', 'sistema')
             )
 
         current_app.logger.debug(f"SQL: {sql}")

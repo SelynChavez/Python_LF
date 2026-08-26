@@ -12,26 +12,37 @@
             <div class="card-body">
                     <form method="POST" action="{{ url_for('prestamos.prestamos') }}">
                         <!-- Barra de búsqueda -->
-                        <div class="row mb-4">
-                            <div class="col-md-2 mb-3">
+                        <div class="row mb-4 align-items-end">
+                            <div class="col-lg-2 mb-3">
                                 <label for="p1" class="form-label">Fecha Inicial</label>
                                 <input type="date" class="form-control" id="p1" name="p1" value="{{p1}}" required>
                             </div>
-                            <div class="col-md-2 mb-3">
+                            <div class="col-lg-2 mb-3">
                                 <label for="p2" class="form-label">Fecha Final</label>
                                 <input type="date" class="form-control" id="p2" name="p2" value="{{p2}}" required>
                             </div>
-                            <div class="col-md-2 mb-3">
-                                <label for="p3" class="form-label">Padron</label>
+                            <div class="col-lg-1 mb-3">
+                                <label for="p3" class="form-label">Padrón</label>
                                 <input type="number" class="form-control" id="p3" name="p3" value="{{p3}}" required>
                             </div>
-                            <div class="col-md-2 mb-3">
-                                <input class="form-check-input" type="checkbox" id="p4" name="p4" {% if p4 %} checked {% endif %}>
-                                <label class="form-check-label" for="p4">Aprobados y Pagados</label>
+                            <div class="col-lg-3 mb-3">
+                                <label for="p5" class="form-label">Tipo Préstamo</label>
+                                <select class="form-select" id="p5" name="p5">
+                                    <option value="">Todos</option>
+                                    {% for tipo in tipos_prestamo %}
+                                    <option value="{{ tipo.codigo }}" {% if p5 == tipo.codigo %}selected{% endif %}>{{ tipo.descripcion }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
-                            <div class="col-md-2 text-end">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-save"></i> Consultar
+                            <div class="col-lg-2 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="p4" name="p4" {% if p4 %} checked {% endif %}>
+                                    <label class="form-check-label" for="p4">Aprob. y Pag.</label>
+                                </div>
+                            </div>
+                            <div class="col-lg-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-search"></i> Consultar
                                 </button>
                             </div>
                         </div>
@@ -45,11 +56,11 @@
                                     <th>Socio</th>
                                     <th>Padrón</th>
                                     <th>Tipo</th>
-                                    <th>Monto Solicitado</th>
-                                    <th>Monto Aprobado</th>
+                                    <th>Monto Préstamo</th>
                                     <th>Cuota</th>
                                     <th>Saldo Pendiente</th>
                                     <th>Fecha</th>
+                                    <th>Cajero</th>
                                     <th>Estado</th>
                                     <th width="15%">Acciones</th>
                                 </tr>
@@ -62,12 +73,12 @@
                                     <td>{{ prestamo.padron }}:{{ prestamo.placa }}</td>
                                     <td>{{ prestamo.tipo_nombre }}</td>
                                     <td style="text-align:right; color:navy">S/{{ prestamo.monto_solicitado }}</td>
-                                    <td style="text-align:right">S/{{ "{:,.2f}".format(prestamo.mnt_aprobado)}}</td>
                                     <td style="text-align:right">S/{{ "{:,.2f}".format(prestamo.cuota or 0) }}</td>
                                     <td style="text-align:right"; color:>
                                          <span class="text-danger">S/{{ "{:,.2f}".format(prestamo.sld_pendiente)}} </span>
                                     </td>
                                     <td>{{ prestamo.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
+                                    <td><small class="text-muted">{{ prestamo.cajero or '—' }}</small></td>
                                     <td>
                                         {% if prestamo.estado == 'pendiente' %}
                                             <span class="badge bg-warning text-dark">Pendiente</span>
@@ -89,6 +100,7 @@
                                             <input type="hidden" id="p2" name="p2" value="{{p2}}">
                                             <input type="hidden" id="p3" name="p3" value="{{p3}}">
                                             <input type="hidden" id="p4" name="p4" value="{{p4}}">
+                                            <input type="hidden" id="p5" name="p5" value="{{p5}}">
                                             <button type="submit" class="btn btn-success"
                                                     onclick="return confirm('¿Está seguro de APROBAR este préstamo?')"
                                                     title="Aprobar Prestamo">
@@ -101,6 +113,7 @@
                                               <input type="hidden" id="p2" name="p2" value="{{p2}}">
                                               <input type="hidden" id="p3" name="p3" value="{{p3}}">
                                               <input type="hidden" id="p4" name="p4" value="{{p4}}">
+                                              <input type="hidden" id="p5" name="p5" value="{{p5}}">
                                               <button type="submit" class="btn btn-sm btn-danger"
                                                     onclick="return confirm('¿Está seguro de RECHAZAR este préstamo?')"
                                                     title="Rechazar Prestamo">
@@ -133,11 +146,11 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="5"></td>
+                        <td colspan="4"></td>
                         <td style="text-align:right"><strong>S/{{ "{:,.2f}".format(total)}}</strong></td>
                         <td></td>
                         <td style="text-align:right;color:red"><strong>S/{{ "{:,.2f}".format(totsp)}}</strong></td>
-                        <td colspan="3"></td>
+                        <td colspan="4"></td>
                     </tr>
                 </tfoot>
             </table>
@@ -210,6 +223,16 @@
                             <option value="evaluacion">Evaluación</option>
                             <option value="pagado">Pagado</option>
                             <option value="anulado">Anulado</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editCajero" class="form-label">Cajero <small class="text-muted">(Opcional)</small></label>
+                        <select class="form-select" id="editCajero" name="cajero">
+                            <option value="">-- Sin asignar --</option>
+                            {% for usuario in usuarios_caja_grifero %}
+                            <option value="{{ usuario.username }}">{{ usuario.fullname }} ({{ usuario.roles }})</option>
+                            {% endfor %}
                         </select>
                     </div>
                 </form>
@@ -286,6 +309,7 @@ function guardarEdicionPrestamo() {
     const prestamoId = document.getElementById('prestamoId').value;
     const cuota = document.getElementById('editCuota').value;
     const estado = document.getElementById('editEstado').value;
+    const cajero = document.getElementById('editCajero').value;
 
     if (!cuota || parseFloat(cuota) <= 0) {
         alert('La cuota es obligatoria y debe ser mayor a 0.');
@@ -299,7 +323,8 @@ function guardarEdicionPrestamo() {
         },
         body: JSON.stringify({
             cuota: parseFloat(cuota),
-            estado: estado
+            estado: estado,
+            cajero: cajero
         })
     })
     .then(response => response.json())

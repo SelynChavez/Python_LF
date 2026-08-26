@@ -17,15 +17,47 @@ def login_required(f):
     return decorated_function
 
 
+def get_usuarios_caja_grifero():
+    """Obtiene lista de usuarios con rol CAJA o GRIFERO"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, username, fullname, roles FROM applicationuser WHERE roles IN ('CAJA', 'GRIFERO') AND status = 'ACTIVE' ORDER BY fullname")
+        usuarios = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return usuarios
+    except Exception as e:
+        print(f"Error obteniendo usuarios: {e}")
+        return []
+
+def get_tipos_prestamo():
+    """Obtiene lista de tipos de préstamo"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT codigo, descripcion FROM a_tipos WHERE tipo='DEUDA' ORDER BY descripcion")
+        tipos = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return tipos
+    except Exception as e:
+        print(f"Error obteniendo tipos de préstamo: {e}")
+        return []
+
 @prestamos_bp.route('/prestamos', methods=['GET', 'POST'])
 def prestamos():
     total = 0
     totsp = 0
+    usuarios_caja_grifero = get_usuarios_caja_grifero()
+    tipos_prestamo = get_tipos_prestamo()
+
     if request.method == 'POST':
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
         p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
         p3 = request.form.get('p3')
         p4 = request.form.get('p4')
+        p5 = request.form.get('p5', '')
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         query = sqlconstants.SELECT_PRESTAMOS_1
@@ -33,17 +65,18 @@ def prestamos():
         query = query.replace("$p2$", str(p2))
         query = query.replace("$p3$", str(p3))
         query = query.replace("$p4$", str(p4))
+        query = query.replace("$p5$", str(p5))
         cursor.execute(query)
         prestamos = cursor.fetchall()
         for r0 in prestamos:
             total += float(r0['mnt_aprobado'])
             totsp += float(r0['sld_pendiente'])
         conn.close()
-        return render_template('prestamos.html', prestamos=prestamos, total=total, totsp=totsp, p1=p1, p2=p2, p3=p3, p4=p4)
+        return render_template('prestamos.html', prestamos=prestamos, total=total, totsp=totsp, p1=p1, p2=p2, p3=p3, p4=p4, p5=p5, usuarios_caja_grifero=usuarios_caja_grifero, tipos_prestamo=tipos_prestamo)
     else:
         px = datetime.datetime.now().strftime('%Y-%m-%d')
         flash('Listo para consultar.', 'success')
-        return render_template('prestamos.html', prestamos=[],p1=px, p2=px, p3=0, p4='off', total=0, totsp=0)
+        return render_template('prestamos.html', prestamos=[],p1=px, p2=px, p3=0, p4='off', p5='', total=0, totsp=0, usuarios_caja_grifero=usuarios_caja_grifero, tipos_prestamo=tipos_prestamo)
 
 
 @prestamos_bp.route('/prestamos_socio', methods=['GET', 'POST'])
@@ -113,7 +146,7 @@ def crear_prestamo():
         if act == '-':
             try:
                 cursor = conn.cursor()
-                cursor.execute(sqlconstants.INS_PRESTAMO, (pad, fec, tip, mnt, des, cuo, gar, 'pendiente'))
+                cursor.execute(sqlconstants.INS_PRESTAMO, (pad, fec, tip, mnt, des, cuo, gar, 'pendiente', session.get('user_username', 'sistema')))
                 lid = cursor.lastrowid
                 conn.commit()
                 act = "evaluacion"
@@ -209,6 +242,7 @@ def actualizar_prestamo(prestamo_id):
         data = request.get_json()
         cuota = data.get('cuota')
         estado = data.get('estado')
+        cajero = data.get('cajero', '')
 
         if cuota is None:
             return jsonify({'success': False, 'error': 'La cuota es requerida'}), 400
@@ -216,10 +250,11 @@ def actualizar_prestamo(prestamo_id):
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        usuario = session.get('user_username', 'sistema')
         if estado and estado.strip():
-            cursor.execute(sqlconstants.UPD_PRESTAMO_CUOTA_ESTADO, (cuota, estado, prestamo_id))
+            cursor.execute(sqlconstants.UPD_PRESTAMO_CUOTA_ESTADO, (cuota, estado, cajero, usuario, prestamo_id))
         else:
-            cursor.execute(sqlconstants.UPD_PRESTAMO_CUOTA, (cuota, prestamo_id))
+            cursor.execute(sqlconstants.UPD_PRESTAMO_CUOTA, (cuota, cajero, usuario, prestamo_id))
 
         conn.commit()
         conn.close()

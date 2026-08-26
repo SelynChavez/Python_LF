@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte - Control de Envíos a Bóveda {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-file-earmark-pdf"></i> Reporte de Control de Envíos a Bóveda</h4>
+            </div>
+            <div class="card-body">
+                <form id="formReporte" action="{{ url_for('reportes.generar_pdf_control_envios_boveda') }}" method="POST" target="_blank">
+
+                    <!-- Rango de Fechas -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="p1" class="form-label">Fecha Desde <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="p1" name="p1" value="{{ p1 }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p2" class="form-label">Fecha Hasta <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="p2" name="p2" value="{{ p2 }}" required>
+                        </div>
+                    </div>
+
+                    <!-- Filtro de Cajero -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="p3" class="form-label">Cajero <small class="text-muted">(Opcional)</small></label>
+                            <select class="form-control" id="p3" name="p3">
+                                <option value="todos" selected>-- Todos --</option>
+                                {% for usuario in usuarios_caja_grifero %}
+                                    <option value="{{ usuario.username }}">{{ usuario.fullname }} ({{ usuario.roles }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="submit" class="btn btn-primary me-md-2">
+                            <i class="bi bi-file-earmark-pdf"></i> Generar y Ver Reporte
+                        </button>
+                        <a href="{{ url_for('reportes.reportes') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+
+                    <!-- Información de campos requeridos -->
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        Los campos marcados con <span class="text-danger">*</span> son obligatorios
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

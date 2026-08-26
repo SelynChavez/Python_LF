@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash, session
+from flask import render_template, request, redirect, url_for, flash, session, jsonify
 from functools import wraps
 from mysql.connector import Error
 import datetime
@@ -15,6 +15,21 @@ def login_required(f):
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
+
+
+def get_usuarios_caja_grifero():
+    """Obtiene lista de usuarios con rol CAJA o GRIFERO"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, username, fullname, roles FROM applicationuser WHERE roles IN ('CAJA', 'GRIFERO') AND status = 'ACTIVE' ORDER BY fullname")
+        usuarios = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return usuarios
+    except Exception as e:
+        print(f"Error obteniendo usuarios: {e}")
+        return []
 
 
 @retiros_bp.route('/retiros_socio', methods=['GET', 'POST'])
@@ -60,11 +75,12 @@ def retiros_socio():
 def retiros():
     total = 0
     tipos = []
+    usuarios_caja_grifero = get_usuarios_caja_grifero()
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     querA = sqlconstants.DROPLIST_APORTES_RET
     cursor.execute(querA)
-    tipos = cursor.fetchall()    
+    tipos = cursor.fetchall()
     if request.method == 'POST':
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
         p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
@@ -80,12 +96,12 @@ def retiros():
         conn.close()
         for r0 in retiros:
             total += float(r0['mnt_retirado'])
-        return render_template('retiros.html', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4)
+        return render_template('retiros.html', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4, usuarios_caja_grifero=usuarios_caja_grifero)
     else:
-        conn.close()           
+        conn.close()
         px = datetime.datetime.now().strftime('%Y-%m-%d')
         flash('Listo para consultar.', 'success')
-        return render_template('retiros.html', retiros=[], tipos=tipos, p1=px, p2=px, p3=0, p4='', total=total)
+        return render_template('retiros.html', retiros=[], tipos=tipos, p1=px, p2=px, p3=0, p4='', total=total, usuarios_caja_grifero=usuarios_caja_grifero)
 
 
 @retiros_bp.route('/retiros/nuevo', methods=['GET', 'POST'])
@@ -236,3 +252,24 @@ def rechazar_retiro(retiro_id):
     conn.close()
     flash('Retiro rechazado', 'info')
     return redirect(url_for('retiros.retiros', retiros=retiros, tipos=tipos, total=total, p1=p1, p2=p2, p3=p3, p4=p4))
+
+
+@retiros_bp.route('/api/retiros/<int:retiro_id>/cajero', methods=['POST'])
+def actualizar_cajero_retiro(retiro_id):
+    """Actualiza el cajero de un retiro"""
+    try:
+        data = request.get_json()
+        cajero = data.get('cajero', '')
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE a_retiros SET cajero=%s, modified=NOW() WHERE id=%s", (cajero, retiro_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Cajero actualizado correctamente'})
+    except Error as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500

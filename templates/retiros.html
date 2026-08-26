@@ -53,6 +53,7 @@
                                     <th>Solicitado</th>
                                     <th>Retirado</th>
                                     <th>Fecha</th>
+                                    <th>Cajero</th>
                                     <th>Estado</th>
                                     <th width="15%">Acciones</th>
                                 </tr>
@@ -66,7 +67,8 @@
                                     <td>{{ r0.tipo_aporte }}</td>
                                     <td style="text-align:right"><span class="text-danger">S/{{ "{:,.2f}".format(r0.monto_solicitado) }}</span></td>
                                     <td style="text-align:right"><span style="color:navy">S/{{ "{:,.2f}".format(r0.mnt_retirado) }}</span></td>
-                                    <td>{{ r0.fecha_retiro.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ r0.fecha_retiro.strftime('%d/%m/%y') if r0.fecha_retiro else '—' }}</td>
+                                    <td><small class="text-muted">{{ r0.cajero or '—' }}</small></td>
                                     <td>
                                         {% if r0.estado == 'pendiente' %}
                                             <span class="badge bg-warning text-dark">Pendiente</span>
@@ -107,24 +109,110 @@
                                         </form>
                                         {% endif %}
                                         {% if r0.estado != 'rechazado' %}
-                                            <!-- Botones para PDF -->
-                                            <a href="{{ url_for('reportes.generar_pdf_retiro', retiro_id=r0.id) }}" 
+                                            <!-- Botón para PDF -->
+                                            <a href="{{ url_for('reportes.generar_pdf_retiro', retiro_id=r0.id) }}"
                                             class="btn btn-sm btn-secondary btn-action" target="_blank">
                                                 <i class="bi bi-file-pdf"></i>
                                             </a>
+                                            <!-- Botón para editar cajero -->
+                                            <button type="button" class="btn btn-sm btn-outline-info"
+                                                    onclick="abrirModalEditarCajero({{ r0.id }}, '{{ r0.cajero or '' }}')"
+                                                    title="Editar Cajero">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
                                         {% endif %}
 
                                     </td>
                                 </tr>
                                 {% endfor %}
                                 <tr>
-                                    <td colspan="5"></td><td style="text-align:right;color:navy"><b>S/{{ "{:,.2f}".format(total)}}</b></td><td colspan="3"></td>
+                                    <td colspan="5"></td><td style="text-align:right;color:navy"><b>S/{{ "{:,.2f}".format(total)}}</b></td><td colspan="4"></td>
                                 </tr>
                             </tbody>    
                         </table>
                     </div>
-            </div>        
+            </div>
         </div>
-    </div>    
+    </div>
 </div>
+
+<!-- Modal para Editar Cajero -->
+<div class="modal fade" id="editarCajeroModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square"></i> Editar Cajero
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarCajero">
+                    <input type="hidden" id="retiroId" name="retiro_id">
+
+                    <div class="mb-3">
+                        <label for="editCajeroSelect" class="form-label">Cajero <small class="text-muted">(Opcional)</small></label>
+                        <select class="form-select" id="editCajeroSelect" name="cajero">
+                            <option value="">— Sin asignar —</option>
+                            {% for usuario in usuarios_caja_grifero %}
+                            <option value="{{ usuario.username }}">{{ usuario.fullname }} ({{ usuario.roles }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-info" onclick="guardarEdicionCajero()">
+                    <i class="bi bi-check-circle"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let editarCajeroModalObj = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    editarCajeroModalObj = new bootstrap.Modal(document.getElementById('editarCajeroModal'));
+});
+
+function abrirModalEditarCajero(retiroId, cajeroActual) {
+    document.getElementById('retiroId').value = retiroId;
+    document.getElementById('editCajeroSelect').value = cajeroActual;
+    editarCajeroModalObj.show();
+}
+
+function guardarEdicionCajero() {
+    const retiroId = document.getElementById('retiroId').value;
+    const cajero = document.getElementById('editCajeroSelect').value;
+
+    fetch(`/api/retiros/${retiroId}/cajero`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            cajero: cajero
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Cajero actualizado correctamente.');
+            editarCajeroModalObj.hide();
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo actualizar.'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al actualizar el cajero.');
+    });
+}
+</script>
 {% endblock %}

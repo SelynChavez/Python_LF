@@ -2726,3 +2726,205 @@ def generar_pdf_envios_boveda():
     response.headers['Content-Disposition'] = 'inline; filename=reporte_envios_boveda.pdf'
 
     return response
+
+
+def get_usuarios_caja_grifero():
+    """Obtiene lista de usuarios con rol CAJA o GRIFERO"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, username, fullname, roles FROM applicationuser WHERE roles IN ('CAJA', 'GRIFERO') AND status = 'ACTIVE' ORDER BY fullname")
+        usuarios = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return usuarios
+    except Exception as e:
+        print(f"Error obteniendo usuarios: {e}")
+        return []
+
+
+@reportes_bp.route('/rep_control_envios_boveda')
+@login_required
+def rep_control_envios_boveda():
+    """Formulario para reporte de control de envíos a bóveda."""
+    if session.get('user_rol') not in ('ADMIN', 'CAJA'):
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+
+    usuarios_caja_grifero = get_usuarios_caja_grifero()
+    p1 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p2 = datetime.datetime.now().strftime('%Y-%m-%d')
+    p3 = "todos"
+
+    return render_template('rep_control_envios_boveda.html',
+                         p1=p1, p2=p2, p3=p3,
+                         usuarios_caja_grifero=usuarios_caja_grifero)
+
+
+@reportes_bp.route('/generar_pdf_control_envios_boveda', methods=['POST'])
+@login_required
+def generar_pdf_control_envios_boveda():
+    """Genera el PDF de control de envíos a bóveda."""
+    p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
+    p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
+    p3 = request.form.get('p3', 'todos')
+
+    buffer = BytesIO()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_left_margin(8)
+    pdf.set_right_margin(8)
+
+    # Encabezado
+    pdf.set_font("Arial", '', 9)
+    empresa = "E.T.Las Flores"
+    fecha_hora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    usuario = session.get('user_username', 'sistema')
+    cabecera_izq = f"{empresa} :: [rep_control_envios_boveda] :: [{usuario}]"
+    cabecera_der = f"{fecha_hora}"
+
+    pdf.cell(120, 5, cabecera_izq, 0, 0, 'L')
+    pdf.cell(0, 5, cabecera_der, 0, 1, 'R')
+
+    # Título y subtítulo
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 6, 'Reporte de Control de Envíos a Bóveda', 0, 1, 'C')
+
+    pdf.set_font("Arial", '', 9)
+    subtitulo = f"Desde: {p1} | Hasta: {p2}"
+    if p3 != 'todos':
+        subtitulo += f" | Cajero: {p3}"
+    pdf.cell(0, 4, subtitulo, 0, 1, 'C')
+    pdf.ln(2)
+
+    # Encabezados de columna
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(20, 5, 'Cajero', 1)
+    pdf.cell(15, 5, 'Fecha', 1)
+    pdf.cell(45, 5, 'Concepto', 1)
+    pdf.cell(20, 5, 'Salidas', 1, 0, 'R')
+    pdf.cell(20, 5, 'Ingresos', 1, 0, 'R')
+    pdf.cell(20, 5, 'Saldo', 1, 1, 'R')
+
+    # Obtener datos
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'No se pudo conectar a la base de datos'}), 500
+
+    cursor = connection.cursor(dictionary=True)
+
+    # Construir query dinámicamente con parámetros
+    query = """
+    SELECT UPPER(a.webuser) cajero, DATE(a.giro) fecha, CONCAT('RECIBO SERIE.',a.serie) concepto, 0 salidas, sum(b.monto) ingresos
+    FROM a_recibos a, a_recibos_detalle b
+    WHERE a.id = b.recibo and a.active='S' and a.giro>=%s and a.giro<=%s
+    group by a.webuser, DATE(a.giro), a.serie
+
+    UNION ALL
+
+    SELECT UPPER(cajero) cajero, fecha_solicitud fecha, concat('SALIDAS ',tipo_caja) concepto, sum(monto) salidas, 0 ingresos
+    FROM a_salidas
+    WHERE estado in ('CONFIRMADO','PENDIENTE') and fecha_solicitud>=%s and fecha_solicitud<=%s
+    group by cajero, fecha_solicitud, tipo_caja
+
+    UNION ALL
+
+    SELECT UPPER(cajero) cajero, fecha_solicitud fecha, concat('RETIRO ',tipo_aporte) concepto, sum(monto_retirado) salidas, 0 ingresos
+    FROM a_retiros
+    WHERE estado in ('aprobado') and fecha_solicitud>=%s and fecha_solicitud<=%s
+    group by cajero, fecha_solicitud, tipo_aporte
+
+    UNION ALL
+
+    SELECT UPPER(cajero) cajero, fecha_solicitud fecha, concat('PRESTAMO ',tipo_prestamo) concepto, sum(monto_aprobado) salidas, 0 ingresos
+    FROM a_prestamos
+    WHERE estado in ('aprobado','pagado') and tipo_prestamo='EFECTIVO' and fecha_solicitud>=%s and fecha_solicitud<=%s
+    group by cajero, fecha_solicitud, tipo_prestamo
+
+    UNION ALL
+
+    SELECT UPPER(cajero) cajero, fecha_solicitud fecha, concat('INGRESOS VARIOS') concepto, 0 salidas, sum(monto) ingresos
+    FROM a_ingresos
+    WHERE estado in ('CONFIRMADO','PENDIENTE') and fecha_solicitud>=%s and fecha_solicitud<=%s
+    group by cajero, fecha_solicitud
+
+    ORDER BY cajero, fecha, concepto
+    """
+
+    params = (p1, p2, p1, p2, p1, p2, p1, p2, p1, p2)
+    cursor.execute(query, params)
+    datos = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    # Procesar datos
+    pdf.set_font("Arial", '', 8)
+    cajero_actual = None
+    total_salidas_cajero = 0
+    total_ingresos_cajero = 0
+    num_linea = 0
+
+    # Filtrar por cajero si es necesario
+    if p3 != 'todos':
+        datos = [d for d in datos if d['cajero'] == p3.upper()]
+
+    for dato in datos:
+        # Si cambia el cajero, mostrar corte
+        if cajero_actual and dato['cajero'] != cajero_actual:
+            saldo = total_salidas_cajero - total_ingresos_cajero
+            pdf.set_font("Arial", 'B', 8)
+            pdf.cell(80, 5, f"SALDO {cajero_actual}:", 1, 0, 'R')
+            pdf.cell(20, 5, f"{total_salidas_cajero:.2f}", 1, 0, 'R')
+            pdf.cell(20, 5, f"{total_ingresos_cajero:.2f}", 1, 0, 'R')
+            pdf.cell(20, 5, f"{saldo:.2f}", 1, 1, 'R')
+            pdf.ln(1)
+            total_salidas_cajero = 0
+            total_ingresos_cajero = 0
+            num_linea += 2
+            pdf.set_font("Arial", '', 8)
+
+        cajero_actual = dato['cajero']
+        num_linea += 1
+
+        # Mostrar fila
+        pdf.cell(20, 5, str(dato['cajero'])[:10], 1)
+        pdf.cell(15, 5, str(dato['fecha'])[:10], 1)
+        pdf.cell(45, 5, str(dato['concepto'])[:35], 1)
+        pdf.cell(20, 5, f"{float(dato['salidas'] or 0):.2f}", 1, 0, 'R')
+        pdf.cell(20, 5, f"{float(dato['ingresos'] or 0):.2f}", 1, 0, 'R')
+        saldo_linea = float(dato['salidas'] or 0) - float(dato['ingresos'] or 0)
+        pdf.cell(20, 5, f"{saldo_linea:.2f}", 1, 1, 'R')
+
+        total_salidas_cajero += float(dato['salidas'] or 0)
+        total_ingresos_cajero += float(dato['ingresos'] or 0)
+
+        # Nueva página si es necesario
+        if num_linea >= 35:
+            pdf.add_page()
+            pdf.set_left_margin(8)
+            pdf.set_font("Arial", 'B', 8)
+            pdf.cell(20, 5, 'Cajero', 1)
+            pdf.cell(15, 5, 'Fecha', 1)
+            pdf.cell(45, 5, 'Concepto', 1)
+            pdf.cell(20, 5, 'Salidas', 1, 0, 'R')
+            pdf.cell(20, 5, 'Ingresos', 1, 0, 'R')
+            pdf.cell(20, 5, 'Saldo', 1, 1, 'R')
+            num_linea = 0
+            pdf.set_font("Arial", '', 8)
+
+    # Último corte
+    if cajero_actual:
+        saldo = total_salidas_cajero - total_ingresos_cajero
+        pdf.set_font("Arial", 'B', 8)
+        pdf.cell(80, 5, f"SALDO {cajero_actual}:", 1, 0, 'R')
+        pdf.cell(20, 5, f"{total_salidas_cajero:.2f}", 1, 0, 'R')
+        pdf.cell(20, 5, f"{total_ingresos_cajero:.2f}", 1, 0, 'R')
+        pdf.cell(20, 5, f"{saldo:.2f}", 1, 1, 'R')
+
+    # Retornar PDF
+    pdf_bytes = pdf.output(dest='S').encode('latin-1')
+    response = make_response(pdf_bytes)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'inline; filename=reporte_control_envios_boveda.pdf'
+
+    return response
