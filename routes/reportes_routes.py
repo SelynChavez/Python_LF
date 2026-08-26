@@ -2809,8 +2809,8 @@ def generar_pdf_control_envios_boveda():
     pdf.cell(20, 5, 'Cajero', 1)
     pdf.cell(15, 5, 'Fecha', 1)
     pdf.cell(45, 5, 'Concepto', 1)
-    pdf.cell(20, 5, 'Salidas', 1, 0, 'R')
     pdf.cell(20, 5, 'Ingresos', 1, 0, 'R')
+    pdf.cell(20, 5, 'Salidas', 1, 0, 'R')
     pdf.cell(20, 5, 'Saldo', 1, 1, 'R')
 
     # Obtener datos
@@ -2867,43 +2867,44 @@ def generar_pdf_control_envios_boveda():
     # Procesar datos
     pdf.set_font("Arial", '', 8)
     cajero_actual = None
-    total_salidas_cajero = 0
-    total_ingresos_cajero = 0
+    fecha_actual = None
+    total_salidas = 0
+    total_ingresos = 0
     num_linea = 0
 
     # Filtrar por cajero si es necesario
     if p3 != 'todos':
         datos = [d for d in datos if d['cajero'] == p3.upper()]
 
-    for dato in datos:
-        # Si cambia el cajero, mostrar corte
-        if cajero_actual and dato['cajero'] != cajero_actual:
-            saldo = total_salidas_cajero - total_ingresos_cajero
+    for idx, dato in enumerate(datos):
+        # Si cambia el cajero o la fecha, mostrar corte
+        if cajero_actual and (dato['cajero'] != cajero_actual or dato['fecha'] != fecha_actual):
+            saldo = total_ingresos - total_salidas
             pdf.set_font("Arial", 'B', 8)
-            pdf.cell(80, 5, f"SALDO {cajero_actual}:", 1, 0, 'R')
-            pdf.cell(20, 5, f"{total_salidas_cajero:.2f}", 1, 0, 'R')
-            pdf.cell(20, 5, f"{total_ingresos_cajero:.2f}", 1, 0, 'R')
+            pdf.cell(80, 5, f"SALDO {cajero_actual} FECHA {fecha_actual}", 1, 0, 'R')
+            pdf.cell(20, 5, f"{total_ingresos:.2f}", 1, 0, 'R')
+            pdf.cell(20, 5, f"{total_salidas:.2f}", 1, 0, 'R')
             pdf.cell(20, 5, f"{saldo:.2f}", 1, 1, 'R')
             pdf.ln(1)
-            total_salidas_cajero = 0
-            total_ingresos_cajero = 0
+            total_salidas = 0
+            total_ingresos = 0
             num_linea += 2
             pdf.set_font("Arial", '', 8)
 
         cajero_actual = dato['cajero']
+        fecha_actual = dato['fecha']
         num_linea += 1
 
-        # Mostrar fila
+        # Mostrar fila sin saldo
         pdf.cell(20, 5, str(dato['cajero'])[:10], 1)
         pdf.cell(15, 5, str(dato['fecha'])[:10], 1)
         pdf.cell(45, 5, str(dato['concepto'])[:35], 1)
-        pdf.cell(20, 5, f"{float(dato['salidas'] or 0):.2f}", 1, 0, 'R')
         pdf.cell(20, 5, f"{float(dato['ingresos'] or 0):.2f}", 1, 0, 'R')
-        saldo_linea = float(dato['salidas'] or 0) - float(dato['ingresos'] or 0)
-        pdf.cell(20, 5, f"{saldo_linea:.2f}", 1, 1, 'R')
+        pdf.cell(20, 5, f"{float(dato['salidas'] or 0):.2f}", 1, 0, 'R')
+        pdf.cell(20, 5, '', 1, 1, 'R')
 
-        total_salidas_cajero += float(dato['salidas'] or 0)
-        total_ingresos_cajero += float(dato['ingresos'] or 0)
+        total_salidas += float(dato['salidas'] or 0)
+        total_ingresos += float(dato['ingresos'] or 0)
 
         # Nueva página si es necesario
         if num_linea >= 35:
@@ -2913,19 +2914,19 @@ def generar_pdf_control_envios_boveda():
             pdf.cell(20, 5, 'Cajero', 1)
             pdf.cell(15, 5, 'Fecha', 1)
             pdf.cell(45, 5, 'Concepto', 1)
-            pdf.cell(20, 5, 'Salidas', 1, 0, 'R')
             pdf.cell(20, 5, 'Ingresos', 1, 0, 'R')
+            pdf.cell(20, 5, 'Salidas', 1, 0, 'R')
             pdf.cell(20, 5, 'Saldo', 1, 1, 'R')
             num_linea = 0
             pdf.set_font("Arial", '', 8)
 
     # Último corte
-    if cajero_actual:
-        saldo = total_salidas_cajero - total_ingresos_cajero
+    if cajero_actual and fecha_actual:
+        saldo = total_ingresos - total_salidas
         pdf.set_font("Arial", 'B', 8)
-        pdf.cell(80, 5, f"SALDO {cajero_actual}:", 1, 0, 'R')
-        pdf.cell(20, 5, f"{total_salidas_cajero:.2f}", 1, 0, 'R')
-        pdf.cell(20, 5, f"{total_ingresos_cajero:.2f}", 1, 0, 'R')
+        pdf.cell(80, 5, f"SALDO {cajero_actual} FECHA {fecha_actual}", 1, 0, 'R')
+        pdf.cell(20, 5, f"{total_ingresos:.2f}", 1, 0, 'R')
+        pdf.cell(20, 5, f"{total_salidas:.2f}", 1, 0, 'R')
         pdf.cell(20, 5, f"{saldo:.2f}", 1, 1, 'R')
 
     # Retornar PDF
