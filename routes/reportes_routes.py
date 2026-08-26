@@ -1290,7 +1290,7 @@ def generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo,
         # Si cambia la fecha, mostrar subtotal del día anterior
         if fecha_actual and dato['fecha_orden'] != fecha_actual:
             pdf.set_font("Arial", 'B', 8)
-            pdf.cell(137, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(152, 5, f'Total del Día {fecha_actual}:', 1)
             pdf.cell(20, 5, f'{total_dia:.2f}', 1, 0, 'R')
             pdf.set_font("Arial", 'B', 7)
             pdf.cell(12, 5, '', 1, 1)
@@ -1320,7 +1320,7 @@ def generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo,
         if num_linea >= 40:
             pdf.ln(2)
             pdf.set_font("Arial", 'B', 8)
-            pdf.cell(137, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(152, 5, f'Total del Día {fecha_actual}:', 1)
             pdf.cell(20, 5, f'{total_dia:.2f}', 1, 0, 'R')
             pdf.set_font("Arial", 'B', 7)
             pdf.cell(12, 5, '', 1, 1)
@@ -1390,7 +1390,7 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, sub
     pdf.cell(10, 5, 'Id', 1)
     pdf.cell(15, 5, 'Fecha', 1)
     pdf.cell(20, 5, 'Tp.Sal', 1)
-    pdf.cell(45, 5, 'Salida', 1)
+    pdf.cell(60, 5, 'Salida', 1)
     pdf.cell(35, 5, 'Beneficiario', 1)
     pdf.cell(12, 5, 'T.Doc', 1)
     pdf.cell(16, 5, 'Nro Doc', 1)
@@ -1433,7 +1433,7 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, sub
         # Si cambia la fecha, mostrar subtotal del día anterior
         if fecha_actual and dato['fecha_orden'] != fecha_actual:
             pdf.set_font("Arial", 'B', 8)
-            pdf.cell(137, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(152, 5, f'Total del Día {fecha_actual}:', 1)
             pdf.cell(20, 5, f'{total_dia:.2f}', 1, 0, 'R')
             pdf.set_font("Arial", 'B', 7)
             pdf.cell(12, 5, '', 1, 1)
@@ -1456,7 +1456,7 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, sub
         pdf.cell(10, 5, str(dato['id']), 1)
         pdf.cell(15, 5, str(dato['fecha']), 1)
         pdf.cell(20, 5, str(dato['tipo_salida']).strip(), 1)
-        pdf.cell(45, 5, str(dato['salida_desc'])[:35], 1)
+        pdf.cell(60, 5, str(dato['salida_desc'])[:40], 1)
         pdf.cell(35, 5, beneficiario[:25], 1)
         pdf.cell(12, 5, tipo_doc_abrevia, 1)
         pdf.cell(16, 5, str(dato['numero_doc']), 1)
@@ -1471,7 +1471,7 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, sub
         if num_linea >= 40:
             pdf.ln(2)
             pdf.set_font("Arial", 'B', 8)
-            pdf.cell(137, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(152, 5, f'Total del Día {fecha_actual}:', 1)
             pdf.cell(20, 5, f'{total_dia:.2f}', 1, 0, 'R')
             pdf.set_font("Arial", 'B', 7)
             pdf.cell(12, 5, '', 1, 1)
