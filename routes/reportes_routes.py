@@ -2822,38 +2822,38 @@ def generar_pdf_control_envios_boveda():
 
     # Construir query dinámicamente con parámetros
     query = """
-    SELECT COALESCE(UPPER(a.webuser), 'SIN ASIGNAR') cajero, DATE(a.giro) fecha, CONCAT('RECIBO SERIE.',a.serie) concepto, 0 salidas, sum(b.monto) ingresos
+    SELECT COALESCE(UPPER(TRIM(a.webuser)), 'SIN ASIGNAR') cajero, DATE(a.giro) fecha, CONCAT('RECIBO SERIE.',a.serie) concepto, 0 salidas, sum(b.monto) ingresos
     FROM a_recibos a, a_recibos_detalle b
     WHERE a.id = b.recibo and a.active='S' and a.giro>=%s and a.giro<=%s
-    group by a.webuser, DATE(a.giro), a.serie
+    group by UPPER(TRIM(a.webuser)), DATE(a.giro), a.serie
 
     UNION ALL
 
-    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('SALIDAS ',tipo_caja) concepto, sum(monto) salidas, 0 ingresos
+    SELECT COALESCE(UPPER(TRIM(cajero)), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('SALIDAS ',tipo_caja) concepto, sum(monto) salidas, 0 ingresos
     FROM a_salidas
     WHERE estado in ('CONFIRMADO','PENDIENTE') and fecha_solicitud>=%s and fecha_solicitud<=%s
-    group by cajero, DATE(fecha_solicitud), tipo_caja
+    group by UPPER(TRIM(cajero)), DATE(fecha_solicitud), tipo_caja
 
     UNION ALL
 
-    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('RETIRO ',tipo_aporte) concepto, sum(monto_retirado) salidas, 0 ingresos
+    SELECT COALESCE(UPPER(TRIM(cajero)), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('RETIRO ',tipo_aporte) concepto, sum(monto_retirado) salidas, 0 ingresos
     FROM a_retiros
     WHERE estado in ('aprobado') and fecha_solicitud>=%s and fecha_solicitud<=%s
-    group by cajero, DATE(fecha_solicitud), tipo_aporte
+    group by UPPER(TRIM(cajero)), DATE(fecha_solicitud), tipo_aporte
 
     UNION ALL
 
-    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('PRESTAMO ',tipo_prestamo) concepto, sum(monto_aprobado) salidas, 0 ingresos
+    SELECT COALESCE(UPPER(TRIM(cajero)), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('PRESTAMO ',tipo_prestamo) concepto, sum(monto_aprobado) salidas, 0 ingresos
     FROM a_prestamos
     WHERE estado in ('aprobado','pagado') and tipo_prestamo='EFECTIVO' and fecha_solicitud>=%s and fecha_solicitud<=%s
-    group by cajero, DATE(fecha_solicitud), tipo_prestamo
+    group by UPPER(TRIM(cajero)), DATE(fecha_solicitud), tipo_prestamo
 
     UNION ALL
 
-    SELECT COALESCE(UPPER(cajero), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('INGRESOS VARIOS') concepto, 0 salidas, sum(monto) ingresos
+    SELECT COALESCE(UPPER(TRIM(cajero)), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('INGRESOS VARIOS') concepto, 0 salidas, sum(monto) ingresos
     FROM a_ingresos
     WHERE estado in ('CONFIRMADO','PENDIENTE') and fecha_solicitud>=%s and fecha_solicitud<=%s
-    group by cajero, DATE(fecha_solicitud)
+    group by UPPER(TRIM(cajero)), DATE(fecha_solicitud)
 
     ORDER BY cajero, fecha, concepto
     """
@@ -2874,11 +2874,12 @@ def generar_pdf_control_envios_boveda():
 
     # Filtrar por cajero si es necesario
     if p3 != 'todos':
-        datos = [d for d in datos if d['cajero'] == p3.upper()]
+        datos = [d for d in datos if d['cajero'].strip() == p3.upper().strip()]
 
     for idx, dato in enumerate(datos):
         # Si cambia el cajero o la fecha, mostrar corte
-        if cajero_actual and (dato['cajero'] != cajero_actual or dato['fecha'] != fecha_actual):
+        cajero_limpio = str(dato['cajero']).strip() if dato['cajero'] else ''
+        if cajero_actual and (cajero_limpio != cajero_actual or dato['fecha'] != fecha_actual):
             saldo = total_ingresos - total_salidas
             pdf.set_font("Arial", 'B', 8)
             pdf.cell(80, 5, f"SALDO {cajero_actual} FECHA {fecha_actual}", 1, 0, 'R')
@@ -2891,12 +2892,12 @@ def generar_pdf_control_envios_boveda():
             num_linea += 2
             pdf.set_font("Arial", '', 8)
 
-        cajero_actual = dato['cajero']
+        cajero_actual = cajero_limpio
         fecha_actual = dato['fecha']
         num_linea += 1
 
         # Mostrar fila sin saldo
-        pdf.cell(20, 5, str(dato['cajero'])[:10], 1)
+        pdf.cell(20, 5, cajero_limpio[:10], 1)
         pdf.cell(15, 5, str(dato['fecha'])[:10], 1)
         pdf.cell(45, 5, str(dato['concepto'])[:35], 1)
         pdf.cell(20, 5, f"{float(dato['ingresos'] or 0):.2f}", 1, 0, 'R')
