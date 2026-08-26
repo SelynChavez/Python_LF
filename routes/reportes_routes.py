@@ -499,7 +499,8 @@ def rep_ventas_comb():
     if connection:
         cursor = connection.cursor(dictionary=True)
         cursor.execute(sqlconstants.LISTA_USUARIOS_ACTIVOS)
-        usuarios = cursor.fetchall()
+        all_usuarios = cursor.fetchall()
+        usuarios = [u for u in all_usuarios if u['username'].upper() not in ('SELYN', 'MATIAS')]
         cursor.close()
         connection.close()
 
