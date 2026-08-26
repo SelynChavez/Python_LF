@@ -65,7 +65,6 @@
                                     <th>Girado</th>
                                     <th>Tipo</th>
                                     <th>Emitido A.</th>
-                                    <th>SubTotal</th>
                                     <th>Total</th>
                                     <th>Act?</th>
                                     <th>Caja</th>
@@ -82,7 +81,6 @@
                                     <td>{{ r3.d3 }}</td>
                                     <td>{{ r3.d4 }}</td>
                                     <td style="white-space:nowrap;" title="{{ r3.d6 or '-' }}"><strong>{{ (r3.d6 or '-')[:30] }}</strong></td>
-                                    <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ r3.d7 }}</b></td>
                                     <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ r3.d13 }}</b></td>
                                     <td>
                                         <span class="badge {{ 'badge-activo' if r3.d8 == 'S' else 'badge-inactivo' }}">
@@ -114,7 +112,6 @@
                                 {% endfor %}
                             </tbody>
                             <tfoot><td colspan="6"></td>
-                                <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ "{:,.2f}".format(subtotal) }}</b></td>
                                 <td style="text-align:right;background-color:rgb(245, 247, 241)"><b>S/{{ "{:,.2f}".format(total) }}</b></td>
                                 <td></td></tfoot>
                         </table>
