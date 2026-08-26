@@ -162,7 +162,7 @@
             <small class="text-muted">Consolidado de movimientos de efectivo por cajero</small>
             <a href="{{ url_for('reportes.rep_control_envios_boveda') if session.user_rol in ['ADMIN', 'CAJA'] else '#' }}"
                class="btn btn-info {{ 'disabled' if session.user_rol not in ['ADMIN', 'CAJA'] }}">
-                <i class="bi bi-file-earmark-pdf"></i> Control Envíos
+                <i class="bi bi-file-earmark-pdf"></i> Control Cajeros
             </a>
         </div>
     </div>
