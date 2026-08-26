@@ -2769,6 +2769,15 @@ def generar_pdf_control_envios_boveda():
     p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
     p3 = request.form.get('p3', 'todos')
 
+    # Obtener nombre del cajero si se filtra por uno
+    cajero_nombre = 'Todos'
+    if p3 != 'todos':
+        usuarios = get_usuarios_caja_grifero()
+        for u in usuarios:
+            if u['username'].lower() == p3.lower():
+                cajero_nombre = u['fullname']
+                break
+
     buffer = BytesIO()
     pdf = FPDF()
     pdf.add_page()
@@ -2791,9 +2800,7 @@ def generar_pdf_control_envios_boveda():
     pdf.cell(0, 6, 'Reporte de Control de Envíos a Bóveda', 0, 1, 'C')
 
     pdf.set_font("Arial", '', 9)
-    subtitulo = f"Desde: {p1} | Hasta: {p2}"
-    if p3 != 'todos':
-        subtitulo += f" | Cajero: {p3}"
+    subtitulo = f"Desde: {p1} | Hasta: {p2} | Cajero: {cajero_nombre}"
     pdf.cell(0, 4, subtitulo, 0, 1, 'C')
     pdf.ln(2)
 
