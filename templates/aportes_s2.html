@@ -96,10 +96,12 @@
                                                title="Re-imprimir Recibo con fecha correcta">
                                                 <i class="bi-eye"></i>
                                             </a>
+                                            {% if session.get('user_rol') == 'ADMIN' %}
                                             <button type="button" class="btn btn-outline-info" title="Editar Usuario"
                                                     onclick="abrirModalEditarUsuario('{{ r3.d10 }}', '{{ r3.d9 }}')">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
+                                            {% endif %}
                                             {% if session.get('user_rol') == 'ADMIN' and r3.d8 == 'S' %}
                                             <button type="button" class="btn btn-outline-danger" title="Anular Recibo"
                                                     onclick="anularRecibo(this, '{{ r3.d10 }}')">
