@@ -28,14 +28,14 @@ def admin_required(f):
 
 
 def get_usuarios_para_recibos():
-    """Obtiene usuarios: CAJERO, ADMIN (solo AFIESTAS), GRIFERO"""
+    """Obtiene usuarios: CAJA, ADMIN (solo AFIESTAS), GRIFERO"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
             SELECT id, username, fullname, roles FROM applicationuser
             WHERE status = 'ACTIVE' AND (
-                roles = 'CAJERO' OR
+                roles = 'CAJA' OR
                 roles = 'GRIFERO' OR
                 (roles = 'ADMIN' AND username = 'AFIESTAS')
             )
