@@ -158,7 +158,7 @@
 
     <div class="col-md-6 col-lg-3 mb-4">
         <div class="card dashboard-card">
-            <p><b>Control de Envíos a Bóveda</b></p>
+            <p><b>Control Ingresos - Salidas (Cajero)</b></p>
             <small class="text-muted">Consolidado de movimientos de efectivo por cajero</small>
             <a href="{{ url_for('reportes.rep_control_envios_boveda') if session.user_rol in ['ADMIN', 'CAJA'] else '#' }}"
                class="btn btn-info {{ 'disabled' if session.user_rol not in ['ADMIN', 'CAJA'] }}">
