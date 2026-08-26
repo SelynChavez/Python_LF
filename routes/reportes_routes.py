@@ -1677,7 +1677,7 @@ def generar_pdf_control_pagos_prestamos(p1, p2, p3, p4, p5, titulo, subtitulo, c
     return BytesIO(pdf_output)
 
 
-def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", serie="1", tipo_fecha="fecha"):
+def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", p8="todos", serie="1", tipo_fecha="fecha"):
     print(f"DEBUG: generar_pdf_reporte START - cod={cod}, serie={serie}")
     buffer = BytesIO()
     pdf = FPDF()
@@ -1696,7 +1696,7 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", s
     elif cod == "REP_SALIDAS_ENTRE_FECHAS":
         print(f"DEBUG: Entrando a generar_pdf_salidas_entre_fechas")
         usuario = session.get('user_username', 'desconocido')
-        return generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo, cod, usuario)
+        return generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, subtitulo, cod, usuario)
     elif cod == "REP_CONTROL_PAGOS_PRESTAMOS":
         print(f"DEBUG: Entrando a generar_pdf_control_pagos_prestamos")
         usuario = session.get('user_username', 'desconocido')
@@ -1858,6 +1858,7 @@ def generar_reporte():
         p5 = request.form.get('p5', '0')
         p6 = request.form.get('p6', '')
         p7 = request.form.get('p7', '')
+        p8 = request.form.get('p8', 'todos')
         serie = request.form.get('serie', '1')
         tipo_fecha = request.form.get('tipo_fecha', 'fecha')
 
@@ -1875,7 +1876,7 @@ def generar_reporte():
         print("tipo_fecha:"+tipo_fecha)
 
         print(f"DEBUG: Iniciando generación de PDF - cod={cod}, serie={serie}")
-        pdf_buffer = generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7, serie, tipo_fecha)
+        pdf_buffer = generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7, p8, serie, tipo_fecha)
         print(f"DEBUG: PDF generado exitosamente, tamaño={pdf_buffer.getbuffer().nbytes if pdf_buffer else 0}")
         pdf_base64 = base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
         return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod=cod)
