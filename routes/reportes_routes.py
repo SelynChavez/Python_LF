@@ -2807,8 +2807,8 @@ def generar_pdf_control_envios_boveda():
     # Encabezados de columna
     pdf.set_font("Arial", 'B', 8)
     pdf.cell(20, 5, 'Cajero', 1)
-    pdf.cell(15, 5, 'Fecha', 1)
-    pdf.cell(45, 5, 'Concepto', 1)
+    pdf.cell(25, 5, 'Fecha', 1)
+    pdf.cell(35, 5, 'Concepto', 1)
     pdf.cell(20, 5, 'Ingresos', 1, 0, 'R')
     pdf.cell(20, 5, 'Salidas', 1, 0, 'R')
     pdf.cell(20, 5, 'Saldo', 1, 1, 'R')
@@ -2898,8 +2898,8 @@ def generar_pdf_control_envios_boveda():
 
         # Mostrar fila sin saldo
         pdf.cell(20, 5, cajero_limpio[:10], 1)
-        pdf.cell(15, 5, str(dato['fecha'])[:10], 1)
-        pdf.cell(45, 5, str(dato['concepto'])[:35], 1)
+        pdf.cell(25, 5, str(dato['fecha'])[:10], 1)
+        pdf.cell(35, 5, str(dato['concepto'])[:35], 1)
         pdf.cell(20, 5, f"{float(dato['ingresos'] or 0):.2f}", 1, 0, 'R')
         pdf.cell(20, 5, f"{float(dato['salidas'] or 0):.2f}", 1, 0, 'R')
         pdf.cell(20, 5, '', 1, 1, 'R')
@@ -2913,8 +2913,8 @@ def generar_pdf_control_envios_boveda():
             pdf.set_left_margin(8)
             pdf.set_font("Arial", 'B', 8)
             pdf.cell(20, 5, 'Cajero', 1)
-            pdf.cell(15, 5, 'Fecha', 1)
-            pdf.cell(45, 5, 'Concepto', 1)
+            pdf.cell(25, 5, 'Fecha', 1)
+            pdf.cell(35, 5, 'Concepto', 1)
             pdf.cell(20, 5, 'Ingresos', 1, 0, 'R')
             pdf.cell(20, 5, 'Salidas', 1, 0, 'R')
             pdf.cell(20, 5, 'Saldo', 1, 1, 'R')
