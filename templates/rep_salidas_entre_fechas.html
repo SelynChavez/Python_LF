@@ -61,11 +61,20 @@
                         </div>
                     </div>
 
-                    <!-- Período -->
+                    <!-- Período y Cajero -->
                     <div class="row mt-3">
                         <div class="col-md-6">
                             <label for="p7" class="form-label">Período</label>
                             <input type="text" class="form-control" id="p7" name="p7" placeholder="Ej: 202401" value="{{ p7 }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="p8" class="form-label">Cajero <small class="text-muted">(Opcional)</small></label>
+                            <select class="form-select" id="p8" name="p8">
+                                <option value="todos">-- Todos --</option>
+                                {% for usuario in usuarios %}
+                                <option value="{{ usuario.username }}">{{ usuario.fullname }} ({{ usuario.roles }})</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
 
@@ -93,9 +102,11 @@ function construirSubtitulo() {
     const p5 = document.getElementById('p5').value;
     const p6 = document.getElementById('p6').value;
     const p7 = document.getElementById('p7').value;
+    const p8 = document.getElementById('p8').value;
 
     const p3Text = document.getElementById('p3').options[document.getElementById('p3').selectedIndex].text;
     const p4Text = document.getElementById('p4').options[document.getElementById('p4').selectedIndex].text;
+    const p8Text = document.getElementById('p8').options[document.getElementById('p8').selectedIndex].text;
 
     let subtitulo = `Desde ${p1} a ${p2}`;
 

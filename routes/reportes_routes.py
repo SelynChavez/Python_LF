@@ -192,7 +192,9 @@ def rep_salidas_entre_fechas():
     p5 = ""
     p6 = ""
     p7 = ""
+    p8 = "todos"
 
+    usuarios = get_usuarios_caja_grifero()
     connection = get_db_connection()
     tipos_salida = []
     tipos_beneficiario = [
@@ -212,8 +214,8 @@ def rep_salidas_entre_fechas():
         connection.close()
 
     return render_template('rep_salidas_entre_fechas.html',
-                         p1=p1, p2=p2, p3=p3, p4=p4, p5=p5, p6=p6, p7=p7,
-                         tipos_salida=tipos_salida, tipos_beneficiario=tipos_beneficiario)
+                         p1=p1, p2=p2, p3=p3, p4=p4, p5=p5, p6=p6, p7=p7, p8=p8,
+                         tipos_salida=tipos_salida, tipos_beneficiario=tipos_beneficiario, usuarios=usuarios)
 
 
 @reportes_bp.route('/rep_ingresos_entre_fechas')
@@ -1288,8 +1290,10 @@ def generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo,
         # Si cambia la fecha, mostrar subtotal del día anterior
         if fecha_actual and dato['fecha_orden'] != fecha_actual:
             pdf.set_font("Arial", 'B', 8)
-            pdf.cell(147, 5, f'Total del Día {fecha_actual}:', 1)
-            pdf.cell(20, 5, f'{total_dia:.2f}', 1, 1, 'R')
+            pdf.cell(137, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(20, 5, f'{total_dia:.2f}', 1, 0, 'R')
+            pdf.set_font("Arial", 'B', 7)
+            pdf.cell(12, 5, '', 1, 1)
             total_dia = 0
             pdf.set_font("Arial", '', 8)
 
@@ -1316,8 +1320,10 @@ def generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo,
         if num_linea >= 40:
             pdf.ln(2)
             pdf.set_font("Arial", 'B', 8)
-            pdf.cell(147, 5, f'Total del Día {fecha_actual}:', 1)
-            pdf.cell(20, 5, f'{total_dia:.2f}', 1, 1, 'R')
+            pdf.cell(137, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(20, 5, f'{total_dia:.2f}', 1, 0, 'R')
+            pdf.set_font("Arial", 'B', 7)
+            pdf.cell(12, 5, '', 1, 1)
             pdf.add_page()
             pdf.set_left_margin(8)
             pdf.set_font("Arial", 'B', 8)
@@ -1336,8 +1342,10 @@ def generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo,
     # Último total del día
     if fecha_actual:
         pdf.set_font("Arial", 'B', 8)
-        pdf.cell(147, 5, f'Total del Día {fecha_actual}:', 1)
-        pdf.cell(20, 5, f'{total_dia:.2f}', 1, 1, 'R')
+        pdf.cell(137, 5, f'Total del Día {fecha_actual}:', 1)
+        pdf.cell(20, 5, f'{total_dia:.2f}', 1, 0, 'R')
+        pdf.set_font("Arial", 'B', 7)
+        pdf.cell(12, 5, '', 1, 1)
 
     # Total final
     pdf.set_font("Arial", 'B', 10)
@@ -1348,7 +1356,7 @@ def generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo,
     return BytesIO(pdf_output)
 
 
-def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitulo, cod='REP_SALIDAS_ENTRE_FECHAS', usuario=''):
+def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, subtitulo, cod='REP_SALIDAS_ENTRE_FECHAS', usuario=''):
     import datetime
 
     buffer = BytesIO()
@@ -1382,11 +1390,13 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
     pdf.cell(10, 5, 'Id', 1)
     pdf.cell(15, 5, 'Fecha', 1)
     pdf.cell(20, 5, 'Tp.Sal', 1)
-    pdf.cell(55, 5, 'Salida', 1)
+    pdf.cell(45, 5, 'Salida', 1)
     pdf.cell(35, 5, 'Beneficiario', 1)
     pdf.cell(12, 5, 'T.Doc', 1)
     pdf.cell(16, 5, 'Nro Doc', 1)
-    pdf.cell(20, 5, 'Monto', 1, 1, 'R')
+    pdf.cell(20, 5, 'Monto', 1, 0, 'R')
+    pdf.set_font("Arial", 'B', 7)
+    pdf.cell(12, 5, 'Cajero', 1, 1, 'C')
 
     # Obtener datos
     connection = get_db_connection()
@@ -1402,6 +1412,7 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
     query = query.replace("$p5$", str(p5) if p5 else '')
     query = query.replace("$p6$", str(p6) if p6 else '')
     query = query.replace("$p7$", str(p7) if p7 else '')
+    query = query.replace("$p8$", str(p8) if p8 else 'todos')
 
     ## print(f"\n{'='*80}\nQUERY:\n{query}\n{'='*80}\n")
 
@@ -1422,8 +1433,10 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
         # Si cambia la fecha, mostrar subtotal del día anterior
         if fecha_actual and dato['fecha_orden'] != fecha_actual:
             pdf.set_font("Arial", 'B', 8)
-            pdf.cell(147, 5, f'Total del Día {fecha_actual}:', 1)
-            pdf.cell(20, 5, f'{total_dia:.2f}', 1, 1, 'R')
+            pdf.cell(137, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(20, 5, f'{total_dia:.2f}', 1, 0, 'R')
+            pdf.set_font("Arial", 'B', 7)
+            pdf.cell(12, 5, '', 1, 1)
             total_dia = 0
             pdf.set_font("Arial", '', 8)
 
@@ -1439,14 +1452,17 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
             beneficiario = ' '.join(word.capitalize() for word in beneficiario.split())
 
         # Mostrar fila
+        pdf.set_font("Arial", '', 8)
         pdf.cell(10, 5, str(dato['id']), 1)
         pdf.cell(15, 5, str(dato['fecha']), 1)
         pdf.cell(20, 5, str(dato['tipo_salida']).strip(), 1)
-        pdf.cell(55, 5, str(dato['salida_desc'])[:40], 1)
+        pdf.cell(45, 5, str(dato['salida_desc'])[:35], 1)
         pdf.cell(35, 5, beneficiario[:25], 1)
         pdf.cell(12, 5, tipo_doc_abrevia, 1)
         pdf.cell(16, 5, str(dato['numero_doc']), 1)
-        pdf.cell(20, 5, f"{float(dato['monto']):.2f}", 1, 1, 'R')
+        pdf.cell(20, 5, f"{float(dato['monto']):.2f}", 1, 0, 'R')
+        pdf.set_font("Arial", '', 7)
+        pdf.cell(12, 5, str(dato['cajero'])[:8], 1, 1, 'C')
 
         total_dia += float(dato['monto'])
         total_general += float(dato['monto'])
@@ -1455,8 +1471,10 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
         if num_linea >= 40:
             pdf.ln(2)
             pdf.set_font("Arial", 'B', 8)
-            pdf.cell(147, 5, f'Total del Día {fecha_actual}:', 1)
-            pdf.cell(20, 5, f'{total_dia:.2f}', 1, 1, 'R')
+            pdf.cell(137, 5, f'Total del Día {fecha_actual}:', 1)
+            pdf.cell(20, 5, f'{total_dia:.2f}', 1, 0, 'R')
+            pdf.set_font("Arial", 'B', 7)
+            pdf.cell(12, 5, '', 1, 1)
             pdf.add_page()
             pdf.set_left_margin(8)
             pdf.set_right_margin(8)
@@ -1487,11 +1505,13 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
             pdf.cell(10, 5, 'Id', 1)
             pdf.cell(15, 5, 'Fecha', 1)
             pdf.cell(20, 5, 'Tp.Sal', 1)
-            pdf.cell(55, 5, 'Salida', 1)
+            pdf.cell(45, 5, 'Salida', 1)
             pdf.cell(35, 5, 'Beneficiario', 1)
             pdf.cell(12, 5, 'T.Doc', 1)
             pdf.cell(16, 5, 'Nro Doc', 1)
-            pdf.cell(20, 5, 'Monto', 1, 1, 'R')
+            pdf.cell(20, 5, 'Monto', 1, 0, 'R')
+            pdf.set_font("Arial", 'B', 7)
+            pdf.cell(12, 5, 'Cajero', 1, 1, 'C')
             total_dia = 0
             num_linea = 0
             pdf.set_font("Arial", '', 8)
@@ -1499,8 +1519,10 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, titulo, subtitu
     # Último total del día
     if fecha_actual:
         pdf.set_font("Arial", 'B', 8)
-        pdf.cell(147, 5, f'Total del Día {fecha_actual}:', 1)
-        pdf.cell(20, 5, f'{total_dia:.2f}', 1, 1, 'R')
+        pdf.cell(137, 5, f'Total del Día {fecha_actual}:', 1)
+        pdf.cell(20, 5, f'{total_dia:.2f}', 1, 0, 'R')
+        pdf.set_font("Arial", 'B', 7)
+        pdf.cell(12, 5, '', 1, 1)
 
     # Total final
     pdf.set_font("Arial", 'B', 10)
