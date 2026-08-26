@@ -98,6 +98,10 @@
                                                title="Re-imprimir Recibo con fecha correcta">
                                                 <i class="bi-eye"></i>
                                             </a>
+                                            <button type="button" class="btn btn-outline-info" title="Editar Usuario"
+                                                    onclick="abrirModalEditarUsuario('{{ r3.d10 }}', '{{ r3.d9 }}')">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
                                             {% if session.get('user_rol') == 'ADMIN' and r3.d8 == 'S' %}
                                             <button type="button" class="btn btn-outline-danger" title="Anular Recibo"
                                                     onclick="anularRecibo(this, '{{ r3.d10 }}')">
@@ -150,7 +154,85 @@
     </div>
 </div>
 
+<!-- Modal Editar Usuario -->
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square"></i> Editar Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarUsuario">
+                    <input type="hidden" id="reciboId" name="recibo_id">
+                    <div class="mb-3">
+                        <label for="editUsuarioSelect" class="form-label">Usuario</label>
+                        <select class="form-select" id="editUsuarioSelect" name="usuario" required>
+                            <option value="">-- Seleccionar Usuario --</option>
+                            {% for usuario in usuarios %}
+                            <option value="{{ usuario.username }}">{{ usuario.fullname }} ({{ usuario.roles }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-info" onclick="guardarEdicionUsuario()">
+                    <i class="bi bi-check-circle"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+let editarUsuarioModalObj = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    editarUsuarioModalObj = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
+});
+
+function abrirModalEditarUsuario(reciboId, usuarioActual) {
+    document.getElementById('reciboId').value = reciboId;
+    document.getElementById('editUsuarioSelect').value = usuarioActual;
+    editarUsuarioModalObj.show();
+}
+
+function guardarEdicionUsuario() {
+    const reciboId = document.getElementById('reciboId').value;
+    const usuario = document.getElementById('editUsuarioSelect').value;
+
+    fetch(`{{ url_for('aportes.actualizar_usuario_recibo') }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            recibo_id: reciboId,
+            usuario: usuario
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Usuario actualizado correctamente.');
+            editarUsuarioModalObj.hide();
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo actualizar.'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al actualizar el usuario.');
+    });
+}
+
 function anularRecibo(btn, id) {
     if (!confirm('¿Está seguro de ANULAR el recibo (IdCtrl ' + id + ')?\n\nEsta acción no se puede deshacer.')) return;
     fetch("{{ url_for('aportes.anular_recibo') }}", {

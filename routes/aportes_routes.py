@@ -27,6 +27,29 @@ def admin_required(f):
     return decorated_function
 
 
+def get_usuarios_para_recibos():
+    """Obtiene usuarios: CAJERO, ADMIN (solo AFIESTAS), GRIFERO"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id, username, fullname, roles FROM applicationuser
+            WHERE status = 'ACTIVE' AND (
+                roles = 'CAJERO' OR
+                roles = 'GRIFERO' OR
+                (roles = 'ADMIN' AND username = 'AFIESTAS')
+            )
+            ORDER BY fullname
+        """)
+        usuarios = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return usuarios
+    except Exception as e:
+        print(f"Error obteniendo usuarios: {e}")
+        return []
+
+
 SERIE_COLORS = {
     '3': 'rgb(245, 247, 241)',
     '4': 'rgb(243, 215, 235)',
@@ -90,6 +113,33 @@ def anular_recibo():
         except Exception:
             pass
         return jsonify({'success': False, 'error': str(e)})
+
+
+@aportes_bp.route('/actualizar_usuario_recibo', methods=['POST'])
+@login_required
+def actualizar_usuario_recibo():
+    """Actualiza el usuario (webuser) de un recibo"""
+    try:
+        data = request.get_json()
+        recibo_id = data.get('recibo_id')
+        usuario = data.get('usuario', '')
+
+        if not recibo_id:
+            return jsonify({'success': False, 'error': 'No se indicó el recibo'}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE a_recibos SET webuser=%s, modified=NOW() WHERE id=%s", (usuario, recibo_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Usuario actualizado correctamente'})
+    except Error as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @aportes_bp.route('/aportes_series', methods=['GET', 'POST'])
 @login_required
@@ -282,6 +332,8 @@ def aportes_s2():
     subtotal = 0
     line0 = 0
     recs = []
+    usuarios = get_usuarios_para_recibos()
+
     if request.method == 'POST':
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
         p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
@@ -303,7 +355,7 @@ def aportes_s2():
                 reg['d0'] = str(line0)
                 subtotal += float(reg['d7']) if reg['d7'] else 0
                 total += round(float(reg['d13']),2) if reg['d13'] else 0
-            return render_template('aportes_s2.html', recibos=recibos, total=total, subtotal=subtotal, p1=p1, p2=p2, p3=p3)
+            return render_template('aportes_s2.html', recibos=recibos, total=total, subtotal=subtotal, p1=p1, p2=p2, p3=p3, usuarios=usuarios)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
             return redirect(url_for('dashboard.menurecibos'))
