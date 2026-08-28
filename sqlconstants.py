@@ -843,7 +843,7 @@ UPDATE a_compras_comb SET numero = CONCAT(numero, '-ANU'), estado = 'ANULADO' WH
 SEL_PRESTAMOS_PDF = """
 SELECT p.*, pr.placa, pr.monto0, s.nombre, s.email, s.fono telefono, s.dni,
        tp.descripcion as tipo_nombre, tp.monto1 tasa_interes,
-       s.nombre as socio_nombre, p.id padron
+       s.nombre as socio_nombre, pr.id padron
 FROM a_prestamos p
 JOIN a_padrones pr ON p.padron = pr.id
 JOIN a_socios s ON pr.socio = s.id
