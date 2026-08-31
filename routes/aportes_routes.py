@@ -118,23 +118,29 @@ def anular_recibo():
 @aportes_bp.route('/actualizar_usuario_recibo', methods=['POST'])
 @login_required
 def actualizar_usuario_recibo():
-    """Actualiza el usuario (webuser) de un recibo"""
+    """Actualiza el usuario (webuser) y fecha de giro de un recibo"""
     try:
         data = request.get_json()
         recibo_id = data.get('recibo_id')
         usuario = data.get('usuario', '')
+        fecha_giro = data.get('fecha_giro', '')
 
         if not recibo_id:
             return jsonify({'success': False, 'error': 'No se indicó el recibo'}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("UPDATE a_recibos SET webuser=%s, modified=NOW() WHERE id=%s", (usuario, recibo_id))
+
+        if fecha_giro:
+            cursor.execute("UPDATE a_recibos SET webuser=%s, giro=%s, modified=NOW() WHERE id=%s", (usuario, fecha_giro, recibo_id))
+        else:
+            cursor.execute("UPDATE a_recibos SET webuser=%s, modified=NOW() WHERE id=%s", (usuario, recibo_id))
+
         conn.commit()
         cursor.close()
         conn.close()
 
-        return jsonify({'success': True, 'message': 'Usuario actualizado correctamente'})
+        return jsonify({'success': True, 'message': 'Recibo actualizado correctamente'})
     except Error as e:
         return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:

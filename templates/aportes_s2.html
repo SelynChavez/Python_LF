@@ -98,7 +98,7 @@
                                             </a>
                                             {% if session.get('user_rol') == 'ADMIN' %}
                                             <button type="button" class="btn btn-outline-info" title="Editar Usuario"
-                                                    onclick="abrirModalEditarUsuario('{{ r3.d10 }}', '{{ r3.d9 }}')">
+                                                    onclick="abrirModalEditarUsuario('{{ r3.d10 }}', '{{ r3.d9 }}', '{{ r3.d10 }}', '{{ r3.d11 }}', '{{ r3.d3 }}')">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
                                             {% endif %}
@@ -167,6 +167,14 @@
                 <form id="formEditarUsuario">
                     <input type="hidden" id="reciboId" name="recibo_id">
                     <div class="mb-3">
+                        <label for="editId" class="form-label">ID</label>
+                        <input type="text" class="form-control" id="editId" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPadron" class="form-label">Padrón</label>
+                        <input type="text" class="form-control" id="editPadron" readonly>
+                    </div>
+                    <div class="mb-3">
                         <label for="editUsuarioSelect" class="form-label">Usuario</label>
                         <select class="form-select" id="editUsuarioSelect" name="usuario" required>
                             <option value="">-- Seleccionar Usuario --</option>
@@ -174,6 +182,10 @@
                             <option value="{{ usuario.username }}">{{ usuario.fullname }} ({{ usuario.roles }})</option>
                             {% endfor %}
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editFechaGiro" class="form-label">Fecha de Giro</label>
+                        <input type="date" class="form-control" id="editFechaGiro" name="fecha_giro">
                     </div>
                 </form>
             </div>
@@ -196,15 +208,57 @@ document.addEventListener('DOMContentLoaded', function() {
     editarUsuarioModalObj = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
 });
 
-function abrirModalEditarUsuario(reciboId, usuarioActual) {
+function abrirModalEditarUsuario(reciboId, usuarioActual, id, padron, fechaGiro) {
+    console.log('Datos recibidos:', {reciboId, usuarioActual, id, padron, fechaGiro});
+
     document.getElementById('reciboId').value = reciboId;
-    document.getElementById('editUsuarioSelect').value = usuarioActual;
+    document.getElementById('editId').value = id || '';
+    document.getElementById('editPadron').value = padron || '';
+
+    // Buscar opción que coincida con usuarioActual (caso insensible)
+    const selectElement = document.getElementById('editUsuarioSelect');
+    let encontrado = false;
+    for (let option of selectElement.options) {
+        if (option.value.toLowerCase() === usuarioActual.toLowerCase() ||
+            option.textContent.toLowerCase().includes(usuarioActual.toLowerCase())) {
+            option.selected = true;
+            encontrado = true;
+            console.log('Usuario encontrado:', option.value);
+            break;
+        }
+    }
+    if (!encontrado) {
+        console.warn('Usuario no encontrado en opciones:', usuarioActual);
+        selectElement.value = usuarioActual;
+    }
+
+    if (fechaGiro && fechaGiro.trim()) {
+        // Convertir formato DD/MM/YY o DD/MM/YYYY a YYYY-MM-DD para el input date
+        const partes = fechaGiro.split('/');
+        if (partes.length === 3) {
+            let anio = partes[2];
+            // Convertir año corto a largo
+            if (anio.length === 2) {
+                anio = (parseInt(anio) < 50) ? '20' + anio : '19' + anio;
+            }
+            const fechaFormato = `${anio}-${partes[1]}-${partes[0]}`;
+            document.getElementById('editFechaGiro').value = fechaFormato;
+            console.log('Fecha convertida:', fechaGiro, '->', fechaFormato);
+        } else {
+            document.getElementById('editFechaGiro').value = fechaGiro;
+        }
+    } else {
+        document.getElementById('editFechaGiro').value = '';
+        console.log('Sin fecha de giro');
+    }
+
     editarUsuarioModalObj.show();
 }
 
 function guardarEdicionUsuario() {
     const reciboId = document.getElementById('reciboId').value;
     const usuario = document.getElementById('editUsuarioSelect').value;
+    const fechaGiro = document.getElementById('editFechaGiro').value;
 
     fetch(`{{ url_for('aportes.actualizar_usuario_recibo') }}`, {
         method: 'POST',
@@ -213,7 +267,8 @@ function guardarEdicionUsuario() {
         },
         body: JSON.stringify({
             recibo_id: reciboId,
-            usuario: usuario
+            usuario: usuario,
+            fecha_giro: fechaGiro
         })
     })
     .then(response => response.json())
