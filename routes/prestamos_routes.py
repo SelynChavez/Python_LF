@@ -18,11 +18,11 @@ def login_required(f):
 
 
 def get_usuarios_caja_grifero():
-    """Obtiene lista de usuarios con rol CAJA o GRIFERO"""
+    """Obtiene lista de usuarios con rol CAJA, GRIFERO o ADMIN (excluyendo selyn y matias)"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT id, username, fullname, roles FROM applicationuser WHERE roles IN ('CAJA', 'GRIFERO') AND status = 'ACTIVE' ORDER BY fullname")
+        cursor.execute("SELECT id, username, fullname, roles FROM applicationuser WHERE roles IN ('CAJA', 'GRIFERO', 'ADMIN') AND status = 'ACTIVE' AND username NOT IN ('selyn', 'matias') ORDER BY fullname")
         usuarios = cursor.fetchall()
         cursor.close()
         conn.close()
