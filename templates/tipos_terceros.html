@@ -67,6 +67,8 @@ $(document).ready(function() {
                                 {% if a1 %}
                                     <th>{{ a1 }}</th>
                                 {% endif %}
+                                <th>Clase de Tercero</th>
+                                <th>Orden Contable</th>
                                 {% if a2 %}
                                     <th>{{ a2 }}</th>
                                 {% endif %}
@@ -99,19 +101,18 @@ $(document).ready(function() {
                                     <td class="text-end">{{ t0.monto2 }}</td>
                                 {% endif %}
                                 {% if a1 %}
-                                    <td>{{ t0.serie }}</td>
+                                    <td>{{ t0.atributo1 }}</td>
                                 {% endif %}
+                                <td>{{ t0.atributo2 or '-' }}</td>
+                                <td>{{ t0.atributo3 or '-' }}</td>
                                 {% if a2 %}
-                                    <td>{{ t0.atributo2 }}</td>
-                                {% endif %}
-                                {% if a3 %}
-                                    <td>{{ t0.atributo3 }}</td>
-                                {% endif %}
-                                {% if a4 %}
                                     <td>{{ t0.atributo4 }}</td>
                                 {% endif %}
-                                {% if a5 %}
+                                {% if a3 %}
                                     <td>{{ t0.atributo5 }}</td>
+                                {% endif %}
+                                {% if a4 %}
+                                    <td>{{ t0.atributo6 }}</td>
                                 {% endif %}
                                 <td>{{ t0.modified.strftime('%d/%m/%Y %H:%M') if t0.modified }}</td>
                                 <td>{{ t0.webuser }}</td>

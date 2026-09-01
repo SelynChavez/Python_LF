@@ -441,9 +441,11 @@ def guardar_tipo_tercero(id):
             codigo = request.form.get('codigo')
             descripcion = request.form.get('descripcion')
             atributo1 = request.form.get('atributo1') or ''
+            clase_tercero = request.form.get('clase_tercero') or ''
+            orden_contable = request.form.get('orden_contable') or ''
             try:
                 cursor = connection.cursor()
-                cursor.execute(sqlconstants.UPDATE_TIPO, (codigo, descripcion, '0','0',atributo1,'','','','', id))
+                cursor.execute(sqlconstants.UPDATE_TIPO, (codigo, descripcion, '0','0',atributo1,clase_tercero,orden_contable,'','', id))
                 connection.commit()
                 cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'editar_tipo_tercero', f'LOG::Editó el tercero id: {id} con {codigo}'))
                 connection.commit()
@@ -476,6 +478,8 @@ def guardar_tipo_tercero(id):
             codigo = request.form.get('codigo')
             descripcion = request.form.get('descripcion')
             atributo1 = request.form.get('atributo1') or ''
+            clase_tercero = request.form.get('clase_tercero') or ''
+            orden_contable = request.form.get('orden_contable') or ''
             if not all([codigo, descripcion]):
                 flash('Por favor, complete todos los campos.', 'danger')
                 return render_template('tipo_tercero_form.html', tipo=None)
@@ -483,7 +487,7 @@ def guardar_tipo_tercero(id):
             if connection:
                 try:
                     cursor = connection.cursor()
-                    cursor.execute(sqlconstants.INSERT_TIPO, (tipo, codigo, descripcion, '0', '0', atributo1, '', '', '', '', session['user_username']))
+                    cursor.execute(sqlconstants.INSERT_TIPO, (tipo, codigo, descripcion, '0', '0', atributo1, clase_tercero, orden_contable, '', '', session['user_username']))
                     xid = cursor.lastrowid
                     connection.commit()
                     cursor.execute(sqlconstants.INSERT_LOGUSUARIO, (session['user_id'], 'crear_tipo_tercero', f'LOG::Creó el tercero id:{xid} con {codigo}'))

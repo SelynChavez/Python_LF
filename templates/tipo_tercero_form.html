@@ -26,10 +26,26 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="atributo1" class="form-label">RUC / DNI / Identificacion</label>
-                            <input type="text" class="form-control" id="atributo1" name="atributo1" 
+                            <input type="text" class="form-control" id="atributo1" name="atributo1"
                                    value="{{ tipo.atributo1 if tipo else '' }}" maxlength="11">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="clase_tercero" class="form-label">Clase de Tercero</label>
+                            <select class="form-select" id="clase_tercero" name="clase_tercero">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="Proveedor" {% if tipo and tipo.atributo2 == 'Proveedor' %}selected{% endif %}>Proveedor</option>
+                                <option value="Contratista" {% if tipo and tipo.atributo2 == 'Contratista' %}selected{% endif %}>Contratista</option>
+                                <option value="Org.Publico" {% if tipo and tipo.atributo2 == 'Org.Publico' %}selected{% endif %}>Org. Público</option>
+                                <option value="LocadorServicios" {% if tipo and tipo.atributo2 == 'LocadorServicios' %}selected{% endif %}>Locador de Servicios</option>
+                                <option value="Prestamista" {% if tipo and tipo.atributo2 == 'Prestamista' %}selected{% endif %}>Prestamista</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="orden_contable" class="form-label">Orden en Plan Contable</label>
+                            <input type="text" class="form-control" id="orden_contable" name="orden_contable"
+                                   value="{{ tipo.atributo3 if tipo else '' }}" maxlength="3" placeholder="01, 02, 03...">
                         </div>
                     </div>
 
