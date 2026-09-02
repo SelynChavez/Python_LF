@@ -2869,7 +2869,7 @@ def generar_pdf_control_envios_boveda():
 
     SELECT COALESCE(UPPER(TRIM(cajero)), 'SIN ASIGNAR') cajero, DATE(fecha_solicitud) fecha, concat('PRESTAMO ',tipo_prestamo) concepto, sum(monto_aprobado) salidas, 0 ingresos
     FROM a_prestamos
-    WHERE estado in ('aprobado','pagado') and tipo_prestamo='EFECTIVO' and fecha_solicitud>=%s and fecha_solicitud<=%s
+    WHERE estado in ('aprobado','pagado') and tipo_prestamo in ('EFECTIVO', 'PETROLEO') and fecha_solicitud>=%s and fecha_solicitud<=%s
     group by UPPER(TRIM(cajero)), DATE(fecha_solicitud), tipo_prestamo
 
     UNION ALL
