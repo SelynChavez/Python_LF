@@ -702,16 +702,16 @@ UNION ALL
 SELECT
     p.id,
     DATE_FORMAT(p.fecha_solicitud, '%d/%m/%y') as fecha,
-    'Prestamo en Efectivo' as salida_desc,
+    p.tipo_prestamo as salida_desc,
     'PRESTAMO' as tipo_salida,
-    LOWER(SUBSTR(COALESCE(nombPadronSocio(p.padron), CONCAT('Padron #', p.padron)), 1, 25)) as beneficiario,
-    'EFECT' as tipo_doc,
+    SUBSTR(COALESCE(nombPadronSocio(p.padron)), 1, 22) as beneficiario,
+    'DEUDA' as tipo_doc,
     CAST(p.id AS CHAR) as numero_doc,
     ifnull(p.monto_aprobado, 0) as monto,
     COALESCE(UPPER(p.cajero), '') as cajero,
     DATE_FORMAT(p.fecha_solicitud, '%Y-%m-%d') as fecha_orden
 FROM a_prestamos p
-WHERE p.tipo_prestamo = 'EFECTIVO'
+WHERE p.tipo_prestamo in ('EFECTIVO', 'PETROLEO')
     AND p.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$')
     AND ('PRESTAMO' = '$p3$' OR '$p3$' = '0')
     AND ('PADRON' = '$p4$' OR '$p4$' = '0')
@@ -728,7 +728,7 @@ SELECT
     DATE_FORMAT(r.fecha_retiro, '%d/%m/%y') as fecha,
     'Retiro' salida_desc,
     r.tipo_aporte as tipo_salida,
-    LOWER(SUBSTR(COALESCE(nombPadronSocio(r.padron), CONCAT('Padron #', r.padron)), 1, 25)) as beneficiario,
+    SUBSTR(COALESCE(nombPadronSocio(r.padron)), 1, 22) as beneficiario,
     'EFECT' as tipo_doc,
     CAST(r.id AS CHAR) as numero_doc,
     ifnull(r.monto_retirado, 0) as monto,
