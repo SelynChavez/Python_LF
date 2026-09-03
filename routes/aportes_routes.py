@@ -229,6 +229,7 @@ def aportes_s5():
     total = 0
     line0 = 0
     recs = []
+    usuarios = get_usuarios_para_recibos()
     if request.method == 'POST':
         p1 = request.form.get('p1', datetime.datetime.now().strftime('%Y-%m-%d'))
         p2 = request.form.get('p2', datetime.datetime.now().strftime('%Y-%m-%d'))
@@ -249,14 +250,14 @@ def aportes_s5():
                 line0 += 1
                 reg['d0'] = str(line0)
                 total += float(reg['d7']) if reg['d7'] else 0
-            return render_template('aportes_s5.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3)
+            return render_template('aportes_s5.html', recibos=recibos, total=total, p1=p1, p2=p2, p3=p3, usuarios=usuarios)
         else:
             flash('Error de conexión a la base de datos.', 'danger')
             return redirect(url_for('dashboard.menurecibos'))
     else:
         px = datetime.datetime.now().strftime('%Y-%m-%d')
         flash('Listo para consultar.', 'success')
-        return render_template('aportes_s5.html', p1=px, p2=px, p3=0, recibos=recs, total=total)
+        return render_template('aportes_s5.html', p1=px, p2=px, p3=0, recibos=recs, total=total, usuarios=usuarios)
 
 
 @aportes_bp.route('/aportes_s4', methods=['GET', 'POST'])
