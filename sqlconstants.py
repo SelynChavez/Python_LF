@@ -685,10 +685,12 @@ SELECT
     s.numero_doc,
     ifnull(s.monto,0) as monto,
     COALESCE(UPPER(s.cajero), '') as cajero,
-    DATE_FORMAT(s.fecha_solicitud, '%Y-%m-%d') as fecha_orden
+    DATE_FORMAT(s.fecha_solicitud, '%Y-%m-%d') as fecha_orden,
+    s.tipo_caja as tipo_caja
 FROM a_salidas s
 JOIN a_tipos ts ON s.tipo_salida = ts.codigo AND ts.tipo = 'SALIDA' 
-WHERE s.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$') and s.tipo_caja = 'EFECTIVO'
+WHERE s.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$')
+    AND (s.tipo_caja = '$p9$' OR '$p9$' = '0')
     AND (s.tipo_salida = '$p3$' OR '$p3$' = '0')
     AND (s.tipo_beneficiario = '$p4$' OR '$p4$' = '0')
     AND (s.beneficiario_nombre LIKE '%$p5$%' OR '$p5$' = '')
@@ -709,7 +711,8 @@ SELECT
     CAST(p.id AS CHAR) as numero_doc,
     ifnull(p.monto_aprobado, 0) as monto,
     COALESCE(UPPER(p.cajero), '') as cajero,
-    DATE_FORMAT(p.fecha_solicitud, '%Y-%m-%d') as fecha_orden
+    DATE_FORMAT(p.fecha_solicitud, '%Y-%m-%d') as fecha_orden,
+    'EFECTIVO' as tipo_caja
 FROM a_prestamos p
 WHERE p.tipo_prestamo in ('EFECTIVO', 'PETROLEO')
     AND p.fecha_solicitud BETWEEN DATE('$p1$') AND DATE('$p2$')
@@ -719,6 +722,7 @@ WHERE p.tipo_prestamo in ('EFECTIVO', 'PETROLEO')
     AND (CAST(p.id AS CHAR) LIKE '%$p6$%' OR '$p6$' = '')
     AND (SUBSTR(p.fecha_solicitud, 1, 6) = '$p7$' OR '$p7$' = '')
     AND (COALESCE(UPPER(p.cajero), '') = UPPER('$p8$') OR '$p8$' = 'todos')
+    AND ('$p9$' = 'EFECTIVO')
     AND p.estado in ('aprobado', 'pagado')
 
 UNION ALL
@@ -733,7 +737,7 @@ SELECT
     CAST(r.id AS CHAR) as numero_doc,
     ifnull(r.monto_retirado, 0) as monto,
     COALESCE(UPPER(r.cajero), '') as cajero,
-    DATE_FORMAT(r.fecha_retiro, '%Y-%m-%d') as fecha_orden
+    DATE_FORMAT(r.fecha_retiro, '%Y-%m-%d') as fecha_orden, 'EFECTIVO' tipo_caja
 FROM a_retiros r
 WHERE
     DATE(r.fecha_retiro) BETWEEN DATE('$p1$') AND DATE('$p2$')
@@ -743,6 +747,7 @@ WHERE
     AND (CAST(r.id AS CHAR) LIKE '%$p6$%' OR '$p6$' = '')
     AND (SUBSTR(r.fecha_retiro, 1, 6) = '$p7$' OR '$p7$' = '')
     AND (COALESCE(UPPER(r.cajero), '') = UPPER('$p8$') OR '$p8$' = 'todos')
+    AND ('$p9$' = 'EFECTIVO')
     AND r.estado in ('aprobado')
 
 ORDER BY fecha_orden DESC, id DESC

@@ -1357,7 +1357,7 @@ def generar_pdf_ingresos_entre_fechas(p1, p2, p3, p4, p5, p6, titulo, subtitulo,
     return BytesIO(pdf_output)
 
 
-def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, subtitulo, cod='REP_SALIDAS_ENTRE_FECHAS', usuario=''):
+def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, p9, titulo, subtitulo, cod='REP_SALIDAS_ENTRE_FECHAS', usuario=''):
     import datetime
 
     buffer = BytesIO()
@@ -1391,11 +1391,12 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, sub
     pdf.cell(10, 5, 'Id', 1)
     pdf.cell(15, 5, 'Fecha', 1)
     pdf.cell(20, 5, 'Tp.Sal', 1)
-    pdf.cell(55, 5, 'Salida', 1)
+    pdf.cell(53, 5, 'Salida', 1)
     pdf.cell(35, 5, 'Beneficiario', 1)
     pdf.cell(12, 5, 'T.Doc', 1)
     pdf.cell(16, 5, 'Nro Doc', 1)
-    pdf.cell(20, 5, 'Monto', 1, 0, 'R')
+    pdf.cell(18, 5, 'Monto', 1, 0, 'R')
+    pdf.cell(8, 5, 'TC', 1, 0, 'C')
     pdf.set_font("Arial", 'B', 7)
     pdf.cell(12, 5, 'Cajero', 1, 1, 'C')
 
@@ -1414,6 +1415,7 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, sub
     query = query.replace("$p6$", str(p6) if p6 else '')
     query = query.replace("$p7$", str(p7) if p7 else '')
     query = query.replace("$p8$", str(p8) if p8 else 'todos')
+    query = query.replace("$p9$", str(p9) if p9 else '0')
 
     ## print(f"\n{'='*80}\nQUERY:\n{query}\n{'='*80}\n")
 
@@ -1457,11 +1459,17 @@ def generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, sub
         pdf.cell(10, 5, str(dato['id']), 1)
         pdf.cell(15, 5, str(dato['fecha']), 1)
         pdf.cell(20, 5, str(dato['tipo_salida']).strip(), 1)
-        pdf.cell(55, 5, str(dato['salida_desc'])[:40], 1)
+        pdf.cell(53, 5, str(dato['salida_desc'])[:40], 1)
         pdf.cell(35, 5, beneficiario[:25], 1)
         pdf.cell(12, 5, tipo_doc_abrevia, 1)
         pdf.cell(16, 5, str(dato['numero_doc']), 1)
-        pdf.cell(20, 5, f"{float(dato['monto']):.2f}", 1, 0, 'R')
+        pdf.cell(18, 5, f"{float(dato['monto']):.2f}", 1, 0, 'R')
+
+        # Tipo de caja: E para EFECTIVO, B para BANCOS
+        tipo_caja = dato.get('tipo_caja', 'EFECTIVO')
+        tipo_caja_abrevia = 'E' if tipo_caja.upper() == 'EFECTIVO' else 'B' if tipo_caja.upper() == 'BANCOS' else ''
+        pdf.cell(8, 5, tipo_caja_abrevia, 1, 0, 'C')
+
         pdf.set_font("Arial", '', 7)
         pdf.cell(12, 5, str(dato['cajero'])[:8], 1, 1, 'C')
 
@@ -1678,7 +1686,7 @@ def generar_pdf_control_pagos_prestamos(p1, p2, p3, p4, p5, titulo, subtitulo, c
     return BytesIO(pdf_output)
 
 
-def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", p8="todos", serie="1", tipo_fecha="fecha"):
+def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", p8="todos", p9="0", serie="1", tipo_fecha="fecha"):
     print(f"DEBUG: generar_pdf_reporte START - cod={cod}, serie={serie}")
     buffer = BytesIO()
     pdf = FPDF()
@@ -1697,7 +1705,7 @@ def generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7="", p
     elif cod == "REP_SALIDAS_ENTRE_FECHAS":
         print(f"DEBUG: Entrando a generar_pdf_salidas_entre_fechas")
         usuario = session.get('user_username', 'desconocido')
-        return generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, titulo, subtitulo, cod, usuario)
+        return generar_pdf_salidas_entre_fechas(p1, p2, p3, p4, p5, p6, p7, p8, p9, titulo, subtitulo, cod, usuario)
     elif cod == "REP_CONTROL_PAGOS_PRESTAMOS":
         print(f"DEBUG: Entrando a generar_pdf_control_pagos_prestamos")
         usuario = session.get('user_username', 'desconocido')
@@ -1860,6 +1868,7 @@ def generar_reporte():
         p6 = request.form.get('p6', '')
         p7 = request.form.get('p7', '')
         p8 = request.form.get('p8', 'todos')
+        p9 = request.form.get('p9', '0')
         serie = request.form.get('serie', '1')
         tipo_fecha = request.form.get('tipo_fecha', 'fecha')
 
@@ -1877,7 +1886,7 @@ def generar_reporte():
         print("tipo_fecha:"+tipo_fecha)
 
         print(f"DEBUG: Iniciando generación de PDF - cod={cod}, serie={serie}")
-        pdf_buffer = generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7, p8, serie, tipo_fecha)
+        pdf_buffer = generar_pdf_reporte(cod, titulo, subtitulo, p1, p2, p3, p4, p5, p6, p7, p8, p9, serie, tipo_fecha)
         print(f"DEBUG: PDF generado exitosamente, tamaño={pdf_buffer.getbuffer().nbytes if pdf_buffer else 0}")
         pdf_base64 = base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
         return render_template('mostrar_pdf.html', pdf_data=pdf_base64, cod=cod)

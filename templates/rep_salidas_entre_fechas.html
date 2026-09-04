@@ -78,6 +78,18 @@
                         </div>
                     </div>
 
+                    <!-- Tipo de Caja -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="p9" class="form-label">Tipo de Caja <small class="text-muted">(Opcional)</small></label>
+                            <select class="form-select" id="p9" name="p9">
+                                <option value="0">-- Todos --</option>
+                                <option value="EFECTIVO" selected>EFECTIVO</option>
+                                <option value="BANCOS">BANCOS</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <!-- Botones de Acción -->
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                         <button type="submit" class="btn btn-primary me-md-2">
@@ -103,10 +115,12 @@ function construirSubtitulo() {
     const p6 = document.getElementById('p6').value;
     const p7 = document.getElementById('p7').value;
     const p8 = document.getElementById('p8').value;
+    const p9 = document.getElementById('p9').value;
 
     const p3Text = document.getElementById('p3').options[document.getElementById('p3').selectedIndex].text;
     const p4Text = document.getElementById('p4').options[document.getElementById('p4').selectedIndex].text;
     const p8Text = document.getElementById('p8').options[document.getElementById('p8').selectedIndex].text;
+    const p9Text = document.getElementById('p9').options[document.getElementById('p9').selectedIndex].text;
 
     let subtitulo = `Desde ${p1} a ${p2}`;
 
@@ -124,6 +138,9 @@ function construirSubtitulo() {
     }
     if (p7) {
         subtitulo += ` | Período: ${p7}`;
+    }
+    if (p9 !== '0') {
+        subtitulo += ` | Tipo Caja: ${p9Text}`;
     }
 
     document.getElementById('subtitulo').value = subtitulo;
