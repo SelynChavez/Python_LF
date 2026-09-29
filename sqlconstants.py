@@ -940,7 +940,7 @@ FROM (
     AND p.id IN ($padron_list$)
   ORDER BY tc.fecha ASC
 ) AS tab1
-LIMIT 100
+LIMIT 1000
 """
 
 # Task Scheduler - Programación de Tareas
