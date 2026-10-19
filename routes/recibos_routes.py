@@ -17,7 +17,7 @@ TITULOS_SERIE = {
     '1': 'RECIBO DE INGRESOS',
     '2': 'Recibo Cot.x Padron',
     '3': 'RECIBO ACCESO Y CAPITAL',
-    '4': 'RECIBO ATU COMBUSTIBLE',
+    '4': 'RECIBO VARIOS JICAMARCA',
     '5': 'Recibo Cobranza de Comb.',
     '6': 'RECIBO DE DESPACHO',
 }
