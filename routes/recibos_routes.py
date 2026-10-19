@@ -16,8 +16,8 @@ RECIBOS_DIR = 'recibos_'
 TITULOS_SERIE = {
     '1': 'RECIBO DE INGRESOS',
     '2': 'Recibo Cot.x Padron',
-    '3': 'RECIBO ACCESO Y CAPITAL',
-    '4': 'RECIBO VARIOS JICAMARCA',
+    '3': 'RECIBO ACCESO Y CAPITAL', 
+    '4': 'RECIBO COCHERA JICAMARCA',
     '5': 'Recibo Cobranza de Comb.',
     '6': 'RECIBO DE DESPACHO',
 }
