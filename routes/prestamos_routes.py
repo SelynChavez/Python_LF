@@ -243,6 +243,7 @@ def actualizar_prestamo(prestamo_id):
         cuota = data.get('cuota')
         estado = data.get('estado')
         cajero = data.get('cajero', '')
+        fecha_aprobacion = data.get('fecha_aprobacion') or None
 
         if cuota is None:
             return jsonify({'success': False, 'error': 'La cuota es requerida'}), 400
@@ -252,9 +253,9 @@ def actualizar_prestamo(prestamo_id):
 
         usuario = session.get('user_username', 'sistema')
         if estado and estado.strip():
-            cursor.execute(sqlconstants.UPD_PRESTAMO_CUOTA_ESTADO, (cuota, estado, cajero, usuario, prestamo_id))
+            cursor.execute(sqlconstants.UPD_PRESTAMO_CUOTA_ESTADO, (cuota, estado, cajero, usuario, fecha_aprobacion, prestamo_id))
         else:
-            cursor.execute(sqlconstants.UPD_PRESTAMO_CUOTA, (cuota, cajero, usuario, prestamo_id))
+            cursor.execute(sqlconstants.UPD_PRESTAMO_CUOTA, (cuota, cajero, usuario, fecha_aprobacion, prestamo_id))
 
         conn.commit()
         conn.close()

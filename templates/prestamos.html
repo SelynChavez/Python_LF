@@ -123,7 +123,7 @@
                                         {% endif %}
                                         <!-- Botón para editar cuota y estado -->
                                         <button type="button" class="btn btn-outline-primary btn-sm"
-                                                onclick="abrirModalEditar({{ prestamo.id }}, {{ prestamo.cuota or 0 }}, '{{ prestamo.estado }}')"
+                                                onclick="abrirModalEditar({{ prestamo.id }}, {{ prestamo.cuota or 0 }}, '{{ prestamo.estado }}', '{{ prestamo.fecha_aprobacion.strftime('%Y-%m-%d') if prestamo.fecha_aprobacion else '' }}')"
                                                 title="Editar Cuota y Estado">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
@@ -227,6 +227,11 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="editFechaAprobacion" class="form-label">Fecha de Aprobación <small class="text-muted">(Opcional)</small></label>
+                        <input type="date" class="form-control" id="editFechaAprobacion" name="fecha_aprobacion">
+                    </div>
+
+                    <div class="mb-3">
                         <label for="editCajero" class="form-label">Cajero <small class="text-muted">(Opcional)</small></label>
                         <select class="form-select" id="editCajero" name="cajero">
                             <option value="">-- Sin asignar --</option>
@@ -298,10 +303,11 @@ function abrirDetallePagos(prestamoId) {
     detallePagosModalObj.show();
 }
 
-function abrirModalEditar(prestamoId, cuota, estado) {
+function abrirModalEditar(prestamoId, cuota, estado, fechaAprobacion) {
     document.getElementById('prestamoId').value = prestamoId;
     document.getElementById('editCuota').value = cuota;
     document.getElementById('editEstado').value = estado;
+    document.getElementById('editFechaAprobacion').value = fechaAprobacion || '';
     editarPrestamoModalObj.show();
 }
 
@@ -310,6 +316,7 @@ function guardarEdicionPrestamo() {
     const cuota = document.getElementById('editCuota').value;
     const estado = document.getElementById('editEstado').value;
     const cajero = document.getElementById('editCajero').value;
+    const fechaAprobacion = document.getElementById('editFechaAprobacion').value;
 
     if (!cuota || parseFloat(cuota) <= 0) {
         alert('La cuota es obligatoria y debe ser mayor a 0.');
@@ -324,7 +331,8 @@ function guardarEdicionPrestamo() {
         body: JSON.stringify({
             cuota: parseFloat(cuota),
             estado: estado,
-            cajero: cajero
+            cajero: cajero,
+            fecha_aprobacion: fechaAprobacion
         })
     })
     .then(response => response.json())
