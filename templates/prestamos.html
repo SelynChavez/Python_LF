@@ -62,6 +62,7 @@
                                     <th>Fecha</th>
                                     <th>Cajero</th>
                                     <th>Estado</th>
+                                    <th style="width:2%" title="Tipo de Caja">*</th>
                                     <th width="15%">Acciones</th>
                                 </tr>
                             </thead>
@@ -92,6 +93,7 @@
                                             <span class="badge bg-secondary">Pagado</span>
                                         {% endif %}
                                     </td>
+                                    <td style="text-align:center"><small>{{ 'C' if prestamo.tipo_caja == 'CAJA' else 'E' }}</small></td>
                                     <td>
                                         {% if prestamo.estado == 'pendiente' or prestamo.estado == 'evaluacion' %}
                                         <form action="{{ url_for('prestamos.aprobar_prestamo', prestamo_id=prestamo.id) }}"
@@ -123,7 +125,7 @@
                                         {% endif %}
                                         <!-- Botón para editar cuota y estado -->
                                         <button type="button" class="btn btn-outline-primary btn-sm"
-                                                onclick="abrirModalEditar({{ prestamo.id }}, {{ prestamo.cuota or 0 }}, '{{ prestamo.estado }}', '{{ prestamo.fecha_aprobacion.strftime('%Y-%m-%d') if prestamo.fecha_aprobacion else '' }}')"
+                                                onclick="abrirModalEditar({{ prestamo.id }}, {{ prestamo.cuota or 0 }}, '{{ prestamo.estado }}', '{{ prestamo.fecha_aprobacion.strftime('%Y-%m-%d') if prestamo.fecha_aprobacion else '' }}', '{{ prestamo.tipo_caja or '' }}', '{{ prestamo.cajero or '' }}')"
                                                 title="Editar Cuota y Estado">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
@@ -150,7 +152,7 @@
                         <td style="text-align:right"><strong>S/{{ "{:,.2f}".format(total)}}</strong></td>
                         <td></td>
                         <td style="text-align:right;color:red"><strong>S/{{ "{:,.2f}".format(totsp)}}</strong></td>
-                        <td colspan="4"></td>
+                        <td colspan="5"></td>
                     </tr>
                 </tfoot>
             </table>
@@ -232,6 +234,14 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="editTipoCaja" class="form-label">Tipo de Caja</label>
+                        <select class="form-select" id="editTipoCaja" name="tipo_caja">
+                            <option value="EFECTIVO">EFECTIVO</option>
+                            <option value="CAJA">CAJA</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="editCajero" class="form-label">Cajero <small class="text-muted">(Opcional)</small></label>
                         <select class="form-select" id="editCajero" name="cajero">
                             <option value="">-- Sin asignar --</option>
@@ -303,11 +313,23 @@ function abrirDetallePagos(prestamoId) {
     detallePagosModalObj.show();
 }
 
-function abrirModalEditar(prestamoId, cuota, estado, fechaAprobacion) {
+function abrirModalEditar(prestamoId, cuota, estado, fechaAprobacion, tipoCaja, cajeroActual) {
     document.getElementById('prestamoId').value = prestamoId;
     document.getElementById('editCuota').value = cuota;
     document.getElementById('editEstado').value = estado;
     document.getElementById('editFechaAprobacion').value = fechaAprobacion || '';
+    document.getElementById('editTipoCaja').value = tipoCaja || 'EFECTIVO';
+
+    const selectCajero = document.getElementById('editCajero');
+    selectCajero.value = '';
+    if (cajeroActual) {
+        for (const option of selectCajero.options) {
+            if (option.value.toLowerCase() === cajeroActual.trim().toLowerCase()) {
+                option.selected = true;
+                break;
+            }
+        }
+    }
     editarPrestamoModalObj.show();
 }
 
@@ -317,6 +339,7 @@ function guardarEdicionPrestamo() {
     const estado = document.getElementById('editEstado').value;
     const cajero = document.getElementById('editCajero').value;
     const fechaAprobacion = document.getElementById('editFechaAprobacion').value;
+    const tipoCaja = document.getElementById('editTipoCaja').value;
 
     if (!cuota || parseFloat(cuota) <= 0) {
         alert('La cuota es obligatoria y debe ser mayor a 0.');
@@ -332,7 +355,8 @@ function guardarEdicionPrestamo() {
             cuota: parseFloat(cuota),
             estado: estado,
             cajero: cajero,
-            fecha_aprobacion: fechaAprobacion
+            fecha_aprobacion: fechaAprobacion,
+            tipo_caja: tipoCaja
         })
     })
     .then(response => response.json())
