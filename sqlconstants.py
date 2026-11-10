@@ -722,7 +722,7 @@ WHERE p.tipo_prestamo in ('EFECTIVO', 'PETROLEO')
     AND (CAST(p.id AS CHAR) LIKE '%$p6$%' OR '$p6$' = '')
     AND (SUBSTR(p.fecha_solicitud, 1, 6) = '$p7$' OR '$p7$' = '')
     AND (COALESCE(UPPER(p.cajero), '') = UPPER('$p8$') OR '$p8$' = 'todos')
-    AND ('$p9$' = 'EFECTIVO')
+    AND (p.tipo_caja = 'EFECTIVO' )
     AND p.estado in ('aprobado', 'pagado')
 
 UNION ALL
