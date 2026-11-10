@@ -2156,8 +2156,6 @@ def generar_pdf_salida(salida_id):
 
     fecha_actual = datetime.datetime.now().strftime("%d de %B de %Y")
     beneficiario = escape(str(salida['beneficiario_nombre'] or ''))
-    tipo_doc = escape(str(salida['tipo_doc'] or ''))
-    numero_doc = escape(str(salida['numero_doc'] or ''))
     glosa = escape(str(salida['observaciones'] or 'No especificado'))
     monto = float(salida['monto'] or 0)
     fecha_salida = salida['fecha_solicitud'].strftime('%d/%m/%Y') if salida['fecha_solicitud'] else ''
@@ -2172,19 +2170,17 @@ def generar_pdf_salida(salida_id):
     Story.append(Paragraph("Dpto. de Administración", styles['Left']))
     Story.append(Paragraph("Presente.", styles['Left']))
     Story.append(Spacer(1, 0.2*inch))
-    Story.append(Paragraph(f"Yo, <b>{beneficiario}</b>, con {tipo_doc} <b>{numero_doc}</b>, declaro haber recibido ", styles['Left']))
+    Story.append(Paragraph(f"Yo, <b>{beneficiario}</b>, declaro haber recibido ", styles['Left']))
     Story.append(Paragraph(f"la suma de <b>S/. {monto:,.2f}</b>, por concepto de <b>{glosa}</b>.", styles['Left']))
     Story.append(Spacer(1, 0.2*inch))
 
     data = [
         ['Detalle de la Salida', ''],
-        ['N° Recibo:', str(salida['id'])],
+        ['N° Documento:', escape(str(salida['numero_doc'] or ''))],
         ['Fecha:', fecha_salida],
         ['Tipo de Salida:', escape(str(salida['tipo_salida'] or ''))],
         ['Beneficiario:', beneficiario],
-        ['Número de Documento:', numero_doc],
         ['Monto:', f"S/. {monto:,.2f}"],
-        ['Glosa (Observaciones):', glosa],
         ['Estado:', str(salida['estado'] or '').upper()],
     ]
 
