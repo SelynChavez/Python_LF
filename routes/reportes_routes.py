@@ -6,9 +6,10 @@ import datetime
 from decimal import Decimal
 import base64
 import os
+from xml.sax.saxutils import escape
 
 from fpdf import FPDF
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
@@ -2128,6 +2129,102 @@ def generar_pdf_prestamo(prestamo_id):
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = f'inline; filename=solicitud_prestamo_{prestamo_id}.pdf'
 
+    return response
+
+
+@reportes_bp.route('/salidas/pdf/<int:salida_id>')
+@login_required
+def generar_pdf_salida(salida_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(sqlconstants.SELECT_1_SALIDA, (salida_id,))
+    salida = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if not salida:
+        return "Salida no encontrada", 404
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                           rightMargin=72, leftMargin=72,
+                           topMargin=32, bottomMargin=18)
+    Story = []
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name='Center', alignment=TA_CENTER, fontSize=14, spaceAfter=10))
+    styles.add(ParagraphStyle(name='Right', alignment=TA_RIGHT, fontSize=10))
+    styles.add(ParagraphStyle(name='Left', alignment=TA_LEFT, fontSize=12, spaceAfter=10))
+
+    fecha_actual = datetime.datetime.now().strftime("%d de %B de %Y")
+    beneficiario = escape(str(salida['beneficiario_nombre'] or ''))
+    tipo_doc = escape(str(salida['tipo_doc'] or ''))
+    numero_doc = escape(str(salida['numero_doc'] or ''))
+    glosa = escape(str(salida['observaciones'] or 'No especificado'))
+    monto = float(salida['monto'] or 0)
+    fecha_salida = salida['fecha_solicitud'].strftime('%d/%m/%Y') if salida['fecha_solicitud'] else ''
+
+    Story.append(Paragraph("<b>E.T. LAS FLORES</b>", styles['Title']))
+    Story.append(Spacer(1, 0.1*inch))
+    Story.append(Paragraph(f"<i>Fecha de emisión: {fecha_actual}</i>", styles['Right']))
+    Story.append(Spacer(1, 0.1*inch))
+    Story.append(Paragraph(f"<b>CONSTANCIA DE RECEPCIÓN DE SALIDA #{salida['id']}.</b>", styles['Center']))
+    Story.append(Spacer(1, 0.3*inch))
+    Story.append(Paragraph("<b>Señores</b>", styles['Left']))
+    Story.append(Paragraph("Dpto. de Administración", styles['Left']))
+    Story.append(Paragraph("Presente.", styles['Left']))
+    Story.append(Spacer(1, 0.2*inch))
+    Story.append(Paragraph(f"Yo, <b>{beneficiario}</b>, con {tipo_doc} <b>{numero_doc}</b>, declaro haber recibido ", styles['Left']))
+    Story.append(Paragraph(f"la suma de <b>S/. {monto:,.2f}</b>, por concepto de <b>{glosa}</b>.", styles['Left']))
+    Story.append(Spacer(1, 0.2*inch))
+
+    data = [
+        ['Detalle de la Salida', ''],
+        ['N° Recibo:', str(salida['id'])],
+        ['Fecha:', fecha_salida],
+        ['Tipo de Salida:', escape(str(salida['tipo_salida'] or ''))],
+        ['Beneficiario:', beneficiario],
+        ['Número de Documento:', numero_doc],
+        ['Monto:', f"S/. {monto:,.2f}"],
+        ['Glosa (Observaciones):', glosa],
+        ['Estado:', str(salida['estado'] or '').upper()],
+    ]
+
+    tabla = Table(data, colWidths=[2*inch, 3*inch])
+    tabla.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    Story.append(tabla)
+    Story.append(Spacer(1, 0.3*inch))
+
+    Story.append(Paragraph("<b>DECLARACIÓN</b>", styles['Left']))
+    Story.append(Paragraph("Declaro haber recibido conforme la suma indicada en el presente documento.", styles['Left']))
+    Story.append(Spacer(1, 0.5*inch))
+
+    data_firmas = [
+        ['_________________________', '_________________________'],
+        [beneficiario, escape(str(salida['cajero'] or ''))],
+        ['Beneficiario', 'Entregado por'],
+    ]
+    tabla_firmas = Table(data_firmas, colWidths=[3*inch, 3*inch])
+    tabla_firmas.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 1), (-1, 1), 5),
+    ]))
+    Story.append(tabla_firmas)
+
+    doc.build(Story)
+
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=formato_salida_{salida_id}.pdf'
     return response
 
 

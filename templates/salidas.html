@@ -289,11 +289,15 @@
                         <i class="bi bi-upload"></i>
                        </button>`;
                 
-                const acciones = item.estado !== 'ANULADO' 
+                const botonFormato = `<button class="btn btn-sm btn-outline-secondary btn-action" onclick="verFormatoSalida(${item.id})" title="Formato de firma">
+                        <i class="bi bi-file-pdf"></i>
+                       </button>`;
+                const botonAnular = item.estado !== 'ANULADO'
                     ? `<button class="btn btn-sm btn-danger btn-action" onclick="mostrarAnularModal(${item.id})" title="Anular">
                         <i class="bi bi-trash"></i>
                        </button>`
-                    : '<span class="text-muted">-</span>';
+                    : '';
+                const acciones = `${botonFormato} ${botonAnular}`;
                 
                 const fila = document.createElement('tr');
                 fila.innerHTML = `
@@ -317,6 +321,11 @@
             });
         }
         
+        // Abre el formato de firma de una salida en otra pestaña
+        function verFormatoSalida(id) {
+            window.open(`/salidas/pdf/${id}`, '_blank');
+        }
+
         // Función para actualizar resumen
         function actualizarResumen(datos) {
             const totalRegistros = datos.length;
