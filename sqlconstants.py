@@ -398,6 +398,7 @@ UPD_SALIDA_ANULADO = "UPDATE a_salidas SET estado = 'ANULADO', modified = CURREN
 SEL_SALIDA_ARCHIVO = "SELECT archivo FROM a_salidas WHERE id = %s"
 UPD_SALIDA_ARCHIVO = "UPDATE a_salidas SET archivo = %s, modified = CURRENT_TIMESTAMP WHERE id = %s"
 SELECT_1_SALIDA = "SELECT * FROM a_salidas WHERE id = %s"
+SEL_DESCRIPCION_TIPO_SALIDA = "SELECT descripcion FROM a_tipos WHERE tipo = 'SALIDA' AND codigo = %s"
 SELECT_1_INGRESO = "SELECT * FROM a_ingresos WHERE id = %s"
 LISTA_INGRESOS = "SELECT * FROM a_ingresos WHERE DATE(fecha_solicitud) BETWEEN %s AND %s AND estado in ('PENDIENTE','CONFIRMADO') ORDER BY fecha_solicitud DESC, id DESC"
 LISTA_SALIDAS = "SELECT * FROM a_salidas WHERE DATE(fecha_solicitud) BETWEEN %s AND %s AND estado in ('PENDIENTE','CONFIRMADO') ORDER BY fecha_solicitud DESC, id DESC"
@@ -436,7 +437,7 @@ WHERE id = %s """
 INS_9_SALIDAS = """
 INSERT INTO a_salidas
 (fecha_solicitud, tipo_salida, tipo_beneficiario, beneficiario,beneficiario_nombre, monto, estado, observaciones, tipo_doc, numero_doc, periodo, tipo_caja, cajero, webuser)
-VALUES (%s, %s, %s, %s, %s, %s, 'PENDIENTE', %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, 'CONFIRMADO', %s, %s, %s, %s, %s, %s, %s)
 """
 UPD_9_INGRESOS = """UPDATE a_ingresos
 SET fecha_solicitud = %s,

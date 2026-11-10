@@ -2139,6 +2139,11 @@ def generar_pdf_salida(salida_id):
     cursor = conn.cursor(dictionary=True)
     cursor.execute(sqlconstants.SELECT_1_SALIDA, (salida_id,))
     salida = cursor.fetchone()
+    descripcion_tipo = ''
+    if salida:
+        cursor.execute(sqlconstants.SEL_DESCRIPCION_TIPO_SALIDA, (salida['tipo_salida'],))
+        tipo = cursor.fetchone()
+        descripcion_tipo = tipo['descripcion'] if tipo else salida['tipo_salida']
     cursor.close()
     conn.close()
     if not salida:
@@ -2178,7 +2183,7 @@ def generar_pdf_salida(salida_id):
         ['Detalle de la Salida', ''],
         ['N° Documento:', escape(str(salida['numero_doc'] or ''))],
         ['Fecha:', fecha_salida],
-        ['Tipo de Salida:', escape(str(salida['tipo_salida'] or ''))],
+        ['Tipo de Salida:', escape(str(descripcion_tipo or ''))],
         ['Beneficiario:', beneficiario],
         ['Monto:', f"S/. {monto:,.2f}"],
         ['Estado:', str(salida['estado'] or '').upper()],
