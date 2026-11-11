@@ -126,6 +126,8 @@ def guardar_salida():
     cursor = None
     try:
         data = request.json
+        if data.get('tipo_doc') == 'COMPROBANTE':
+            data['numero_doc'] = '0'
         current_app.logger.debug(f"Datos recibidos: {data}")
 
         conn = get_db_connection()

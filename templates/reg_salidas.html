@@ -193,7 +193,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label><i class="bi bi-bag-heart"></i>Tipo de Documento</label>
-                                        <select class="form-select" id="tipo_doc" required>
+                                        <select class="form-select" id="tipo_doc" required onchange="ajustarNumeroDoc()">
                                             <option value="">Seleccione tipo</option>
                                             <option value="FACTURA">Factura</option>
                                             <option value="BOLETA">Boleta</option>
@@ -211,7 +211,7 @@
                                         <label><i class="bi bi-receipt-cutoff"></i>Numero de Documento</label>
                                         <div class="input-group">
                                             <span class="input-group-text">0-0#</span>
-                                            <input type="text" class="form-control" id="numero_doc" max-length="15" required>
+                                            <input type="text" class="form-control" id="numero_doc" max-length="15">
                                         </div>
                                     </div>
                                 </div>
@@ -367,7 +367,7 @@
                 return;
             }
 
-            if (!formData.numero_doc || formData.numero_doc <= 0) {
+            if (formData.tipo_doc !== 'COMPROBANTE' && (!formData.numero_doc || formData.numero_doc <= 0)) {
                 alert('Por favor ingrese un numero de documento válido');
                 return;
             }
@@ -445,6 +445,7 @@
                 document.getElementById('tipo_beneficiario').value = data.tipo_beneficiario;
                 document.getElementById('tipo_doc').value = data.tipo_doc;
                 document.getElementById('numero_doc').value = data.numero_doc;
+                ajustarNumeroDoc();
                 document.getElementById('periodo').value = data.periodo;
                 document.getElementById('monto').value = data.monto;
                 document.getElementById('tipo_caja').value = data.tipo_caja || 'EFECTIVO';
@@ -466,6 +467,17 @@
             });
         }
         
+        // Los comprobantes en línea no llevan número de documento
+        function ajustarNumeroDoc() {
+            const esComprobante = document.getElementById('tipo_doc').value === 'COMPROBANTE';
+            const campo = document.getElementById('numero_doc');
+            campo.disabled = esComprobante;
+            campo.placeholder = esComprobante ? 'No aplica' : '';
+            if (esComprobante) {
+                campo.value = '';
+            }
+        }
+
         // Función para limpiar formulario
         function limpiarFormulario() {
             document.getElementById('form-title').innerHTML = '<i class="bi bi-plus-circle"></i>Registrar Nueva Salida';
