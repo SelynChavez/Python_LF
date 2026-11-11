@@ -2211,6 +2211,7 @@ def generar_pdf_salida(salida_id):
         ['_________________________', '_________________________'],
         [beneficiario, escape(str(salida['cajero'] or ''))],
         ['Beneficiario', 'Entregado por'],
+        ['DNI: ______________', ''],
     ]
     tabla_firmas = Table(data_firmas, colWidths=[3*inch, 3*inch])
     tabla_firmas.setStyle(TableStyle([
