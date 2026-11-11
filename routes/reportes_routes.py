@@ -2181,7 +2181,7 @@ def generar_pdf_salida(salida_id):
 
     data = [
         ['Detalle de la Salida', ''],
-        ['N° Documento:', escape(str(salida['numero_doc'] or ''))],
+        ['N° Documento:', str(salida['id'])],
         ['Fecha:', fecha_salida],
         ['Tipo de Salida:', escape(str(descripcion_tipo or ''))],
         ['Beneficiario:', beneficiario],
